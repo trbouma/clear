@@ -167,6 +167,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# Clear runtime state
+/data/
+
 # mypy
 .mypy_cache/
 .dmypy.json

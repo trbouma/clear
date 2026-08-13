@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Clear logo</title>
+  <desc id="desc">A clear blue circular token with an open center and a precise coral ledger mark.</desc>
+  <circle cx="256" cy="256" r="208" fill="#247c93"/>
+  <circle cx="256" cy="256" r="122" fill="#f4fbfc"/>
+  <path fill="#143d52" d="M256 48a208 208 0 0 0 0 416v-86a122 122 0 1 1 0-244z"/>
+  <path fill="#e16f51" d="M222 224h168v64H222z"/>
+</svg>

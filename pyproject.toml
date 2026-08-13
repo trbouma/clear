@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "clear-mint"
+version = "0.1.0"
+description = "A Cashu mint for organization-defined points without Lightning settlement"
+authors = ["Tim Bouma"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "clear", from = "src" }]
+homepage = "https://trbouma.github.io/clear/"
+repository = "https://github.com/trbouma/clear"
+keywords = ["cashu", "ecash", "points", "local-first", "safebox"]
+
+[tool.poetry.scripts]
+clear = "clear.cli:main"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+coincurve = ">=20.0.0,<22.0.0"
+fastapi = ">=0.115.0,<1.0.0"
+uvicorn = { version = ">=0.34.0,<1.0.0", extras = ["standard"] }
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3.0,<10.0.0"
+httpx = ">=0.28.0,<1.0.0"
+ruff = ">=0.16.0,<1.0.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = ">=1.6.0,<2.0.0"
+mkdocs-material = ">=9.5.0,<10.0.0"
+pymdown-extensions = ">=10.0.0,<11.0.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

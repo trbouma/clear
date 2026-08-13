@@ -1,0 +1,125 @@
+:root {
+  --md-primary-fg-color: #17677b;
+  --md-primary-fg-color--light: #39879a;
+  --md-primary-fg-color--dark: #143d52;
+  --md-accent-fg-color: #c9543b;
+  --clear-ink: #143d52;
+  --clear-water: #eaf6f7;
+  --clear-coral: #c9543b;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #3d91a5;
+  --md-accent-fg-color: #ee8067;
+  --clear-ink: #edf8fa;
+  --clear-water: #172b31;
+}
+
+.md-header__option .md-header__button:not([hidden]) {
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  gap: 0.35rem;
+  padding-inline: 0.45rem;
+}
+
+.md-header__option .md-header__button:not([hidden])::after {
+  content: attr(title);
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.clear-hero {
+  margin: 1rem 0 2.5rem;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  text-align: center;
+  background: var(--clear-water);
+  border-block: 1px solid color-mix(in srgb, var(--md-primary-fg-color) 22%, transparent);
+}
+
+.clear-hero h1 {
+  margin: 0 0 0.85rem;
+  color: var(--clear-ink);
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.clear-hero-mark {
+  display: block;
+  width: clamp(7rem, 18vw, 10rem);
+  margin: 0 auto 1.4rem;
+}
+
+.clear-tagline {
+  max-width: 44rem;
+  margin: 0 auto 0.8rem;
+  color: var(--clear-ink);
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.clear-intro {
+  max-width: 43rem;
+  margin: 0 auto 1.5rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.clear-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.clear-card {
+  padding: 1.2rem 1.3rem;
+  border: 1px solid color-mix(in srgb, var(--md-default-fg-color) 15%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--md-default-bg-color) 96%, var(--md-primary-fg-color));
+}
+
+.clear-card h3 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
+
+.clear-rule {
+  padding: 1rem 1.2rem;
+  border-left: 0.3rem solid var(--clear-coral);
+  background: color-mix(in srgb, var(--md-default-bg-color) 94%, var(--clear-coral));
+}
+
+.md-typeset blockquote {
+  border-left-color: var(--clear-coral);
+}
+
+@media screen and (max-width: 52rem) {
+  .md-header__option .md-header__button:not([hidden]) {
+    width: 2.4rem;
+    padding-inline: 0.6rem;
+  }
+
+  .md-header__option .md-header__button:not([hidden])::after {
+    content: none;
+  }
+
+  .clear-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .clear-hero {
+    padding-block: 2.25rem;
+  }
+
+  .clear-hero .md-button {
+    display: block;
+    width: 100%;
+    margin: 0.65rem 0 0;
+    text-align: center;
+  }
+}
