@@ -16,6 +16,13 @@ Clear does not invent those questions or claim that software can settle them.
 It gives an established treasury function a new way to issue, circulate, and
 retire organization-defined value.
 
+The protocol term for the bearer instrument is **Mint Note**. Each Mint Note is
+denominated in a keyset-bound **Clear Mint Unit**, identified as
+`cmu-<keyset-id>`. *Cashu proof* remains the implementation term for the data
+structure encoding a spendable note. Programs may still describe their
+real-world purpose using familiar words such as credits, vouchers, or points;
+those labels do not replace the canonical CMU identifier.
+
 ## Treasury before software
 
 Some of the earliest surviving written records are administrative accounts.

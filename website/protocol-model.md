@@ -1,6 +1,6 @@
 ---
 title: Protocol Model
-description: How Clear adapts Cashu issuance and retirement without Lightning.
+description: How Clear issues, transfers, redeems, and retires Mint Notes without Lightning.
 ---
 
 # Protocol Model
@@ -21,43 +21,67 @@ Clear preserves the central Cashu model:
 - spent-secret tracking; and
 - proof-state checks.
 
+In product and protocol language, the resulting bearer instruments are **Mint
+Notes** denominated in a **Clear Mint Unit (CMU)**. In implementation language, each
+spendable Mint Note is represented by a Cashu proof. The distinction keeps the
+instrument understandable without renaming Cashu data structures.
+
 ## Clear issuance method
 
 Cashu NUT-04 provides a general quote flow and allows method-specific
 settlement mechanisms. Clear introduces the experimental method name `clear`:
 
-1. A wallet requests a `clear` mint quote for a unique Clear unit.
+1. A wallet requests a `clear` mint quote for one exact
+   `cmu-<keyset-id>`.
 2. The quote begins with no authorized amount.
 3. The prototype authorizes the quote through its protected operator boundary.
 4. The wallet submits blinded outputs up to the authorized amount.
 5. Clear returns blind signatures and records issued supply.
 
-The keyset secret never crosses the HTTP boundary. The prototype uses a
-separate operator token for routine actions. The intended model instead
-requires a signed authorization from a treasurer named in the active policy.
+The prototype derives its keyset secret locally and never accepts it over the
+HTTP API. The intended model also permits an operator-approved remote signer or
+portable keyset enrollment. A raw keyset secret should move only through a
+protected offline installation path, never as a routine issuance request.
 
-The prototype unit is not operator-selected. It is deterministically bound to
-the keyset's public-key fingerprint. The intended multi-keyset model binds the
-durable unit to the currency root and separately identifies each operational
-keyset. A configured friendly name remains presentation metadata rather than
-currency identity.
+The prototype uses a separate operator token for routine actions. The intended
+model instead requires a signed authorization from a treasurer named in the
+active policy. If that treasurer is also the delegated keyset signer, operator
+approval must be committed before signatures are released.
 
-## Clear retirement
+The Clear Mint Unit is not operator-selected. The target protocol identifier is
+formed from the exact NUT-02 keyset ID:
 
-Retirement is intentionally distinct from Cashu melt-to-payment behavior:
+```text
+cmu-<keyset-id>
+```
 
-1. The organization receives proofs under its own policy.
-2. The treasurer submits them to the protected retirement endpoint.
-3. Clear validates the signatures and confirms they are unspent.
-4. Their secrets are atomically marked spent.
+Each new keyset creates a new CMU. A currency root may authorize several
+keysets, but it does not make their Mint Notes automatically interchangeable.
+A configured friendly name remains presentation metadata.
+
+!!! warning "Implementation migration pending"
+    The current code may still expose a legacy keyset-bound `PTS` or `pts`
+    identifier. Migrating those fields and stored values to
+    `cmu-<keyset-id>` is the next implementation step.
+
+## Clear redemption and retirement
+
+Redemption and retirement are intentionally distinct from Cashu
+melt-to-payment behavior:
+
+1. The organization receives Mint Notes under its own policy.
+2. The treasurer submits their Cashu proofs to the protected retirement
+   endpoint.
+3. Clear validates the notes and confirms they are unspent.
+4. Their secrets are atomically marked spent, completing protocol redemption.
 5. The amount is recorded as retired supply.
 
 ## Compatibility boundary
 
-Issued proofs use normal Cashu proof structures and swaps. However, `clear` is
+Mint Notes use normal Cashu proof structures and swaps. However, `clear` is
 not currently a published Cashu NUT, and many wallets assume familiar units or
-Lightning settlement. Compatible wallets must support custom unit strings and
-the Clear quote workflow.
+Lightning settlement. Compatible wallets must support keyset-bound CMU strings
+and the Clear quote workflow.
 
 The implementation follows the public
 [Cashu NUTs](https://github.com/cashubtc/nuts) and takes architectural guidance

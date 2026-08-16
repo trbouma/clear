@@ -1,21 +1,29 @@
 # Clear
 
-Clear is an experimental Cashu mint for organization-defined points. It keeps
-Cashu's blinded proofs, transfer, swap, and double-spend protection while
-replacing Lightning settlement with explicit treasurer-authorized issuance and
-retirement.
+Clear is an experimental Cashu mint for organization-defined Mint Notes. It
+keeps Cashu's blinded issuance, transfer, swap, and double-spend protection
+while replacing Lightning settlement with explicit treasurer-authorized
+issuance, redemption, and retirement.
 
-Each Clear keyset is its own currency. Clear derives a keyset fingerprint from
-the denomination public keys and binds the protocol unit to it, for example
-`pts.00a1b2c3d4e5f6`. Wallets and applications must never add balances from
-different units or keysets together. A friendly name is presentation metadata,
-not currency identity.
+Each Clear keyset defines its own Clear Mint Unit (CMU). The canonical target unit is
+bound to the exact NUT-02 keyset ID, for example
+`cmu-00a1b2c3d4e5f6`. Wallets and applications must never add balances from
+different logical mints or CMUs together. One logical mint may expose an
+operator-approved **mint cluster** only when its instances synchronously
+coordinate authoritative issuance and spent-note state. A friendly name is
+presentation metadata, not the identity of a Clear Mint Unit.
+
+Mint Note and CMU are the canonical documentation terms. *Cashu proof* remains
+the implementation term for the structure encoding a spendable note. The
+current code may still expose legacy `PTS` or `pts` identifiers until the code,
+API, database, and test migration is completed. See
+[Mint Notes Vocabulary](docs/MINT-NOTES-VOCABULARY.md).
 
 ## Current milestone
 
 - Cashu-compatible key discovery, swap, and proof-state endpoints
 - `clear` mint quotes authorized by an operator rather than a paid invoice
-- operator-authorized proof retirement
+- operator-authorized Mint Note redemption and proof retirement
 - atomic SQLite issuance, swap, retirement, and spent-proof accounting
 - FastAPI service, Poetry entry point, tests, and MkDocs documentation
 
@@ -44,13 +52,15 @@ poetry run mkdocs serve
 
 The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
+The accepted implementation boundary for the first release is described in
+[First Release Scope](docs/FIRST-RELEASE-SCOPE.md).
 
 ## Relationship to Cashu
 
 Clear follows the Cashu protocol's standard cryptographic and circulation
 model. Its `clear` issuance and retirement method is experimental and is not a
-published Cashu NUT. Standard wallets may require explicit support for custom
-units and this settlement method.
+published Cashu NUT. Standard wallets may require explicit support for
+keyset-bound CMU identifiers and this settlement method.
 
 - [Cashu protocol specifications](https://github.com/cashubtc/nuts)
 - [Nutshell reference implementation](https://github.com/cashubtc/nutshell)

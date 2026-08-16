@@ -15,7 +15,7 @@ description: Initial Cashu and operator endpoints exposed by Clear.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/` | Clear service and currency identity |
+| `GET` | `/` | Clear service, keyset, and unit metadata |
 | `GET` | `/health` | Process health |
 | `GET` | `/v1/info` | Cashu mint capabilities |
 | `GET` | `/v1/keys` | Active keyset and public keys |
@@ -41,6 +41,13 @@ The interactive OpenAPI description is available at `/docs` while the service
 is running.
 
 The current `/v1/info` response also includes Clear's `currency` metadata:
-friendly name, display unit, keyset-bound protocol unit, public-key fingerprint,
-and NUT-02 keyset ID. Applications should resolve the friendly name from this
-metadata while retaining the protocol identifiers as the balance key.
+friendly name, display unit, keyset-bound protocol unit, public-key
+fingerprint, and NUT-02 keyset ID. Applications should resolve the friendly
+name from this metadata while retaining the logical mint, complete protocol
+unit, and authenticated service endpoints as the balance identity and routes.
+
+The target protocol unit is `cmu-<keyset-id>`. The current implementation may
+still return a legacy `PTS` or `pts` value until the code and database migration
+is completed. Endpoint names and Cashu fields that use *proof* retain that
+technical meaning: a Cashu proof is the encoded spendable representation of a
+Mint Note.
