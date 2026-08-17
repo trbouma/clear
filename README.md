@@ -93,6 +93,12 @@ docker compose ps
 curl http://127.0.0.1:3339/health
 ```
 
+On a deployment host, pull, rebuild, recreate, and health-check Clear with:
+
+```bash
+./refresh-containers.sh
+```
+
 The mint database and privileged root wallet are stored in the named
 `clear-data` volume. The same image includes `clear-root`, which can be run in
 the privileged mint container with its injected operator environment:
