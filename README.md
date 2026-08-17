@@ -57,6 +57,9 @@ The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
 The accepted implementation boundary for the first release is described in
 [First Release Scope](docs/FIRST-RELEASE-SCOPE.md).
+The current privileged lab issuance, local JSON lab wallet, token retirement,
+and NIP-59 delivery path are described in
+[Lab CMU Issuance and Delivery](docs/LAB-CMU-ISSUANCE-AND-DELIVERY.md).
 
 ## Relationship to Cashu
 

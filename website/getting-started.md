@@ -71,17 +71,26 @@ poetry run clear-lab summary
 ```
 
 A Lightning-address or NIP-05 well-known response can advertise lab Clear
-delivery with a `clear` object:
+delivery with a `clear` object. The current Safebox-compatible shape
+advertises NIP-59 delivery with inner kind `7379`:
 
 ```json
 {
   "clear": {
-    "receive": "https://wallet.example/clear/receive",
-    "mints": ["http://127.0.0.1:3338"],
-    "units": ["cmu-0011223344556677"]
+    "alice": {
+      "protocols": ["clear-token-transfer"],
+      "transports": ["nip59"],
+      "kinds": [7379],
+      "mints": ["http://127.0.0.1:3338"],
+      "units": ["cmu-0011223344556677"]
+    }
   }
 }
 ```
+
+The `mints` and `units` arrays are optional restrictions. When omitted, the
+receiver advertises general Clear support and validates the mint, CMU, and
+keyset ids after decrypting the transfer.
 
 ## Run checks
 
