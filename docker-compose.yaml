@@ -12,27 +12,28 @@ services:
       - --host
       - 0.0.0.0
       - --port
-      - "3338"
+      - "3339"
       - --database
       - /app/data/clear.sqlite3
       - --mint-url
-      - "${CLEAR_MINT_URL:-http://127.0.0.1:3338}"
+      - "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
       - --log-level
       - "${CLEAR_LOG_LEVEL:-info}"
     environment:
       CLEAR_MASTER_SECRET: "${CLEAR_MASTER_SECRET:?Generate CLEAR_MASTER_SECRET before starting}"
       CLEAR_OPERATOR_TOKEN: "${CLEAR_OPERATOR_TOKEN:?Generate CLEAR_OPERATOR_TOKEN before starting}"
       CLEAR_DATABASE: /app/data/clear.sqlite3
-      CLEAR_MINT_URL: "${CLEAR_MINT_URL:-http://127.0.0.1:3338}"
+      CLEAR_MINT_URL: "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
       CLEAR_CURRENCY_NAME: "${CLEAR_CURRENCY_NAME:-Clear Mint Units}"
       CLEAR_CURRENCY_ALIAS: "${CLEAR_CURRENCY_ALIAS:-}"
       CLEAR_CURRENCY_UNIT_ALIAS: "${CLEAR_CURRENCY_UNIT_ALIAS:-}"
       CLEAR_MAX_ORDER: "${CLEAR_MAX_ORDER:-20}"
       CLEAR_ROOT_AUTHORITY_NPUB: "${CLEAR_ROOT_AUTHORITY_NPUB:-}"
       CLEAR_LAB_WALLET: /app/data/clear-lab-wallet.json
+      CLEAR_LAB_API_URL: http://127.0.0.1:3339
       CLEAR_LAB_NSEC: "${CLEAR_LAB_NSEC:-}"
     ports:
-      - "${CLEAR_BIND_ADDRESS:-127.0.0.1}:${CLEAR_PORT:-3338}:3338"
+      - "${CLEAR_BIND_ADDRESS:-127.0.0.1}:${CLEAR_PORT:-3339}:3339"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m

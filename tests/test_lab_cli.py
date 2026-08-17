@@ -27,7 +27,7 @@ def test_lab_cli_configure_writes_display_metadata(
             "--root-authority-npub",
             "npub1root",
             "--mint-url",
-            "http://127.0.0.1:3338",
+            "http://127.0.0.1:3339",
         ],
     )
 
@@ -38,7 +38,7 @@ def test_lab_cli_configure_writes_display_metadata(
         'CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"\n'
         'CLEAR_CURRENCY_UNIT_ALIAS="smiles"\n'
         'CLEAR_ROOT_AUTHORITY_NPUB="npub1root"\n'
-        'CLEAR_MINT_URL="http://127.0.0.1:3338"\n'
+        'CLEAR_MINT_URL="http://127.0.0.1:3339"\n'
     )
     assert '"CLEAR_CURRENCY_UNIT_ALIAS": "smiles"' in capsys.readouterr().out
 
@@ -549,6 +549,8 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
 ) -> None:
     calls = []
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+    monkeypatch.setenv("CLEAR_LAB_API_URL", "http://127.0.0.1:3339")
+    monkeypatch.setenv("CLEAR_MINT_URL", "https://clear.example")
 
     def fake_request_json(mint_url, method, path, payload=None, *, token=None):
         calls.append((mint_url, method, path, payload, token))
@@ -556,6 +558,7 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
             return {
                 "name": "Clear",
                 "version": "0.1.0",
+                "mint_url": "https://clear.example",
                 "description": "Example Credits issued as Clear ecash",
                 "currency": {
                     "name": "Example Credits",
@@ -586,13 +589,15 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
     monkeypatch.setattr(lab_cli, "request_json", fake_request_json)
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "--mint-url", "http://clear.example/", "info"],
+        ["clear-lab", "info"],
     )
 
     assert lab_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"unit": "cmu-0011223344556677"' in output
+    assert '"mint": "https://clear.example"' in output
+    assert '"api_url": "http://127.0.0.1:3339"' in output
     assert '"friendly_alias": "Example Credits (cmu-0011223344556677)"' in output
     assert '"friendly_unit_alias": "smiles"' in output
     assert '"root_authority_npub": "npub1root"' in output
@@ -600,9 +605,9 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
     assert '"retired": 13' in output
     assert '"outstanding": 21' in output
     assert calls == [
-        ("http://clear.example", "GET", "/v1/info", None, None),
+        ("http://127.0.0.1:3339", "GET", "/v1/info", None, None),
         (
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "GET",
             "/v1/operator/summary",
             None,

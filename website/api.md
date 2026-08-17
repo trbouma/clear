@@ -40,11 +40,13 @@ These endpoints require `Authorization: Bearer <CLEAR_OPERATOR_TOKEN>`.
 The interactive OpenAPI description is available at `/docs` while the service
 is running.
 
-The current `/v1/info` response also includes Clear's `currency` metadata:
-friendly name, display unit, keyset-bound protocol unit, public-key
-fingerprint, and NUT-02 keyset ID. Applications should resolve the friendly
-name from this metadata while retaining the logical mint, complete protocol
-unit, and authenticated service endpoints as the balance identity and routes.
+The current `/v1/info` response includes the canonical public `mint_url` and
+Clear's `currency` metadata: friendly name, display unit, keyset-bound protocol
+unit, public-key fingerprint, and NUT-02 keyset ID. Applications should resolve
+the friendly name from this metadata while retaining the logical mint,
+complete protocol unit, and authenticated service endpoints as the balance
+identity and routes. The privileged lab CLI may contact the service through a
+different internal API URL, but circulating tokens always use `mint_url`.
 
 The target protocol unit is `cmu-<keyset-id>`. The current implementation may
 still return a prototype unit value until the code and database migration

@@ -48,12 +48,12 @@ poetry install --with dev,docs
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
 export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
-poetry run clear --host 127.0.0.1 --port 3338 \
+poetry run clear --host 127.0.0.1 --port 3339 \
   --database ./data/clear.sqlite3 \
   --currency-name "Example Credits"
 ```
 
-Then open [http://127.0.0.1:3338/](http://127.0.0.1:3338/),
+Then open [http://127.0.0.1:3339/](http://127.0.0.1:3339/),
 `/health`, or `/docs`.
 
 Read the full documentation with:
@@ -69,12 +69,18 @@ Create `.env` from `.env.example`, then set `CLEAR_MASTER_SECRET` and
 must be the URL that wallets will use to reach the mint; the loopback default
 is suitable only for local testing.
 
+Inside Docker, `clear-lab` connects directly to
+`CLEAR_LAB_API_URL=http://127.0.0.1:3339`. The mint separately advertises
+`CLEAR_MINT_URL`, and that public URL is encoded into issued and swapped tokens.
+This keeps privileged lab traffic on the container loopback interface without
+leaking an internal address into a circulating token.
+
 ```bash
 cp .env.example .env
 # Set both required secrets in .env using independent `openssl rand -hex 32` values.
 docker compose up --build --detach
 docker compose ps
-curl http://127.0.0.1:3338/health
+curl http://127.0.0.1:3339/health
 ```
 
 The mint database and the privileged lab wallet are stored in the named

@@ -14,7 +14,7 @@ def test_encode_cashu_token_v3() -> None:
     ]
 
     token = encode_token_v3(
-        mint="http://127.0.0.1:3338/",
+        mint="http://127.0.0.1:3339/",
         proofs=proofs,
         unit="cmu-0011223344556677",
         memo="test issuance",
@@ -22,7 +22,7 @@ def test_encode_cashu_token_v3() -> None:
 
     assert token.startswith("cashuA")
     assert decode_token_v3(token) == {
-        "token": [{"mint": "http://127.0.0.1:3338", "proofs": proofs}],
+        "token": [{"mint": "http://127.0.0.1:3339", "proofs": proofs}],
         "unit": "cmu-0011223344556677",
         "memo": "test issuance",
     }
@@ -30,7 +30,7 @@ def test_encode_cashu_token_v3() -> None:
 
 def test_decode_cashu_token_v3_accepts_uri_prefix() -> None:
     token = encode_token_v3(
-        mint="http://127.0.0.1:3338",
+        mint="http://127.0.0.1:3339",
         proofs=[],
         unit="cmu-0011223344556677",
     )

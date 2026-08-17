@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from clear import treasury
-from clear.tokens import encode_token_v3
+from clear.tokens import decode_token_v3, encode_token_v3
 
 
 def test_split_amount_into_supported_denominations() -> None:
@@ -23,7 +23,10 @@ def test_issue_token_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
     def fake_request_json(mint_url, method, path, payload=None, *, token=None):
         calls.append((method, path, payload, token))
         if path == "/v1/info":
-            return {"currency": {"unit": "cmu-0011223344556677"}}
+            return {
+                "mint_url": "https://clear.example",
+                "currency": {"unit": "cmu-0011223344556677"},
+            }
         if path == "/v1/keys":
             return {
                 "keysets": [
@@ -70,13 +73,13 @@ def test_issue_token_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
     )
 
     issued = treasury.issue_token(
-        "http://clear.example/",
+        "http://127.0.0.1:3339/",
         "operator-token",
         13,
         memo="test issuance",
     )
 
-    assert issued["mint"] == "http://clear.example"
+    assert issued["mint"] == "https://clear.example"
     assert issued["unit"] == "cmu-0011223344556677"
     assert issued["amount"] == 13
     assert issued["token"].startswith("cashuA")
@@ -93,6 +96,63 @@ def test_issue_token_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
         None,
         "operator-token",
     )
+
+
+def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> None:
+    calls = []
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path))
+        if path == "/v1/info":
+            return {"mint_url": "https://clear.example"}
+        if path == "/v1/keys":
+            return {
+                "keysets": [
+                    {"id": "keyset-id", "keys": {"1": "pub1"}}
+                ]
+            }
+        if path == "/v1/swap":
+            return {"signatures": [{"C_": "send"}, {"C_": "change"}]}
+        raise AssertionError(path)
+
+    class FakeOutput:
+        def __init__(self, amount):
+            self.amount = amount
+            self.payload = {"amount": amount, "id": "keyset-id", "B_": "B"}
+
+    monkeypatch.setattr(treasury, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        treasury,
+        "blind_output",
+        lambda amount, keyset_id: FakeOutput(amount),
+    )
+    monkeypatch.setattr(
+        treasury,
+        "unblind_signature",
+        lambda output, promise, mint_public_key: {
+            "amount": output.amount,
+            "id": output.payload["id"],
+            "secret": promise["C_"],
+            "C": promise["C_"],
+        },
+    )
+
+    swapped = treasury.swap_token_for_amount(
+        "http://127.0.0.1:3339",
+        [{"amount": 2, "id": "keyset-id"}],
+        1,
+        unit="cmu-0011223344556677",
+    )
+
+    assert swapped["mint"] == "https://clear.example"
+    assert decode_token_v3(swapped["token"])["token"][0]["mint"] == (
+        "https://clear.example"
+    )
+    assert calls == [
+        ("http://127.0.0.1:3339", "GET", "/v1/info"),
+        ("http://127.0.0.1:3339", "GET", "/v1/keys"),
+        ("http://127.0.0.1:3339", "POST", "/v1/swap"),
+    ]
 
 
 def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
@@ -114,6 +174,8 @@ def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
 
     def fake_request_json(mint_url, method, path, payload=None, *, token=None):
         calls.append((mint_url, method, path, payload, token))
+        if path == "/v1/info":
+            return {"mint_url": "http://clear.example"}
         return {"status": "RETIRED", "amount": 8, "unit": "cmu-0011223344556677"}
 
     monkeypatch.setattr(treasury, "request_json", fake_request_json)
@@ -133,6 +195,7 @@ def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
         "memo": "program completed",
     }
     assert calls == [
+        ("http://clear.example", "GET", "/v1/info", None, None),
         (
             "http://clear.example",
             "POST",
@@ -143,7 +206,7 @@ def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
     ]
 
 
-def test_redeem_token_rejects_different_mint() -> None:
+def test_redeem_token_rejects_different_mint(monkeypatch) -> None:
     token = encode_token_v3(
         mint="http://other.example",
         proofs=[
@@ -155,6 +218,14 @@ def test_redeem_token_rejects_different_mint() -> None:
             }
         ],
         unit="cmu-0011223344556677",
+    )
+
+    monkeypatch.setattr(
+        treasury,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "mint_url": "http://clear.example"
+        },
     )
 
     with pytest.raises(treasury.TreasuryError, match="not configured mint"):

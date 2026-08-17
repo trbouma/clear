@@ -94,6 +94,7 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         mint_info = client.get("/v1/info")
 
     assert health.json() == {"status": "ok"}
+    assert mint_info.json()["mint_url"] == "https://clear.example"
     assert info.json()["currency"]["display_unit"] == "CMU"
     currency = info.json()["currency"]
     assert currency["protocol_unit"] == f"cmu-{currency['keyset_fingerprint']}"

@@ -30,7 +30,8 @@ The local mint requires:
 CLEAR_MASTER_SECRET=<32-byte secret, commonly 64 hex chars>
 CLEAR_OPERATOR_TOKEN=<operator API bearer token>
 CLEAR_DATABASE=./data/clear.sqlite3
-CLEAR_MINT_URL=http://127.0.0.1:3338
+CLEAR_MINT_URL=http://127.0.0.1:3339
+CLEAR_LAB_API_URL=http://127.0.0.1:3339
 CLEAR_CURRENCY_NAME="Clear Mint Units"
 CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"
 CLEAR_CURRENCY_UNIT_ALIAS="smiles"
@@ -47,10 +48,16 @@ created with.
 reads it from the privileged environment and sends it as the API authorization
 value when issuing, retiring, or reading operator summaries.
 
+`CLEAR_MINT_URL` is the canonical public URL advertised by the mint and encoded
+in circulating tokens. `CLEAR_LAB_API_URL` is only the connection used by the
+privileged lab CLI. In Docker it remains `http://127.0.0.1:3339`, allowing the
+CLI to bypass the reverse proxy without placing that loopback address in
+tokens. Outside Docker it defaults to `CLEAR_MINT_URL` when not configured.
+
 ## Running the mint
 
 ```sh
-poetry run clear --host 127.0.0.1 --port 3338
+poetry run clear --host 127.0.0.1 --port 3339
 ```
 
 Useful inspection endpoints:
@@ -67,6 +74,7 @@ GET /docs
 
 ```json
 {
+  "mint_url": "https://clear.example",
   "currency": {
     "name": "Clear Mint Units",
     "display_unit": "CMU",
@@ -168,7 +176,7 @@ The encrypted inner payload is a JSON object:
   "type": "clear-token",
   "version": 1,
   "token": "cashuA...",
-  "mint": "http://127.0.0.1:3338",
+  "mint": "http://127.0.0.1:3339",
   "unit": "cmu-00ce29eeaf094301",
   "amount": 25,
   "keyset_ids": ["00ce29eeaf094301"],
@@ -207,4 +215,3 @@ payload after receipt.
 Acorn receives kind `7379` Clear transfers through a separate pending Clear
 receipt path. Clear tokens are not merged into Acorn's normal sats proof state
 and are not counted in the sats balance.
-

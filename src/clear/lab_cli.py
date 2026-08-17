@@ -32,7 +32,7 @@ from clear.treasury import (
     swap_token_for_amount,
 )
 
-DEFAULT_MINT_URL = "http://127.0.0.1:3338"
+DEFAULT_MINT_URL = "http://127.0.0.1:3339"
 CONFIGURE_KEYS = {
     "currency_name": "CLEAR_CURRENCY_NAME",
     "currency_alias": "CLEAR_CURRENCY_ALIAS",
@@ -42,10 +42,24 @@ CONFIGURE_KEYS = {
 }
 
 
-def _mint_url(args) -> str:
-    return (args.mint_url or os.getenv("CLEAR_MINT_URL") or DEFAULT_MINT_URL).rstrip(
-        "/"
-    )
+def _api_url(args) -> str:
+    return (
+        args.api_url
+        or os.getenv("CLEAR_LAB_API_URL")
+        or os.getenv("CLEAR_MINT_URL")
+        or DEFAULT_MINT_URL
+    ).rstrip("/")
+
+
+def _mint_info(api_url: str) -> dict:
+    return request_json(api_url, "GET", "/v1/info")
+
+
+def _public_mint_url(info: dict, api_url: str) -> str:
+    configured = info.get("mint_url")
+    if isinstance(configured, str) and configured.strip():
+        return configured.rstrip("/")
+    return api_url.rstrip("/")
 
 
 def _operator_token() -> str:
@@ -110,7 +124,7 @@ def configure(args) -> int:
 
 def issue(args) -> int:
     issued = issue_token(
-        _mint_url(args),
+        _api_url(args),
         _operator_token(),
         args.amount,
         memo=args.memo,
@@ -127,7 +141,7 @@ def redeem(args) -> int:
     if not token:
         raise TreasuryError("token must be supplied as an argument or on stdin")
     redeemed = redeem_token(
-        _mint_url(args),
+        _api_url(args),
         _operator_token(),
         token,
         memo=args.memo,
@@ -138,7 +152,7 @@ def redeem(args) -> int:
 
 def summary(args) -> int:
     result = request_json(
-        _mint_url(args),
+        _api_url(args),
         "GET",
         "/v1/operator/summary",
         token=_operator_token(),
@@ -148,16 +162,18 @@ def summary(args) -> int:
 
 
 def info(args) -> int:
-    mint_url = _mint_url(args)
-    mint_info = request_json(mint_url, "GET", "/v1/info")
+    api_url = _api_url(args)
+    mint_info = _mint_info(api_url)
+    mint_url = _public_mint_url(mint_info, api_url)
     supply = request_json(
-        mint_url,
+        api_url,
         "GET",
         "/v1/operator/summary",
         token=_operator_token(),
     )
     result = {
         "mint": mint_url,
+        "api_url": api_url,
         "name": mint_info["name"],
         "version": mint_info["version"],
         "description": mint_info["description"],
@@ -173,13 +189,11 @@ def info(args) -> int:
     return 0
 
 
-def _mint_currency(mint_url: str) -> dict:
-    return request_json(mint_url, "GET", "/v1/info")["currency"]
-
-
 def address(args) -> int:
-    mint_url = _mint_url(args)
-    currency = _mint_currency(mint_url)
+    api_url = _api_url(args)
+    mint_info = _mint_info(api_url)
+    mint_url = _public_mint_url(mint_info, api_url)
+    currency = mint_info["currency"]
     _print_json(
         discover_clear_support(
             args.address,
@@ -191,8 +205,10 @@ def address(args) -> int:
 
 
 def send(args) -> int:
-    mint_url = _mint_url(args)
-    currency = _mint_currency(mint_url)
+    api_url = _api_url(args)
+    mint_info = _mint_info(api_url)
+    mint_url = _public_mint_url(mint_info, api_url)
+    currency = mint_info["currency"]
     discovery = discover_clear_support(
         args.address,
         mint_url=mint_url,
@@ -201,7 +217,12 @@ def send(args) -> int:
     if not discovery["supported"]:
         raise DeliveryError("recipient does not advertise compatible Clear support")
     wallet_path = _wallet_path(args)
-    pending = _export_or_swap(args.amount, wallet_path, memo=args.memo)
+    pending = _export_or_swap(
+        args.amount,
+        wallet_path,
+        api_url=api_url,
+        memo=args.memo,
+    )
     delivery = deliver_clear_token(
         discovery,
         token=pending["token"],
@@ -216,7 +237,13 @@ def send(args) -> int:
     return 0
 
 
-def _export_or_swap(amount: int, wallet_path: Path, *, memo: str | None = None) -> dict:
+def _export_or_swap(
+    amount: int,
+    wallet_path: Path,
+    *,
+    api_url: str,
+    memo: str | None = None,
+) -> dict:
     try:
         return export_token(amount, wallet_path, memo=memo, remove=False)
     except ValueError as exc:
@@ -225,7 +252,7 @@ def _export_or_swap(amount: int, wallet_path: Path, *, memo: str | None = None) 
 
     selected = select_proofs_for_amount(amount, wallet_path)
     swapped = swap_token_for_amount(
-        selected["mint"],
+        api_url,
         selected["proofs"],
         amount,
         unit=selected["unit"],
@@ -236,7 +263,7 @@ def _export_or_swap(amount: int, wallet_path: Path, *, memo: str | None = None) 
         selected["amount"],
         wallet_path,
         change={
-            "mint": selected["mint"],
+            "mint": swapped["mint"],
             "unit": selected["unit"],
             "quote": None,
             "amount": selected["amount"],
@@ -262,7 +289,12 @@ def wallet_list(args) -> int:
 
 def withdraw(args) -> int:
     wallet_path = _wallet_path(args)
-    _export_or_swap(args.amount, wallet_path, memo=args.memo)
+    _export_or_swap(
+        args.amount,
+        wallet_path,
+        api_url=_api_url(args),
+        memo=args.memo,
+    )
     withdrawn = export_token(args.amount, wallet_path, memo=args.memo, remove=True)
     _print_json(withdrawn)
     return 0
@@ -277,9 +309,15 @@ def parser() -> argparse.ArgumentParser:
         ),
     )
     result.add_argument(
+        "--api-url",
         "--mint-url",
+        dest="api_url",
         default=None,
-        help=f"Clear mint URL. Defaults to CLEAR_MINT_URL or {DEFAULT_MINT_URL}.",
+        help=(
+            "URL used to contact the Clear mint. Defaults to CLEAR_LAB_API_URL, "
+            f"then CLEAR_MINT_URL, then {DEFAULT_MINT_URL}. --mint-url is kept "
+            "as a compatibility alias."
+        ),
     )
     result.add_argument(
         "--wallet",

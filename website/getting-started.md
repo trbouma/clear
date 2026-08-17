@@ -21,8 +21,10 @@ Generate independent development secrets:
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
 export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
+export CLEAR_MINT_URL="http://127.0.0.1:3339"
 export CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"
 export CLEAR_CURRENCY_UNIT_ALIAS="smiles"
+export CLEAR_LAB_API_URL="http://127.0.0.1:3339"
 ```
 
 The master secret deterministically derives denomination keys and must remain
@@ -33,23 +35,28 @@ should be managed separately.
 The optional currency alias and unit alias are wallet-facing display hints for
 this CMU.
 
+`CLEAR_MINT_URL` is the canonical URL advertised to wallets and encoded in
+tokens. `CLEAR_LAB_API_URL` is the private connection used by `clear-lab`. A
+Docker deployment keeps the latter on container loopback even when the former
+is a public HTTPS URL behind a reverse proxy.
+
 ## Start Clear
 
 ```bash
 poetry run clear \
   --host 127.0.0.1 \
-  --port 3338 \
+  --port 3339 \
   --database ./data/clear.sqlite3 \
   --currency-name "Example Credits"
 ```
 
 Useful development paths:
 
-- `http://127.0.0.1:3338/`
-- `http://127.0.0.1:3338/health`
-- `http://127.0.0.1:3338/docs`
-- `http://127.0.0.1:3338/v1/info`
-- `http://127.0.0.1:3338/v1/keys`
+- `http://127.0.0.1:3339/`
+- `http://127.0.0.1:3339/health`
+- `http://127.0.0.1:3339/docs`
+- `http://127.0.0.1:3339/v1/info`
+- `http://127.0.0.1:3339/v1/keys`
 
 ## Lab CLI
 
@@ -81,7 +88,7 @@ advertises NIP-59 delivery with inner kind `7379`:
       "protocols": ["clear-token-transfer"],
       "transports": ["nip59"],
       "kinds": [7379],
-      "mints": ["http://127.0.0.1:3338"],
+      "mints": ["http://127.0.0.1:3339"],
       "units": ["cmu-0011223344556677"]
     }
   }

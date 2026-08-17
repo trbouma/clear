@@ -119,6 +119,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             "name": "Clear",
             "version": __version__,
+            "mint_url": configured.mint_url,
             "description": f"{configured.currency_name} issued as Clear ecash",
             "currency": {
                 "name": configured.currency_name,

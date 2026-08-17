@@ -19,6 +19,13 @@ class TreasuryError(RuntimeError):
     pass
 
 
+def advertised_mint_url(info: dict[str, Any], api_url: str) -> str:
+    configured = info.get("mint_url")
+    if isinstance(configured, str) and configured.strip():
+        return configured.rstrip("/")
+    return api_url.rstrip("/")
+
+
 @dataclass(frozen=True, slots=True)
 class BlindedOutput:
     amount: int
@@ -113,6 +120,7 @@ def issue_token(
     memo: str | None = None,
 ) -> dict[str, Any]:
     info = request_json(mint_url, "GET", "/v1/info")
+    token_mint_url = advertised_mint_url(info, mint_url)
     unit = info["currency"]["unit"]
     keyset = request_json(mint_url, "GET", "/v1/keys")["keysets"][0]
     keyset_id = keyset["id"]
@@ -158,13 +166,13 @@ def issue_token(
         for output, promise in zip(outputs, promises, strict=True)
     ]
     token = encode_token_v3(
-        mint=mint_url,
+        mint=token_mint_url,
         proofs=proofs,
         unit=unit,
         memo=memo,
     )
     return {
-        "mint": mint_url.rstrip("/"),
+        "mint": token_mint_url,
         "unit": unit,
         "quote": quote["quote"],
         "amount": amount,
@@ -188,6 +196,8 @@ def swap_token_for_amount(
     if input_total < amount:
         raise TreasuryError("insufficient input amount for swap")
 
+    info = request_json(mint_url, "GET", "/v1/info")
+    token_mint_url = advertised_mint_url(info, mint_url)
     keyset = request_json(mint_url, "GET", "/v1/keys")["keysets"][0]
     keyset_id = keyset["id"]
     keys = keyset["keys"]
@@ -231,13 +241,13 @@ def swap_token_for_amount(
     send_proofs = proofs[: len(send_outputs)]
     change_proofs = proofs[len(send_outputs) :]
     return {
-        "mint": mint_url.rstrip("/"),
+        "mint": token_mint_url,
         "unit": unit,
         "amount": amount,
         "input_amount": input_total,
         "change_amount": change_amount,
         "token": encode_token_v3(
-            mint=mint_url,
+            mint=token_mint_url,
             proofs=send_proofs,
             unit=unit,
             memo=memo,
@@ -279,7 +289,9 @@ def redeem_token(
     memo: str | None = None,
 ) -> dict[str, Any]:
     token_mint, token_unit, proofs = proofs_from_token(token)
-    configured_mint = mint_url.rstrip("/")
+    api_url = mint_url.rstrip("/")
+    info = request_json(api_url, "GET", "/v1/info")
+    configured_mint = advertised_mint_url(info, api_url)
     if token_mint != configured_mint:
         raise TreasuryError(
             f"token is for mint {token_mint}, not configured mint {configured_mint}"
@@ -289,7 +301,7 @@ def redeem_token(
     if memo:
         payload["memo"] = memo
     retired = request_json(
-        configured_mint,
+        api_url,
         "POST",
         "/v1/operator/retire",
         payload,
