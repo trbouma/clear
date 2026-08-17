@@ -5,6 +5,15 @@ keeps Cashu's blinded issuance, transfer, swap, and double-spend protection
 while replacing Lightning settlement with explicit treasurer-authorized
 issuance, redemption, and retirement.
 
+Clear is designed to work alongside Bitcoin- and Lightning-backed Cashu mints,
+not replace them. A wallet can present sat-denominated funds from those mints as
+one **Cash Balance**: general-purpose value that can be transferred broadly and
+settled through the Bitcoin and Lightning networks. It can present
+organization-defined credits as separate **Clear Balances**. Each Clear balance
+has its own issuer and policy and is typically intended for specified products,
+in-kind services, allowances, or other limited-purpose uses rather than as a
+cash equivalent.
+
 Each Clear keyset defines its own Clear Mint Unit (CMU). The canonical target unit is
 bound to the exact NUT-02 keyset ID, for example
 `cmu-00a1b2c3d4e5f6`. Wallets and applications must never add balances from

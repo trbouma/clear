@@ -29,9 +29,10 @@ work with it.
                 Lockbox runs the stack locally
 ```
 
-Acorn can eventually hold Mint Notes from multiple Clear CMUs while keeping
-every balance distinct. Safebox Web and Mainstay can present the issuer,
-policy, keyset, CMU, confirmed state, and pending state in plain language.
+Acorn can hold Bitcoin- and Lightning-backed ecash as a Cash Balance while also
+holding Mint Notes from multiple Clear CMUs and keeping every Clear balance
+distinct. Safebox Web and Mainstay can present the issuer, policy, keyset, CMU,
+confirmed state, and pending state in plain language.
 Spurline can preserve wallet state and signed policy records. Grove can
 preserve supporting policy documents or evidence.
 
@@ -41,10 +42,13 @@ key custody, governance, and recognition.
 
 ## Local economies inside Mainstay
 
-Clear gives Mainstay and Lockbox an optional local-first mint for organizations
-that have no need or desire to use Bitcoin or Lightning. A church, food-bank
-network, community association, campus, event, small resort, or cruise ship can define a bounded
-currency recognized only by participating people and service providers.
+Clear gives Mainstay and Lockbox an optional local-first mint that works
+alongside their Bitcoin, Lightning, and ecash payment capabilities. A church,
+food-bank network, community association, campus, event, small resort, or
+cruise ship can define a bounded credit recognized by participating people and
+service providers. Wallets can keep broadly transferable sat-denominated funds
+in a singular Cash Balance while displaying each issuer-defined credit under
+plural Clear Balances.
 
 That creates a different continuity path from externally issued Cashu ecash.
 If an external mint is unavailable, Acorn may preserve received Mint Notes as

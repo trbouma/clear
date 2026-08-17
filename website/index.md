@@ -19,6 +19,21 @@ description: Organization-defined Mint Notes with explicit issuance, redemption,
 
 </section>
 
+## Clear works alongside cash
+
+Clear is not a replacement for Bitcoin, Lightning, or the Cashu mints that use
+them. In a compatible wallet, sat-denominated funds from those mints form a
+single **Cash Balance**: broadly transferable, general-purpose value that can
+move between people and settle through the Bitcoin and Lightning networks.
+
+Clear adds **Clear Balances** alongside that cash balance. The plural matters:
+each balance is a distinct issuer-defined credit with its own mint, Clear Mint
+Unit, and policy. A Clear balance may represent food credits, service units,
+member benefits, event allowances, or other products and in-kind services. It
+can circulate privately between wallets, but it is useful where the relevant
+issuer and participating providers recognize it; it is not presumed to be cash
+or universally interchangeable with another Clear balance.
+
 ## Mint Notes that can circulate
 
 Many organizations already keep internal balances: program credits, community

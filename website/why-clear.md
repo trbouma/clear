@@ -15,6 +15,27 @@ one application and its central account database. Clear explores a different
 model: the organization issues private bearer Mint Notes that people can hold
 and transfer, while the mint prevents double spending.
 
+## One wallet, two kinds of balance
+
+Clear is intended to work seamlessly alongside Bitcoin- and Lightning-backed
+Cashu mints. A wallet can describe sat-denominated funds from those mints as one
+**Cash Balance**. These funds are general-purpose and broadly transferable: any
+holder can send them to another compatible wallet, and the mint connects their
+issuance and redemption to the Bitcoin and Lightning networks.
+
+The same wallet can hold several **Clear Balances**. Each is a separate,
+issuer-defined credit for a particular policy domain. Clear balances are more
+like credits for products and in-kind services than cash: food credits may be
+recognized by participating grocers, service units by participating providers,
+or member credits by a club. The Mint Notes remain transferable bearer
+instruments, but acceptance and redemption depend on the issuer's published
+policy and participating network.
+
+This distinction is intentional. Cash is presented as one broadly useful
+sat-denominated balance; Clear balances stay plural because credits from
+different issuers or programs must not be added together or presented as
+universally interchangeable.
+
 ## Settlement follows policy
 
 A Lightning-backed Cashu mint issues Mint Notes after receiving bitcoin and
