@@ -33,7 +33,7 @@ services:
       CLEAR_LAB_API_URL: http://127.0.0.1:3339
       CLEAR_LAB_NSEC: "${CLEAR_LAB_NSEC:-}"
     ports:
-      - "${CLEAR_BIND_ADDRESS:-127.0.0.1}:${CLEAR_PORT:-3339}:3339"
+      - "${CLEAR_BIND_ADDRESS:-0.0.0.0}:${CLEAR_PORT:-3339}:3339"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m

@@ -69,6 +69,10 @@ Create `.env` from `.env.example`, then set `CLEAR_MASTER_SECRET` and
 must be the URL that wallets will use to reach the mint; the loopback default
 is suitable only for local testing.
 
+Compose publishes port `3339` on all host interfaces by default through
+`CLEAR_BIND_ADDRESS=0.0.0.0`, allowing access over LAN or Tailscale. Use host
+firewall rules or a more specific bind address when access must be restricted.
+
 Inside Docker, `clear-lab` connects directly to
 `CLEAR_LAB_API_URL=http://127.0.0.1:3339`. The mint separately advertises
 `CLEAR_MINT_URL`, and that public URL is encoded into issued and swapped tokens.
