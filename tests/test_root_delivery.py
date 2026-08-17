@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+
 from clear import root_delivery
 from clear.tokens import encode_token_v3
 
@@ -107,3 +112,74 @@ def test_keyset_ids_from_token_are_sorted_unique() -> None:
     )
 
     assert root_delivery._keyset_ids_from_token(token) == ["keyset-a", "keyset-b"]
+
+
+def test_publish_verified_retries_until_relay_returns_event(monkeypatch) -> None:
+    event = SimpleNamespace(id="event-id", kind=1059)
+
+    class FakePool:
+        publishes = 0
+        queries = 0
+
+        def __init__(self, relays):
+            assert relays == ["wss://relay.example"]
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        def publish(self, candidate):
+            assert candidate is event
+            self.__class__.publishes += 1
+
+        async def query(self, filters):
+            assert filters[0]["ids"] == ["event-id"]
+            self.__class__.queries += 1
+            return [event] if self.queries == 2 else []
+
+    monkeypatch.setattr(root_delivery.asyncio, "sleep", AsyncMock())
+
+    verified = root_delivery.asyncio.run(
+        root_delivery._publish_verified(
+            FakePool,
+            event,
+            ["wss://relay.example"],
+        )
+    )
+
+    assert verified == ["wss://relay.example"]
+    assert FakePool.publishes == 2
+    assert FakePool.queries == 2
+
+
+def test_publish_verified_fails_when_relay_query_fails(monkeypatch) -> None:
+    event = SimpleNamespace(id="missing-event", kind=1059)
+
+    class FailingPool:
+        def __init__(self, relays):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        def publish(self, candidate):
+            pass
+
+        async def query(self, filters):
+            raise RuntimeError("relay unavailable")
+
+    monkeypatch.setattr(root_delivery.asyncio, "sleep", AsyncMock())
+
+    with pytest.raises(root_delivery.DeliveryError, match="could not be verified"):
+        root_delivery.asyncio.run(
+            root_delivery._publish_verified(
+                FailingPool,
+                event,
+                ["wss://relay.example"],
+            )
+        )

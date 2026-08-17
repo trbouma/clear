@@ -16,10 +16,52 @@ _BECH32_ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 CLEAR_TRANSFER_KIND = 7379
 CLEAR_TRANSFER_GIFT_WRAP_KIND = 1059
 CLEAR_TRANSFER_PROTOCOL = "clear-token-transfer"
+DELIVERY_VERIFY_TIMEOUT_SECONDS = 10.0
 
 
 class DeliveryError(RuntimeError):
     pass
+
+
+async def _publish_verified(
+    client_pool_type,
+    event,
+    relays: list[str],
+    *,
+    timeout: float = DELIVERY_VERIFY_TIMEOUT_SECONDS,
+) -> list[str]:
+    """Publish until at least one recipient relay returns the exact event."""
+
+    event_id = str(event.id)
+    verified_relays: list[str] = []
+    errors: dict[str, str] = {}
+    for relay in relays:
+        deadline = asyncio.get_running_loop().time() + max(0.5, float(timeout))
+        try:
+            async with client_pool_type([relay]) as client:
+                while asyncio.get_running_loop().time() < deadline:
+                    client.publish(event)
+                    await asyncio.sleep(0.4)
+                    observed = await client.query([{
+                        "ids": [event_id],
+                        "kinds": [int(event.kind)],
+                        "limit": 1,
+                    }])
+                    if any(str(candidate.id) == event_id for candidate in observed):
+                        verified_relays.append(relay)
+                        break
+        except Exception as exc:
+            errors[relay] = str(exc)
+
+    if not verified_relays:
+        detail = "; ".join(
+            f"{relay}: {message}" for relay, message in errors.items()
+        )
+        suffix = f" ({detail})" if detail else ""
+        raise DeliveryError(
+            f"relay delivery could not be verified for event {event_id}{suffix}"
+        )
+    return verified_relays
 
 
 def _get_json(url: str) -> dict[str, Any]:
@@ -486,9 +528,11 @@ def deliver_clear_token(
             to_pub_k=recipient_pubkey,
             expiration=expiration,
         )
-        async with ClientPool(publish_relays) as client:
-            client.publish(event)
-            await asyncio.sleep(0.2)
+        verified_relays = await _publish_verified(
+            ClientPool,
+            event,
+            publish_relays,
+        )
         return {
             "status": "OK",
             "event_id": event.id,
@@ -502,6 +546,8 @@ def deliver_clear_token(
             "sender_ephemeral": sender_secret is None,
             "transient_pubkey": transient_key.public_key_hex(),
             "relays": publish_relays,
+            "verified_relays": verified_relays,
+            "verified": True,
             "expiration": expiration,
         }
 

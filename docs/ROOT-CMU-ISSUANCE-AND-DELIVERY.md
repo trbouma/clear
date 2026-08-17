@@ -195,6 +195,13 @@ that advertises Clear support:
 poetry run clear-root send 25 trbouma@acorn.safebox.dev --memo "test CMU"
 ```
 
+Delivery is not reported as successful merely because the relay publish call
+returned. Clear republishes as needed and requires at least one configured
+recipient relay to return the exact kind `1059` event by ID. Successful output
+includes `publish.verified: true` and `publish.verified_relays`. If readback
+cannot be verified, the command fails before removing the proofs from the root
+wallet.
+
 The delivery format is:
 
 ```text
