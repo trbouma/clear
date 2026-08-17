@@ -32,9 +32,9 @@ CLEAR_OPERATOR_TOKEN=<operator API bearer token>
 CLEAR_DATABASE=./data/clear.sqlite3
 CLEAR_MINT_URL=http://127.0.0.1:3339
 CLEAR_LAB_API_URL=http://127.0.0.1:3339
-CLEAR_CURRENCY_NAME="Clear Mint Units"
-CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"
-CLEAR_CURRENCY_UNIT_ALIAS="smiles"
+CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
+CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
+CLEAR_CURRENCY_UNIT_ALIAS="credits"
 CLEAR_ROOT_AUTHORITY_NPUB=npub...
 ```
 
@@ -76,12 +76,12 @@ GET /docs
 {
   "mint_url": "https://clear.example",
   "currency": {
-    "name": "Clear Mint Units",
+    "name": "Clear Lab Credit Program",
     "display_unit": "CMU",
     "unit": "cmu-00ce29eeaf094301",
     "protocol_unit": "cmu-00ce29eeaf094301",
-    "friendly_alias": "Harbour Lab Credits",
-    "friendly_unit_alias": "smiles"
+    "friendly_alias": "Clear Lab Credits",
+    "friendly_unit_alias": "credits"
   }
 }
 ```

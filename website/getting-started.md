@@ -22,8 +22,9 @@ export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
 export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
 export CLEAR_MINT_URL="http://127.0.0.1:3339"
-export CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"
-export CLEAR_CURRENCY_UNIT_ALIAS="smiles"
+export CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
+export CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
+export CLEAR_CURRENCY_UNIT_ALIAS="credits"
 export CLEAR_LAB_API_URL="http://127.0.0.1:3339"
 ```
 
@@ -62,9 +63,9 @@ Useful development paths:
 
 ```bash
 poetry run clear-lab configure \
-  --currency-name "Harbour Credits" \
-  --currency-alias "Harbour Lab Credits" \
-  --currency-unit-alias "smiles" \
+  --currency-name "Clear Lab Credit Program" \
+  --currency-alias "Clear Lab Credits" \
+  --currency-unit-alias "credits" \
   --root-authority-npub "npub..."
 poetry run clear-lab info
 poetry run clear-lab issue 25 --memo "wallet circulation test"
