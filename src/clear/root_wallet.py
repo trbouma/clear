@@ -1,4 +1,4 @@
-"""Simple JSON wallet for Clear lab tokens."""
+"""Simple JSON wallet for Clear root bootstrap tokens."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 
 from clear.tokens import encode_token_v3
 
-DEFAULT_WALLET_PATH = Path("data/clear-lab-wallet.json")
+DEFAULT_WALLET_PATH = Path("data/clear-root-wallet.json")
 
 
 def empty_wallet() -> dict[str, Any]:
@@ -20,11 +20,11 @@ def load_wallet(path: Path = DEFAULT_WALLET_PATH) -> dict[str, Any]:
         return empty_wallet()
     loaded = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(loaded, dict):
-        raise ValueError("lab wallet must contain a JSON object")
+        raise ValueError("root wallet must contain a JSON object")
     if loaded.get("version") != 1:
-        raise ValueError("unsupported lab wallet version")
+        raise ValueError("unsupported root wallet version")
     if not isinstance(loaded.get("entries"), list):
-        raise ValueError("lab wallet entries must be a list")
+        raise ValueError("root wallet entries must be a list")
     return loaded
 
 

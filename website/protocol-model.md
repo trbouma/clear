@@ -38,15 +38,16 @@ settlement mechanisms. Clear introduces the experimental method name `clear`:
 4. The wallet submits blinded outputs up to the authorized amount.
 5. Clear returns blind signatures and records issued supply.
 
-The prototype derives its keyset secret locally and never accepts it over the
-HTTP API. The intended model also permits an operator-approved remote signer or
-portable keyset enrollment. A raw keyset secret should move only through a
-protected offline installation path, never as a routine issuance request.
+The prototype derives its initial keyset secret locally and never accepts it
+over the HTTP API. New keysets will instead be generated from independent
+random secrets inside the mint after a signed, bounded treasurer
+authorization. The mint encrypts those secrets at rest and never returns them
+through a routine API.
 
 The prototype uses a separate operator token for routine actions. The intended
 model instead requires a signed authorization from a treasurer named in the
-active policy. If that treasurer is also the delegated keyset signer, operator
-approval must be committed before signatures are released.
+active policy. The operational signer remains in mint custody and releases
+signatures only after authorization and ledger checks succeed.
 
 The Clear Mint Unit is not operator-selected. The target protocol identifier is
 formed from the exact NUT-02 keyset ID:

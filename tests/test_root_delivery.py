@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from clear import lab_delivery
+from clear import root_delivery
 from clear.tokens import encode_token_v3
 
 
@@ -20,9 +20,9 @@ def test_discover_clear_support_from_lightning_address(monkeypatch) -> None:
             },
         }
 
-    monkeypatch.setattr(lab_delivery, "_get_json", fake_get_json)
+    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
 
-    discovery = lab_delivery.discover_clear_support(
+    discovery = root_delivery.discover_clear_support(
         "alice@example.com",
         mint_url="http://clear.example",
         unit="cmu-0011223344556677",
@@ -50,9 +50,9 @@ def test_discover_clear_support_returns_unsupported_when_unit_differs(
             }
         }
 
-    monkeypatch.setattr(lab_delivery, "_get_json", fake_get_json)
+    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
 
-    discovery = lab_delivery.discover_clear_support(
+    discovery = root_delivery.discover_clear_support(
         "alice@example.com",
         mint_url="http://clear.example",
         unit="cmu-0011223344556677",
@@ -66,7 +66,7 @@ def test_discover_clear_support_from_lightning_address_descriptor(
 ) -> None:
     def fake_get_json(url):
         if url == "https://example.com/.well-known/nostr.json?name=alice":
-            raise lab_delivery.DeliveryError("no nostr.json")
+            raise root_delivery.DeliveryError("no nostr.json")
         assert url == "https://example.com/.well-known/lnurlp/alice"
         return {
             "callback": "https://example.com/lnurl",
@@ -81,9 +81,9 @@ def test_discover_clear_support_from_lightning_address_descriptor(
             },
         }
 
-    monkeypatch.setattr(lab_delivery, "_get_json", fake_get_json)
+    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
 
-    discovery = lab_delivery.discover_clear_support(
+    discovery = root_delivery.discover_clear_support(
         "alice@example.com",
         mint_url="http://clear.example",
         unit="cmu-0011223344556677",
@@ -106,4 +106,4 @@ def test_keyset_ids_from_token_are_sorted_unique() -> None:
         ],
     )
 
-    assert lab_delivery._keyset_ids_from_token(token) == ["keyset-a", "keyset-b"]
+    assert root_delivery._keyset_ids_from_token(token) == ["keyset-a", "keyset-b"]

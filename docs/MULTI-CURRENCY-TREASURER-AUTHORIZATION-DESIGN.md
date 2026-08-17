@@ -89,12 +89,11 @@ individual Mint Note issuance, redemption, and retirement authorizations within
 their scopes, limits, and approval threshold. They cannot appoint themselves,
 alter the threshold, replace the mint identity, or redefine the currency.
 
-An ordinary treasurer holds only their authorization key. A policy may also
-appoint a treasurer as a **keyset custodian** or **delegated operational
-signer**. That separate role controls a Cashu keyset secret and can bring the
-keyset to an operator-approved Clear deployment. Because the keyset secret can
-create valid Mint Notes, this delegation carries issuance power beyond the
-ordinary treasurer role and must be explicit in policy.
+An ordinary treasurer holds only their authorization key. A treasurer may be
+granted a bounded `keyset:create` scope. The mint then generates an independent
+random keyset secret internally after verifying the signed request. Authorizing
+creation does not disclose the keyset secret or make the treasurer its routine
+operational custodian.
 
 ### Role overlap
 
@@ -120,9 +119,8 @@ Treasurers authorize Mint Note issuance and retirement
 | --- | --- | --- |
 | Currency root authority | Offline or hardware-backed | Governance policies, treasurer membership, mint-service identity, and operational keyset authorization |
 | Treasurer | Treasurer wallet or hardware signer | Individual Mint Note issuance and retirement authorizations |
-| Keyset custodian or delegated signer | HSM, remote signer, or protected offline system | Blinded Cashu outputs for one explicitly authorized keyset |
 | Mint service | Running Clear service or protected signer | Receipts, responses, and encrypted communication events |
-| Operational Cashu signer | Isolated mint signer, eventually HSM-backed | Blinded Cashu outputs for its authorized keyset |
+| Operational Cashu signer | Mint custody, eventually HSM-backed | Blinded Cashu outputs for its authorized keyset after treasury authorization |
 
 The mint operator has no inherent signing key in this authority model. The
 operator may have deployment credentials, but those credentials do not confer
@@ -155,42 +153,37 @@ equivalent `npub`.
 
 The treasurer keeps the corresponding `nsec`. Clear never needs it.
 
-The ordinary treasurer `nsec` authorizes administrative actions but does not
-sign Cashu proofs. A treasurer who is separately entrusted with a keyset secret
-is acting as a keyset custodian or delegated operational signer and can create
-cryptographically valid Mint Notes for that CMU.
+The treasurer `nsec` authorizes administrative actions but does not sign Cashu
+proofs or derive operational denomination keys. The mint never needs the
+treasurer's private key.
 
 ### Operational mint signer
 
 Operational denomination keys issue Mint Notes by signing blinded Cashu
-outputs and validate the resulting proofs. They should be replaceable keyset
-epochs authorized by the currency root. Every epoch retains its own CMU.
+outputs and validate the resulting proofs. Each new keyset is derived from an
+independent random secret generated inside the mint after a valid, bounded
+treasurer authorization. Every keyset retains its own CMU.
 
 Compromise of an operational signer can allow inflation outside the normal
 treasury workflow. Key isolation, short epochs, issuance limits, audit records,
 and eventually an HSM-backed policy-enforcing signer are therefore still
 required even when treasury authorization is strong.
 
-### Portable keyset enrollment
+### Random keyset creation and custody
 
-A keyset need not originate inside the Clear instance that serves it. A keyset
-custodian may request enrollment of an existing keyset by providing its public
-descriptor, proving control, and supplying either a protected signer reference
-or, for development-only deployments, the keyset secret through an approved
-offline installation path. The mint operator must explicitly approve and
-activate the keyset under a root-signed policy before the instance advertises
-the CMU or accepts responsibility for its notes.
+New keysets originate inside the mint from independent cryptographic
+randomness. The mint encrypts each keyset secret at rest and records the signed
+treasurer request, consumed creation grant, public descriptor, derived CMU,
+policy version, activation time, and initial issuance checkpoint atomically.
 
-Operator approval is meaningful as policy admission, accounting acceptance,
-and a redemption commitment. It is not a cryptographic veto over a person who
-already possesses the raw keyset secret. Hard two-party control requires the
-secret to remain inside an HSM or remote signer whose policy requires both a
-valid treasury authorization and operator approval before signing.
+The treasurer governs creation and supply actions while the mint retains
+operational custody. A keyset secret leaves the source mint only through an
+explicit, frozen migration ceremony and is encrypted directly to the approved
+destination. The mint's key-encryption key and unrelated keysets are never
+part of that transfer.
 
-The enrollment transaction should record at least the complete keyset public
-descriptor, derived CMU, policy version, custodian identity, authorized mint
-service identities and endpoints, activation time, signer reference, and the
-initial issuance checkpoint.
+The complete adopted model is specified in
+[Treasurer-Authorized Random Keysets](TREASURER-AUTHORIZED-RANDOM-KEYSETS-DESIGN.md).
 
 ### Mint service identity
 
@@ -429,6 +422,21 @@ full policy locally and make all relay publication an explicit opt-in action.
 
 ## Signed authorization envelope
 
+### Mint readiness prerequisite
+
+Clear evaluates signed treasurer instructions only after root commissioning
+has succeeded and the root has explicitly enabled treasury operations. A valid
+signature, scope, threshold, and nonce cannot override a closed treasury gate.
+
+The readiness check happens before a request consumes its nonce or bounded
+grant. Root verification invokes the same treasury action layer that accepted
+requests use; a privileged alternative issuance path would not establish
+readiness for delegated operation.
+
+The commissioning state machine, verification profile, invalidation rules, and
+durable evidence are specified in
+[Root Commissioning and Treasury Readiness](ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
+
 Clear should authorize a canonical action payload rather than a loosely worded
 message. The signed envelope needs to bind every security-relevant field:
 
@@ -497,11 +505,9 @@ Clear records the quote, canonical authorization payload, all contributing
 treasurer events, policy version, issued amount, output commitment, and ledger
 transaction reference.
 
-When the authorized treasurer is also the delegated keyset signer, the flow may
-route blinded outputs to that signer after Clear approves the request. The
-resulting issuance must still be committed to the authoritative ledger before
-the signatures are released. A signer that releases signatures first creates
-an unaccounted issuance window.
+The operational signer remains in mint custody. The resulting issuance must be
+committed to the authoritative ledger before signatures are released. A signer
+that releases signatures first creates an unaccounted issuance window.
 
 ## Mint clusters and issuance across instances
 

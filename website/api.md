@@ -29,7 +29,10 @@ description: Initial Cashu and operator endpoints exposed by Clear.
 
 ## Prototype operator boundary
 
-These endpoints require `Authorization: Bearer <CLEAR_OPERATOR_TOKEN>`.
+These endpoints require both a loopback client connection and
+`Authorization: Bearer <CLEAR_OPERATOR_TOKEN>`. A valid token presented over a
+non-loopback connection is rejected. Run `clear-root` inside the mint container
+or another trusted local mint environment.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -45,8 +48,8 @@ Clear's `currency` metadata: friendly name, display unit, keyset-bound protocol
 unit, public-key fingerprint, and NUT-02 keyset ID. Applications should resolve
 the friendly name from this metadata while retaining the logical mint,
 complete protocol unit, and authenticated service endpoints as the balance
-identity and routes. The privileged lab CLI may contact the service through a
-different internal API URL, but circulating tokens always use `mint_url`.
+identity and routes. The privileged root CLI contacts the service through its
+loopback API URL, but circulating tokens always use `mint_url`.
 
 The protocol unit is `cmu-<keyset-id>` and is returned consistently by the
 current API. Endpoint names and Cashu fields that use *proof* retain that

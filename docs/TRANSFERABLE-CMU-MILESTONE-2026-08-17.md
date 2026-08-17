@@ -44,8 +44,8 @@ credit is cash, legal tender, or interchangeable with another issuer's unit.
 organization configures Clear mint
   -> master secret derives active keyset and canonical CMU
   -> operator issues CMUs
-  -> issued proofs enter the local clear-lab treasury wallet
-  -> clear-lab selects or swaps proofs for an exact amount
+  -> issued proofs enter the local root treasury wallet
+  -> clear-root selects or swaps proofs for an exact amount
   -> recipient NIP-05 record advertises Clear support
   -> sender publishes NIP-59 kind 1059 gift wrap
        containing inner kind 7379 Clear transfer
@@ -72,7 +72,7 @@ The implemented Clear service provides:
 - SQLite issuance, spent-proof, retirement, and audit accounting;
 - operator-protected issuance and retirement endpoints;
 - issued, retired, circulating, and outstanding supply summaries;
-- a JSON-backed `clear-lab` treasury wallet;
+- a JSON-backed root treasury wallet;
 - exact-amount export using proof selection and swap change;
 - Cashu token encoding for transport;
 - Docker deployment on the default Clear port `3339`; and
@@ -83,23 +83,23 @@ The implemented Clear service provides:
 Inside the Clear container:
 
 ```sh
-docker compose exec clear clear-lab info
-docker compose exec clear clear-lab summary
-docker compose exec clear clear-lab wallet balance
-docker compose exec clear clear-lab wallet list
+docker compose exec clear clear-root info
+docker compose exec clear clear-root summary
+docker compose exec clear clear-root wallet balance
+docker compose exec clear clear-root wallet list
 ```
 
 Issue CMUs into the local treasury wallet:
 
 ```sh
-docker compose exec clear clear-lab issue 100 \
+docker compose exec clear clear-root issue 100 \
   --memo "Program allocation"
 ```
 
 Send an exact amount:
 
 ```sh
-docker compose exec clear clear-lab send 100 \
+docker compose exec clear clear-root send 100 \
   recipient@example.org \
   --memo "Program transfer"
 ```
@@ -107,14 +107,14 @@ docker compose exec clear clear-lab send 100 \
 Retire returned CMUs:
 
 ```sh
-docker compose exec clear clear-lab retire 25 \
+docker compose exec clear clear-root retire 25 \
   --memo "Program settlement"
 ```
 
 `issued` is the cumulative amount created. `retired` is the amount permanently
 removed. `circulating` is issued minus retired and includes CMUs held by the
-treasury and by recipient wallets. The local lab wallet balance is the subset
-still held by `clear-lab` and available to send.
+treasury and by recipient wallets. The local root wallet balance is the subset
+still held by `clear-root` and available to send.
 
 ## Transfer envelope
 
@@ -150,8 +150,8 @@ Friendly aliases improve display but never replace canonical identity.
 
 This milestone does not establish production readiness.
 
-- `clear-lab` is a privileged test utility, not the future treasurer product.
-- The operator token is a lab authorization boundary, not signed,
+- `clear-root` is a privileged bootstrap utility, not the future treasurer product.
+- The operator token is a root bootstrap boundary, not signed,
   currency-scoped treasurer authorization.
 - The software has not received an independent security audit.
 - Clear credits depend on the issuer's policy and ability to honour them.
@@ -176,7 +176,6 @@ The next end-to-end milestone is:
 6. spend or send from one exact Clear balance; and
 7. preserve crash recovery across mint mutation and relay persistence.
 
-After that foundation is reliable, the privileged lab authority can be
+After that foundation is reliable, the privileged root bootstrap authority can be
 replaced with separately installable, signed, currency-scoped treasurer
 authorization.
-

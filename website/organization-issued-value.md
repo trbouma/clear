@@ -92,7 +92,7 @@ deployable products.
 
 The next wallet stage will accept pending transfers into spendable Clear proof
 state and enable onward transfers from an ordinary wallet. The production
-authority stage will replace the privileged lab operator token with signed,
+authority stage will replace the privileged root operator token with signed,
 currency-scoped treasurer authorization.
 
 Until those stages and an independent security review are complete, Clear

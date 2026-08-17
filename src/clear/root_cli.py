@@ -1,4 +1,4 @@
-"""Privileged lab CLI for exercising a local Clear mint."""
+"""Privileged root bootstrap CLI for a Clear mint."""
 
 from __future__ import annotations
 
@@ -6,16 +6,18 @@ import argparse
 import json
 import os
 import sys
+from ipaddress import ip_address
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 
-from clear.lab_delivery import (
+from clear.root_delivery import (
     DeliveryError,
     deliver_clear_token,
     discover_clear_support,
 )
-from clear.lab_wallet import (
+from clear.root_wallet import (
     DEFAULT_WALLET_PATH,
     deposit_issue,
     export_token,
@@ -34,7 +36,7 @@ from clear.treasury import (
 )
 
 DEFAULT_MINT_URL = "http://127.0.0.1:3339"
-CONFIGURE_KEYS = {
+CONFIG_KEYS = {
     "currency_name": "CLEAR_CURRENCY_NAME",
     "currency_alias": "CLEAR_CURRENCY_ALIAS",
     "currency_unit_alias": "CLEAR_CURRENCY_UNIT_ALIAS",
@@ -43,13 +45,28 @@ CONFIGURE_KEYS = {
 }
 
 
+def _is_loopback_url(url: str) -> bool:
+    hostname = urlsplit(url).hostname
+    if hostname is None:
+        return False
+    if hostname.rstrip(".").lower() == "localhost":
+        return True
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
 def _api_url(args) -> str:
-    return (
-        args.api_url
-        or os.getenv("CLEAR_LAB_API_URL")
-        or os.getenv("CLEAR_MINT_URL")
-        or DEFAULT_MINT_URL
+    url = (
+        args.api_url or os.getenv("CLEAR_ROOT_API_URL") or DEFAULT_MINT_URL
     ).rstrip("/")
+    if not _is_loopback_url(url):
+        raise TreasuryError(
+            "clear-root requires a loopback API URL; run it inside the mint "
+            "container or trusted local mint environment"
+        )
+    return url
 
 
 def _mint_info(api_url: str) -> dict:
@@ -71,7 +88,7 @@ def _operator_token() -> str:
 
 
 def _sender_secret(args) -> str | None:
-    return args.nsec or os.getenv("CLEAR_LAB_NSEC") or None
+    return args.nsec or os.getenv("CLEAR_ROOT_NSEC") or None
 
 
 def _print_json(payload: dict) -> None:
@@ -79,7 +96,14 @@ def _print_json(payload: dict) -> None:
 
 
 def _wallet_path(args) -> Path:
-    return Path(args.wallet or os.getenv("CLEAR_LAB_WALLET") or DEFAULT_WALLET_PATH)
+    path = Path(args.wallet or os.getenv("CLEAR_ROOT_WALLET") or DEFAULT_WALLET_PATH)
+    legacy = path.with_name("clear-lab-wallet.json")
+    if path.name == DEFAULT_WALLET_PATH.name and not path.exists() and legacy.exists():
+        try:
+            legacy.replace(path)
+        except OSError as exc:
+            raise TreasuryError(f"unable to migrate root wallet: {exc}") from exc
+    return path
 
 
 def _quote_env_value(value: str) -> str:
@@ -109,10 +133,10 @@ def _update_env_file(path: Path, updates: dict[str, str]) -> None:
     path.write_text("\n".join(output) + "\n", encoding="utf-8")
 
 
-def configure(args) -> int:
+def config(args) -> int:
     updates = {
         env_name: value
-        for arg_name, env_name in CONFIGURE_KEYS.items()
+        for arg_name, env_name in CONFIG_KEYS.items()
         if (value := getattr(args, arg_name)) is not None
     }
     if not updates:
@@ -377,11 +401,11 @@ def withdraw(args) -> int:
     return 0
 
 
-def parser() -> argparse.ArgumentParser:
+def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
-        prog="clear-lab",
+        prog=prog,
         description=(
-            "Privileged Clear lab CLI for test mints. This command requires "
+            "Privileged Clear root bootstrap CLI. This command requires "
             "operator access from .env and is not the production treasurer CLI."
         ),
     )
@@ -391,33 +415,33 @@ def parser() -> argparse.ArgumentParser:
         dest="api_url",
         default=None,
         help=(
-            "URL used to contact the Clear mint. Defaults to CLEAR_LAB_API_URL, "
-            f"then CLEAR_MINT_URL, then {DEFAULT_MINT_URL}. --mint-url is kept "
-            "as a compatibility alias."
+            "URL used to contact the Clear mint. clear-root requires loopback "
+            f"and defaults to CLEAR_ROOT_API_URL, then {DEFAULT_MINT_URL}. "
+            "--mint-url is an alternate spelling for --api-url."
         ),
     )
     result.add_argument(
         "--wallet",
         default=None,
         help=(
-            "Lab wallet JSON path. Defaults to CLEAR_LAB_WALLET or "
+            "Root wallet JSON path. Defaults to CLEAR_ROOT_WALLET or "
             f"{DEFAULT_WALLET_PATH}."
         ),
     )
 
     subcommands = result.add_subparsers(dest="command", required=True)
 
-    configure_parser = subcommands.add_parser(
-        "configure",
-        help="Set lab mint display and governance values in an env file.",
+    config_parser = subcommands.add_parser(
+        "config",
+        help="Set root mint display and governance values in an env file.",
     )
-    configure_parser.add_argument("--env-file", default=".env")
-    configure_parser.add_argument("--currency-name")
-    configure_parser.add_argument("--currency-alias")
-    configure_parser.add_argument("--currency-unit-alias")
-    configure_parser.add_argument("--root-authority-npub")
-    configure_parser.add_argument("--mint-url")
-    configure_parser.set_defaults(handler=configure)
+    config_parser.add_argument("--env-file", default=".env")
+    config_parser.add_argument("--currency-name")
+    config_parser.add_argument("--currency-alias")
+    config_parser.add_argument("--currency-unit-alias")
+    config_parser.add_argument("--root-authority-npub")
+    config_parser.add_argument("--mint-url")
+    config_parser.set_defaults(handler=config)
 
     info_parser = subcommands.add_parser(
         "info",
@@ -443,7 +467,7 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Encode the issued CMU as a Cashu token immediately instead of "
-            "storing its proofs in the lab wallet."
+            "storing its proofs in the root wallet."
         ),
     )
     issue_parser.set_defaults(handler=issue)
@@ -456,7 +480,7 @@ def parser() -> argparse.ArgumentParser:
         "value",
         nargs="?",
         help=(
-            "CMU amount from the lab wallet or a cashuA token. Reads a token "
+            "CMU amount from the root wallet or a cashuA token. Reads a token "
             "or proof JSON from stdin when omitted."
         ),
     )
@@ -483,7 +507,7 @@ def parser() -> argparse.ArgumentParser:
 
     withdraw_parser = subcommands.add_parser(
         "withdraw",
-        help="Export an exact token amount from the local lab wallet.",
+        help="Export an exact token amount from the local root wallet.",
     )
     withdraw_parser.add_argument("amount", type=int)
     withdraw_parser.add_argument("--memo", default=None)
@@ -491,7 +515,7 @@ def parser() -> argparse.ArgumentParser:
 
     send_parser = subcommands.add_parser(
         "send",
-        help="Withdraw and deliver a token to a compatible lab address.",
+        help="Withdraw and deliver a token to a compatible Clear address.",
     )
     send_parser.add_argument("amount", type=int)
     send_parser.add_argument("address")
@@ -500,7 +524,7 @@ def parser() -> argparse.ArgumentParser:
         "--nsec",
         default=None,
         help=(
-            "Sender nsec or private key. Defaults to CLEAR_LAB_NSEC, then an "
+            "Sender nsec or private key. Defaults to CLEAR_ROOT_NSEC, then an "
             "ephemeral sender key."
         ),
     )
@@ -521,24 +545,24 @@ def parser() -> argparse.ArgumentParser:
     summary_parser = subcommands.add_parser("summary", help="Show mint supply totals.")
     summary_parser.set_defaults(handler=summary)
 
-    wallet_parser = subcommands.add_parser("wallet", help="Manage local lab wallet.")
+    wallet_parser = subcommands.add_parser("wallet", help="Manage local root wallet.")
     wallet_subcommands = wallet_parser.add_subparsers(
         dest="wallet_command",
         required=True,
     )
     balance_parser = wallet_subcommands.add_parser(
         "balance",
-        help="Show local lab wallet balances.",
+        help="Show local root wallet balances.",
     )
     balance_parser.set_defaults(handler=wallet_balance)
     list_parser = wallet_subcommands.add_parser(
         "list",
-        help="List local lab wallet entries.",
+        help="List local root wallet entries.",
     )
     list_parser.set_defaults(handler=wallet_list)
     export_parser = wallet_subcommands.add_parser(
         "export",
-        help="Export an exact token amount from the local lab wallet.",
+        help="Export an exact token amount from the local root wallet.",
     )
     export_parser.add_argument("amount", type=int)
     export_parser.add_argument("--memo", default=None)
@@ -549,11 +573,12 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     load_dotenv(override=False)
-    args = parser().parse_args()
+    program = Path(sys.argv[0]).name or "clear-root"
+    args = parser(prog=program).parse_args()
     try:
         return args.handler(args)
     except (DeliveryError, TreasuryError, ValueError) as exc:
-        print(f"clear-lab {args.command} failed: {exc}", file=sys.stderr)
+        print(f"{program} {args.command} failed: {exc}", file=sys.stderr)
         return 1
 
 

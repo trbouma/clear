@@ -23,8 +23,8 @@ protocol experiment, not a production mint.
 - SQLite supply and audit accounting;
 - Docker deployment with separate public and privileged API URLs;
 - wallet-facing currency and unit aliases;
-- privileged `clear-lab` issuance, treasury wallet, exact export, send, and
-  retirement workflows;
+- privileged `clear-root` bootstrap, issuance, treasury wallet, exact export,
+  send, and retirement workflows;
 - issued, retired, circulating, and local-wallet balance inspection;
 - NIP-05 Clear capability discovery;
 - NIP-59 kind `1059` delivery with inner kind `7379`;
@@ -62,10 +62,12 @@ authoritative Clear deployment with several isolated keysets and CMUs. See the
   command;
 - give each currency a distinct mint-service `npub` and home-relay set;
 - add the separately installable `clear-treasury` authorization and token CLI;
-- add operator-approved portable keyset enrollment for explicitly appointed
-  keyset custodians or delegated treasurer-signers;
-- define proof-of-control, activation, suspension, and audit records for an
-  enrolled keyset;
+- add bounded `clear-root` treasurer grants for random keyset creation;
+- add `clear-root verify`, a dedicated commissioning keyset, durable readiness
+  records, and an explicit treasury enable gate;
+- encrypt independent keyset secrets in mint custody;
+- define creation authorization, activation, suspension, migration, and audit
+  records for each keyset;
 - separate durable governance-root identity from operational keysets without
   treating their distinct CMUs as interchangeable;
 - introduce isolated multi-currency routing and ledgers;

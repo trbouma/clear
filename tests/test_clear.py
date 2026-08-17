@@ -20,6 +20,7 @@ def settings(
     root_authority_npub: str | None = None,
     currency_alias: str | None = None,
     currency_unit_alias: str | None = None,
+    root_api_loopback_only: bool = False,
 ) -> Settings:
     return Settings(
         database_path=tmp_path / "clear.sqlite3",
@@ -31,6 +32,7 @@ def settings(
         root_authority_npub=root_authority_npub,
         currency_alias=currency_alias,
         currency_unit_alias=currency_unit_alias,
+        root_api_loopback_only=root_api_loopback_only,
     )
 
 
@@ -120,7 +122,7 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         f"Example Credits ({currency['protocol_unit']})"
     )
     assert info.json()["policy"] == {
-        "mode": "lab",
+        "mode": "root-bootstrap",
         "root_authority_npub": None,
         "enforced": False,
     }
@@ -134,10 +136,26 @@ def test_root_authority_npub_is_reported_as_policy_metadata(tmp_path) -> None:
         info = client.get("/v1/info")
 
     assert info.json()["policy"] == {
-        "mode": "lab",
+        "mode": "root-bootstrap",
         "root_authority_npub": root_authority,
         "enforced": False,
     }
+
+
+def test_operator_api_requires_loopback_client(tmp_path) -> None:
+    configured = settings(tmp_path, root_api_loopback_only=True)
+    app = create_app(configured)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(app, client=("203.0.113.10", 50000)) as remote_client:
+        rejected = remote_client.get("/v1/operator/summary", headers=headers)
+
+    with TestClient(app, client=("127.0.0.1", 50000)) as local_client:
+        accepted = local_client.get("/v1/operator/summary", headers=headers)
+
+    assert rejected.status_code == 403
+    assert rejected.json() == {"detail": "operator API requires loopback access"}
+    assert accepted.status_code == 200
 
 
 def test_currency_aliases_can_be_configured_for_wallet_display(tmp_path) -> None:

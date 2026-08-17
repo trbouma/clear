@@ -1,4 +1,4 @@
-"""Lab address discovery and token delivery helpers."""
+"""Clear address discovery and token delivery helpers."""
 
 from __future__ import annotations
 

@@ -1,11 +1,58 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
-from clear import lab_cli
+import pytest
+
+from clear import root_cli
 
 
-def test_lab_cli_configure_writes_display_metadata(
+def test_root_cli_is_the_primary_parser_name() -> None:
+    assert root_cli.parser().prog == "clear-root"
+
+
+def test_root_cli_error_uses_invoked_program_name(monkeypatch, capsys) -> None:
+    monkeypatch.setattr("sys.argv", ["clear-root", "config"])
+
+    assert root_cli.main() == 1
+
+    assert capsys.readouterr().err.startswith("clear-root config failed:")
+
+
+def test_root_cli_requires_loopback_api_url(monkeypatch) -> None:
+    monkeypatch.setenv("CLEAR_ROOT_API_URL", "https://clear.example")
+
+    with pytest.raises(root_cli.TreasuryError, match="requires a loopback API URL"):
+        root_cli._api_url(SimpleNamespace(api_url=None))
+
+
+def test_root_cli_prefers_root_api_url(monkeypatch) -> None:
+    monkeypatch.setenv("CLEAR_ROOT_API_URL", "http://localhost:3340/")
+
+    assert root_cli._api_url(SimpleNamespace(api_url=None)) == "http://localhost:3340"
+
+
+def test_root_cli_does_not_fall_back_to_public_mint_url(monkeypatch) -> None:
+    monkeypatch.delenv("CLEAR_ROOT_API_URL", raising=False)
+    monkeypatch.setenv("CLEAR_MINT_URL", "https://clear.example/")
+
+    assert root_cli._api_url(SimpleNamespace(api_url=None)) == root_cli.DEFAULT_MINT_URL
+
+
+def test_root_cli_migrates_legacy_wallet_file(tmp_path) -> None:
+    legacy = tmp_path / "clear-lab-wallet.json"
+    root_wallet = tmp_path / "clear-root-wallet.json"
+    legacy.write_text('{"version": 1, "entries": []}\n', encoding="utf-8")
+
+    selected = root_cli._wallet_path(SimpleNamespace(wallet=str(root_wallet)))
+
+    assert selected == root_wallet
+    assert root_wallet.exists()
+    assert not legacy.exists()
+
+
+def test_root_cli_config_writes_display_metadata(
     tmp_path,
     monkeypatch,
     capsys,
@@ -14,8 +61,8 @@ def test_lab_cli_configure_writes_display_metadata(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
-            "configure",
+            "clear-root",
+            "config",
             "--env-file",
             str(env_file),
             "--currency-name",
@@ -31,7 +78,7 @@ def test_lab_cli_configure_writes_display_metadata(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
 
     assert env_file.read_text(encoding="utf-8") == (
         'CLEAR_CURRENCY_NAME="Harbour Credits"\n'
@@ -43,7 +90,7 @@ def test_lab_cli_configure_writes_display_metadata(
     assert '"CLEAR_CURRENCY_UNIT_ALIAS": "smiles"' in capsys.readouterr().out
 
 
-def test_lab_cli_configure_preserves_existing_secrets(tmp_path, monkeypatch) -> None:
+def test_root_cli_config_preserves_existing_secrets(tmp_path, monkeypatch) -> None:
     env_file = tmp_path / ".env"
     env_file.write_text(
         "\n".join(
@@ -59,8 +106,8 @@ def test_lab_cli_configure_preserves_existing_secrets(tmp_path, monkeypatch) -> 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
-            "configure",
+            "clear-root",
+            "config",
             "--env-file",
             str(env_file),
             "--currency-alias",
@@ -68,7 +115,7 @@ def test_lab_cli_configure_preserves_existing_secrets(tmp_path, monkeypatch) -> 
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
 
     assert env_file.read_text(encoding="utf-8") == (
         "CLEAR_MASTER_SECRET=secret\n"
@@ -77,12 +124,12 @@ def test_lab_cli_configure_preserves_existing_secrets(tmp_path, monkeypatch) -> 
     )
 
 
-def test_lab_cli_issue_to_token_uses_dotenv_operator_token(
+def test_root_cli_issue_to_token_uses_dotenv_operator_token(
     monkeypatch,
     capsys,
 ) -> None:
     issued = {
-        "mint": "http://clear.example",
+        "mint": "http://127.0.0.1:3339",
         "unit": "cmu-0011223344556677",
         "quote": "quote-id",
         "amount": 21,
@@ -92,16 +139,16 @@ def test_lab_cli_issue_to_token_uses_dotenv_operator_token(
     }
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "issue_units",
         lambda mint_url, operator_token, amount, *, memo=None: issued,
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "issue",
             "21",
             "--memo",
@@ -110,20 +157,20 @@ def test_lab_cli_issue_to_token_uses_dotenv_operator_token(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"token": "cashuAtoken"' in output
 
 
-def test_lab_cli_issue_stores_to_local_wallet_by_default(
+def test_root_cli_issue_stores_to_local_wallet_by_default(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path = tmp_path / "clear-root-wallet.json"
     issued = {
-        "mint": "http://clear.example",
+        "mint": "http://127.0.0.1:3339",
         "unit": "cmu-0011223344556677",
         "quote": "quote-id",
         "amount": 21,
@@ -137,16 +184,16 @@ def test_lab_cli_issue_stores_to_local_wallet_by_default(
     }
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "issue_units",
         lambda mint_url, operator_token, amount, *, memo=None: issued,
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "--wallet",
             str(wallet_path),
             "issue",
@@ -156,7 +203,7 @@ def test_lab_cli_issue_stores_to_local_wallet_by_default(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"wallet": "' in output
@@ -166,19 +213,19 @@ def test_lab_cli_issue_stores_to_local_wallet_by_default(
     assert wallet_path.exists()
 
 
-def test_lab_cli_withdraw_exports_from_local_wallet(
+def test_root_cli_withdraw_exports_from_local_wallet(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path = tmp_path / "clear-root-wallet.json"
     wallet_path.write_text(
         """
 {
   "version": 1,
   "entries": [
     {
-      "mint": "http://clear.example",
+      "mint": "http://127.0.0.1:3339",
       "unit": "cmu-0011223344556677",
       "quote": "quote-id",
       "amount": 5,
@@ -196,7 +243,7 @@ def test_lab_cli_withdraw_exports_from_local_wallet(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--wallet",
             str(wallet_path),
             "withdraw",
@@ -206,7 +253,7 @@ def test_lab_cli_withdraw_exports_from_local_wallet(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"token": "cashuA' in output
@@ -214,19 +261,19 @@ def test_lab_cli_withdraw_exports_from_local_wallet(
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
 
 
-def test_lab_cli_send_delivers_then_removes_from_local_wallet(
+def test_root_cli_send_delivers_then_removes_from_local_wallet(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path = tmp_path / "clear-root-wallet.json"
     wallet_path.write_text(
         """
 {
   "version": 1,
   "entries": [
     {
-      "mint": "http://clear.example",
+      "mint": "http://127.0.0.1:3339",
       "unit": "cmu-0011223344556677",
       "quote": "quote-id",
       "amount": 5,
@@ -242,14 +289,14 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "request_json",
         lambda mint_url, method, path, payload=None, *, token=None: {
             "currency": {"unit": "cmu-0011223344556677"}
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "discover_clear_support",
         lambda address, *, mint_url, unit: {
             "supported": True,
@@ -260,7 +307,7 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "deliver_clear_token",
         lambda discovery,
         *,
@@ -277,13 +324,13 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
             },
         },
     )
-    monkeypatch.setenv("CLEAR_LAB_NSEC", "")
+    monkeypatch.setenv("CLEAR_ROOT_NSEC", "")
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "--wallet",
             str(wallet_path),
             "send",
@@ -294,7 +341,7 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"status": "OK"' in output
@@ -302,17 +349,17 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
 
 
-def test_lab_cli_send_preserves_wallet_when_delivery_fails(
+def test_root_cli_send_preserves_wallet_when_delivery_fails(
     tmp_path,
     monkeypatch,
 ) -> None:
-    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path = tmp_path / "clear-root-wallet.json"
     original = """
 {
   "version": 1,
   "entries": [
     {
-      "mint": "http://clear.example",
+      "mint": "http://127.0.0.1:3339",
       "unit": "cmu-0011223344556677",
       "quote": "quote-id",
       "amount": 5,
@@ -327,14 +374,14 @@ def test_lab_cli_send_preserves_wallet_when_delivery_fails(
 """.lstrip()
     wallet_path.write_text(original, encoding="utf-8")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "request_json",
         lambda mint_url, method, path, payload=None, *, token=None: {
             "currency": {"unit": "cmu-0011223344556677"}
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "discover_clear_support",
         lambda address, *, mint_url, unit: {
             "supported": True,
@@ -355,16 +402,16 @@ def test_lab_cli_send_preserves_wallet_when_delivery_fails(
         relays=None,
         expiration=None,
     ):
-        raise lab_cli.DeliveryError("delivery failed")
+        raise root_cli.DeliveryError("delivery failed")
 
-    monkeypatch.setattr(lab_cli, "deliver_clear_token", fail_delivery)
-    monkeypatch.delenv("CLEAR_LAB_NSEC", raising=False)
+    monkeypatch.setattr(root_cli, "deliver_clear_token", fail_delivery)
+    monkeypatch.delenv("CLEAR_ROOT_NSEC", raising=False)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "--wallet",
             str(wallet_path),
             "send",
@@ -373,23 +420,23 @@ def test_lab_cli_send_preserves_wallet_when_delivery_fails(
         ],
     )
 
-    assert lab_cli.main() == 1
+    assert root_cli.main() == 1
     assert wallet_path.read_text(encoding="utf-8") == original
 
 
-def test_lab_cli_send_swaps_larger_proof_for_change(
+def test_root_cli_send_swaps_larger_proof_for_change(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path = tmp_path / "clear-root-wallet.json"
     wallet_path.write_text(
         """
 {
   "version": 1,
   "entries": [
     {
-      "mint": "http://clear.example",
+      "mint": "http://127.0.0.1:3339",
       "unit": "cmu-0011223344556677",
       "quote": "quote-id",
       "amount": 32,
@@ -404,14 +451,14 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "request_json",
         lambda mint_url, method, path, payload=None, *, token=None: {
             "currency": {"unit": "cmu-0011223344556677"}
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "discover_clear_support",
         lambda address, *, mint_url, unit: {
             "supported": True,
@@ -422,7 +469,7 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "swap_token_for_amount",
         lambda mint_url, inputs, amount, *, unit, memo=None: {
             "mint": mint_url,
@@ -444,7 +491,7 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "deliver_clear_token",
         lambda discovery,
         *,
@@ -458,9 +505,9 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "--wallet",
             str(wallet_path),
             "send",
@@ -471,7 +518,7 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
     wallet = json.loads(wallet_path.read_text(encoding="utf-8"))
     remaining_amount = sum(
@@ -484,9 +531,9 @@ def test_lab_cli_send_swaps_larger_proof_for_change(
     assert remaining_amount == 7
 
 
-def test_lab_cli_retire_reads_token_from_stdin(monkeypatch, capsys) -> None:
+def test_root_cli_retire_reads_token_from_stdin(monkeypatch, capsys) -> None:
     retired = {
-        "mint": "http://clear.example",
+        "mint": "http://127.0.0.1:3339",
         "unit": "cmu-0011223344556677",
         "amount": 21,
         "status": "RETIRED",
@@ -495,22 +542,22 @@ def test_lab_cli_retire_reads_token_from_stdin(monkeypatch, capsys) -> None:
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
     monkeypatch.setattr("sys.stdin.read", lambda: "cashuAtoken")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "retire_token",
         lambda mint_url, operator_token, token, *, memo=None: retired,
     )
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "--mint-url", "http://clear.example", "retire"],
+        ["clear-root", "--mint-url", "http://127.0.0.1:3339", "retire"],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"status": "RETIRED"' in output
 
 
-def test_lab_cli_retire_accepts_proof_json_from_stdin(monkeypatch, capsys) -> None:
+def test_root_cli_retire_accepts_proof_json_from_stdin(monkeypatch, capsys) -> None:
     calls = []
     proof = {"amount": 8, "id": "keyset-id", "secret": "secret", "C": "signature"}
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
@@ -529,25 +576,27 @@ def test_lab_cli_retire_accepts_proof_json_from_stdin(monkeypatch, capsys) -> No
             "memo": memo,
         }
 
-    monkeypatch.setattr(lab_cli, "retire_proofs", fake_retire)
+    monkeypatch.setattr(root_cli, "retire_proofs", fake_retire)
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "--mint-url", "http://clear.example", "retire"],
+        ["clear-root", "--mint-url", "http://127.0.0.1:3339", "retire"],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     assert calls == [
-        ("http://clear.example", "operator-token", [proof], "cmu-test", None)
+        ("http://127.0.0.1:3339", "operator-token", [proof], "cmu-test", None)
     ]
     assert '"amount": 8' in capsys.readouterr().out
 
 
-def test_lab_cli_retire_amount_uses_local_wallet(monkeypatch, capsys, tmp_path) -> None:
+def test_root_cli_retire_amount_uses_local_wallet(
+    monkeypatch, capsys, tmp_path
+) -> None:
     wallet_path = tmp_path / "wallet.json"
     calls = []
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "_export_or_swap",
         lambda amount, path, *, api_url, memo=None: {
             "amount": amount,
@@ -555,7 +604,7 @@ def test_lab_cli_retire_amount_uses_local_wallet(monkeypatch, capsys, tmp_path) 
         },
     )
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "retire_token",
         lambda mint_url, operator_token, token, *, memo=None: {
             "mint": mint_url,
@@ -570,19 +619,19 @@ def test_lab_cli_retire_amount_uses_local_wallet(monkeypatch, capsys, tmp_path) 
         calls.append((amount, path, memo, remove))
         return {"amount": amount}
 
-    monkeypatch.setattr(lab_cli, "export_token", fake_export)
-    monkeypatch.setattr(lab_cli, "load_wallet", lambda path: {"entries": []})
+    monkeypatch.setattr(root_cli, "export_token", fake_export)
+    monkeypatch.setattr(root_cli, "load_wallet", lambda path: {"entries": []})
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "wallet_summary",
         lambda wallet, path: {"wallet": str(path), "entries": 0, "balances": []},
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "clear-lab",
+            "clear-root",
             "--mint-url",
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "--wallet",
             str(wallet_path),
             "retire",
@@ -592,17 +641,17 @@ def test_lab_cli_retire_amount_uses_local_wallet(monkeypatch, capsys, tmp_path) 
         ],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     assert calls == [(25, wallet_path, "expired", True)]
     output = capsys.readouterr().out
     assert '"status": "RETIRED"' in output
     assert '"wallet": "' in output
 
 
-def test_lab_cli_redeem_remains_a_retire_alias(monkeypatch, capsys) -> None:
+def test_root_cli_redeem_remains_a_retire_alias(monkeypatch, capsys) -> None:
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
     monkeypatch.setattr(
-        lab_cli,
+        root_cli,
         "retire_token",
         lambda mint_url, operator_token, token, *, memo=None: {
             "mint": mint_url,
@@ -614,14 +663,14 @@ def test_lab_cli_redeem_remains_a_retire_alias(monkeypatch, capsys) -> None:
     )
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "--mint-url", "http://clear.example", "redeem", "cashuAtoken"],
+        ["clear-root", "--mint-url", "http://127.0.0.1:3339", "redeem", "cashuAtoken"],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     assert '"status": "RETIRED"' in capsys.readouterr().out
 
 
-def test_lab_cli_summary_calls_operator_endpoint(monkeypatch, capsys) -> None:
+def test_root_cli_summary_calls_operator_endpoint(monkeypatch, capsys) -> None:
     calls = []
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
 
@@ -635,19 +684,19 @@ def test_lab_cli_summary_calls_operator_endpoint(monkeypatch, capsys) -> None:
             "outstanding": 13,
         }
 
-    monkeypatch.setattr(lab_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "--mint-url", "http://clear.example/", "summary"],
+        ["clear-root", "--mint-url", "http://127.0.0.1:3339/", "summary"],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"outstanding": 13' in output
     assert calls == [
         (
-            "http://clear.example",
+            "http://127.0.0.1:3339",
             "GET",
             "/v1/operator/summary",
             None,
@@ -656,13 +705,13 @@ def test_lab_cli_summary_calls_operator_endpoint(monkeypatch, capsys) -> None:
     ]
 
 
-def test_lab_cli_info_combines_cmu_metadata_and_circulation(
+def test_root_cli_info_combines_cmu_metadata_and_circulation(
     monkeypatch,
     capsys,
 ) -> None:
     calls = []
     monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
-    monkeypatch.setenv("CLEAR_LAB_API_URL", "http://127.0.0.1:3339")
+    monkeypatch.setenv("CLEAR_ROOT_API_URL", "http://127.0.0.1:3339")
     monkeypatch.setenv("CLEAR_MINT_URL", "https://clear.example")
 
     def fake_request_json(mint_url, method, path, payload=None, *, token=None):
@@ -684,7 +733,7 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
                     "friendly_alias_key": "example-credits:0011223344556677",
                 },
                 "policy": {
-                    "mode": "lab",
+                    "mode": "root-bootstrap",
                     "root_authority_npub": "npub1root",
                     "enforced": False,
                 },
@@ -699,13 +748,13 @@ def test_lab_cli_info_combines_cmu_metadata_and_circulation(
             }
         raise AssertionError(path)
 
-    monkeypatch.setattr(lab_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
     monkeypatch.setattr(
         "sys.argv",
-        ["clear-lab", "info"],
+        ["clear-root", "info"],
     )
 
-    assert lab_cli.main() == 0
+    assert root_cli.main() == 0
     output = capsys.readouterr().out
 
     assert '"unit": "cmu-0011223344556677"' in output

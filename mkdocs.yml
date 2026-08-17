@@ -48,6 +48,7 @@ nav:
       - Product Family: product-family.md
   - Operate Clear:
       - Getting Started: getting-started.md
+      - Commissioning a Mint: root-commissioning.md
       - API: api.md
       - Security: security.md
       - Release Roadmap: release-roadmap.md

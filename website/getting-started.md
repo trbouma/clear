@@ -25,7 +25,7 @@ export CLEAR_MINT_URL="http://127.0.0.1:3339"
 export CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
 export CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
 export CLEAR_CURRENCY_UNIT_ALIAS="credits"
-export CLEAR_LAB_API_URL="http://127.0.0.1:3339"
+export CLEAR_ROOT_API_URL="http://127.0.0.1:3339"
 ```
 
 The master secret deterministically derives denomination keys and must remain
@@ -37,9 +37,10 @@ The optional currency alias and unit alias are wallet-facing display hints for
 this CMU.
 
 `CLEAR_MINT_URL` is the canonical URL advertised to wallets and encoded in
-tokens. `CLEAR_LAB_API_URL` is the private connection used by `clear-lab`. A
-Docker deployment keeps the latter on container loopback even when the former
-is a public HTTPS URL behind a reverse proxy.
+tokens. `CLEAR_ROOT_API_URL` is the private connection used by `clear-root`,
+which rejects non-loopback URLs. A Docker deployment keeps this administrative
+connection on container loopback even when the public mint URL is behind a
+reverse proxy.
 
 ## Start Clear
 
@@ -59,23 +60,23 @@ Useful development paths:
 - `http://127.0.0.1:3339/v1/info`
 - `http://127.0.0.1:3339/v1/keys`
 
-## Lab CLI
+## Root CLI
 
 ```bash
-poetry run clear-lab configure \
+poetry run clear-root config \
   --currency-name "Clear Lab Credit Program" \
   --currency-alias "Clear Lab Credits" \
   --currency-unit-alias "credits" \
   --root-authority-npub "npub..."
-poetry run clear-lab info
-poetry run clear-lab issue 25 --memo "wallet circulation test"
-poetry run clear-lab wallet balance
-poetry run clear-lab withdraw 25 --memo "disbursement"
-poetry run clear-lab issue 5 --memo "immediate token" --to-token
-poetry run clear-lab address alice@example.com
-poetry run clear-lab send 5 alice@example.com --memo "address delivery"
-poetry run clear-lab redeem "cashuA..." --memo "returned from wallet"
-poetry run clear-lab summary
+poetry run clear-root info
+poetry run clear-root issue 25 --memo "wallet circulation test"
+poetry run clear-root wallet balance
+poetry run clear-root withdraw 25 --memo "disbursement"
+poetry run clear-root issue 5 --memo "immediate token" --to-token
+poetry run clear-root address alice@example.com
+poetry run clear-root send 5 alice@example.com --memo "address delivery"
+poetry run clear-root redeem "cashuA..." --memo "returned from wallet"
+poetry run clear-root summary
 ```
 
 A Lightning-address or NIP-05 well-known response can advertise lab Clear

@@ -17,10 +17,11 @@ Clear operator
 └── Keyset C -> cmu-C -> ledger C
 ```
 
-The operator can approve and enroll a keyset created by a treasurer or keyset
-custodian. Once activated, Clear advertises that keyset, records its issuance,
-and accepts responsibility for its Mint Notes. Keyset secrets are installed
-through a protected local path, never through the public API.
+The operator can grant an authorized treasurer one use of `keyset:create`.
+After verifying the treasurer's signed request, Clear generates an independent
+random keyset secret inside the mint, encrypts it at rest, and records the
+authorization. Once activated, Clear advertises that keyset, records its
+issuance, and accepts responsibility for its Mint Notes.
 
 Enrollment must happen before issuance. Clear does not retrospectively adopt
 unrecorded notes merely because they validate under a newly imported keyset.
@@ -29,11 +30,19 @@ Each keyset remains its own CMU. Quotes, issuance, swaps, spent-note state,
 redemption, retirement, and supply accounting are isolated. Clear does not
 combine the balances simply because they share an operator or friendly name.
 
+Before any treasurer is enabled, `clear-root` must commission the deployment.
+It exercises the shared treasury action layer with a dedicated test keyset,
+retires all test units, records durable readiness evidence, and then explicitly
+opens the treasury gate. A critical configuration or storage change closes the
+gate until verification succeeds again.
+
 ## What must work
 
 - standard NUT-02 keyset IDs and `cmu-<keyset-id>` units;
 - discovery and routing for several active keysets;
-- operator-approved local keyset enrollment;
+- treasurer-authorized random keyset creation and operator activation;
+- root commissioning, durable readiness evidence, and an explicit treasury
+  enable gate;
 - one isolated authoritative ledger per CMU;
 - complete issuance, swap, state-check, redemption, and retirement flows;
 - NUT-18 transfer requests for one exact CMU and strict Clear endpoint;

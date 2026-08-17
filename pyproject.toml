@@ -12,7 +12,7 @@ keywords = ["cashu", "ecash", "mint-units", "local-first", "safebox"]
 
 [tool.poetry.scripts]
 clear = "clear.cli:main"
-clear-lab = "clear.lab_cli:main"
+clear-root = "clear.root_cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"

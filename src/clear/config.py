@@ -20,6 +20,7 @@ class Settings:
     root_authority_npub: str | None = None
     currency_alias: str | None = None
     currency_unit_alias: str | None = None
+    root_api_loopback_only: bool = True
 
     def __post_init__(self) -> None:
         if len(self.master_secret) < 32:

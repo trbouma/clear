@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hmac
 from contextlib import asynccontextmanager
+from ipaddress import ip_address
 
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -60,15 +61,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         max_age=86400,
     )
 
-    def operator_authorized(authorization: str | None) -> bool:
+    def request_is_loopback(request: Request) -> bool:
+        if request.client is None:
+            return False
+        host = request.client.host.rstrip(".").lower()
+        if host == "localhost":
+            return True
+        try:
+            return ip_address(host).is_loopback
+        except ValueError:
+            return False
+
+    def operator_access_error(
+        request: Request, authorization: str | None
+    ) -> JSONResponse | None:
+        if configured.root_api_loopback_only and not request_is_loopback(request):
+            return JSONResponse(
+                {"detail": "operator API requires loopback access"},
+                status_code=403,
+            )
         scheme, _, token = (authorization or "").partition(" ")
-        return scheme.lower() == "bearer" and hmac.compare_digest(
+        if scheme.lower() != "bearer" or not hmac.compare_digest(
             token, configured.operator_token
-        )
+        ):
+            return JSONResponse(
+                {"detail": "operator authorization required"}, status_code=401
+            )
+        return None
 
     def policy_response():
         return {
-            "mode": "lab",
+            "mode": "root-bootstrap",
             "root_authority_npub": configured.root_authority_npub,
             "enforced": False,
         }
@@ -195,12 +218,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/operator/quotes/{quote_id}/authorize")
     async def authorize_mint_quote(
-        quote_id: str, authorization: str | None = Header(default=None)
+        quote_id: str,
+        request: Request,
+        authorization: str | None = Header(default=None),
     ):
-        if not operator_authorized(authorization):
-            return JSONResponse(
-                {"detail": "operator authorization required"}, status_code=401
-            )
+        if error := operator_access_error(request, authorization):
+            return error
         try:
             return store.authorize_quote(quote_id)
         except ClearError as exc:
@@ -229,12 +252,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/v1/operator/retire")
     async def retire(
         request: RetireRequest,
+        http_request: Request,
         authorization: str | None = Header(default=None),
     ):
-        if not operator_authorized(authorization):
-            return JSONResponse(
-                {"detail": "operator authorization required"}, status_code=401
-            )
+        if error := operator_access_error(http_request, authorization):
+            return error
         try:
             amount = store.retire(request.inputs, request.memo)
         except ClearError as exc:
@@ -243,12 +265,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/operator/summary")
     async def operator_summary(
+        request: Request,
         authorization: str | None = Header(default=None),
     ):
-        if not operator_authorized(authorization):
-            return JSONResponse(
-                {"detail": "operator authorization required"}, status_code=401
-            )
+        if error := operator_access_error(request, authorization):
+            return error
         return store.summary()
 
     return app

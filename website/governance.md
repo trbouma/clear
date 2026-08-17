@@ -46,23 +46,36 @@ from several.
 
 </div>
 
-## When a treasurer also controls a keyset
+## How a keyset is created
 
-Ordinarily, a treasurer holds an authorization key and the operational signer
-holds the keyset secret. A policy can deliberately combine those
-responsibilities by appointing a treasurer as a keyset custodian or delegated
-signer.
+A treasurer may receive a bounded, normally single-use permission to create a
+keyset. The treasurer signs the request, but the mint generates the random
+keyset secret internally and keeps it in operational custody. Authorizing a
+keyset does not disclose its signing secret to the treasurer.
 
-That custodian can bring an existing keyset to a Clear operator. The operator
-must approve its enrollment before the deployment advertises the CMU, records
-its issuance, or commits to redeeming its Mint Notes. This makes keysets
-portable without allowing a hosting operator to appoint itself as issuer.
+The mint records who authorized the keyset, encrypts its secret at rest, and
+publishes only the public denomination keys and resulting CMU. Removing a
+treasurer prevents future authorizations but does not invalidate previously
+created keysets or circulating Mint Notes.
 
-Possession of the raw keyset secret nevertheless means the custodian can create
-cryptographically valid Mint Notes. Operator approval cannot undo that fact; it
-governs whether the service recognizes and accounts for the issuance. Where
-both parties must approve every issuance, the secret should remain in a policy-
-enforcing HSM or remote signer that requires both approvals before signing.
+A keyset secret moves only during an explicitly authorized migration. It is
+encrypted directly to the destination mint or designated custodian rather than
+being exposed as an ordinary CLI result.
+
+## Before treasurers are enabled
+
+The root commissions the mint before delegating routine authority. Using
+`clear-root`, it exercises the same keyset, issuance, swap, proof-state,
+retirement, wallet, ledger, and audit paths that treasurer requests will use.
+
+A successful verification creates durable readiness evidence but does not
+silently enable treasurers. The root must separately open the treasury gate.
+Critical schema, storage, signer, restore, reconciliation, or routing changes
+invalidate readiness and require another verification.
+
+This ensures that appointing a treasurer and operating a proven mint are two
+separate requirements. Read more in
+[Commissioning a Mint](root-commissioning.md).
 
 ## Why separate the roles?
 

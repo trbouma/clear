@@ -36,7 +36,8 @@ tokens, database identity, and tests. See
 - `clear` mint quotes authorized by an operator rather than a paid invoice
 - operator-authorized Mint Note redemption and proof retirement
 - atomic SQLite issuance, swap, retirement, and spent-proof accounting
-- privileged `clear-lab` treasury issuance, exact export, send, and retirement
+- privileged `clear-root` bootstrap, treasury issuance, exact export, send,
+  and retirement
 - canonical keyset-bound CMUs with wallet-facing aliases
 - NIP-05 discovery and private NIP-59 kind `7379` delivery
 - pending Clear transfer interoperability with Acorn and Safebox Web
@@ -77,10 +78,11 @@ Compose publishes port `3339` on all host interfaces by default through
 `CLEAR_BIND_ADDRESS=0.0.0.0`, allowing access over LAN or Tailscale. Use host
 firewall rules or a more specific bind address when access must be restricted.
 
-Inside Docker, `clear-lab` connects directly to
-`CLEAR_LAB_API_URL=http://127.0.0.1:3339`. The mint separately advertises
+Inside Docker, `clear-root` connects directly to
+`CLEAR_ROOT_API_URL=http://127.0.0.1:3339`. The command rejects non-loopback
+API URLs. The mint separately advertises
 `CLEAR_MINT_URL`, and that public URL is encoded into issued and swapped tokens.
-This keeps privileged lab traffic on the container loopback interface without
+This keeps privileged root traffic on the container loopback interface without
 leaking an internal address into a circulating token.
 
 ```bash
@@ -91,26 +93,30 @@ docker compose ps
 curl http://127.0.0.1:3339/health
 ```
 
-The mint database and the privileged lab wallet are stored in the named
-`clear-data` volume. The same image includes `clear-lab`, which can be run in
+The mint database and privileged root wallet are stored in the named
+`clear-data` volume. The same image includes `clear-root`, which can be run in
 the privileged mint container with its injected operator environment:
 
 ```bash
-docker compose exec clear clear-lab info
-docker compose exec clear clear-lab issue 25 --memo "Docker lab issue"
-docker compose exec clear clear-lab wallet balance
-docker compose exec clear clear-lab summary
+docker compose exec clear clear-root info
+docker compose exec clear clear-root issue 25 --memo "Docker lab issue"
+docker compose exec clear clear-root wallet balance
+docker compose exec clear clear-root summary
 ```
 
 `docker compose down` stops the deployment without removing the named volume.
 
 The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
+The accepted custody and creation model for new keysets is described in
+[Treasurer-Authorized Random Keysets](docs/TREASURER-AUTHORIZED-RANDOM-KEYSETS-DESIGN.md).
+The required acceptance gate before treasurer access is described in
+[Root Commissioning and Treasury Readiness](docs/ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
 The accepted implementation boundary for the first release is described in
 [First Release Scope](docs/FIRST-RELEASE-SCOPE.md).
-The current privileged lab issuance, local JSON lab wallet, token retirement,
+The current privileged root issuance, local JSON root wallet, token retirement,
 and NIP-59 delivery path are described in
-[Lab CMU Issuance and Delivery](docs/LAB-CMU-ISSUANCE-AND-DELIVERY.md).
+[Root CMU Issuance and Delivery](docs/ROOT-CMU-ISSUANCE-AND-DELIVERY.md).
 The complete cross-product milestone is recorded in
 [Transferable Clear Mint Unit Milestone](docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md).
 

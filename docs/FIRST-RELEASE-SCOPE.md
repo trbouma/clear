@@ -20,6 +20,26 @@ financial service.
 
 ## Required capability
 
+### Root commissioning and treasury gate
+
+- Keep remote treasurer operations disabled after installation.
+- Provide `clear-root verify` to exercise the shared keyset, issuance, swap,
+  proof-state, retirement, wallet, accounting, and audit paths.
+- Use a dedicated commissioning keyset and retire all test units before a run
+  can succeed.
+- Persist a versioned readiness record bound to the software, database schema,
+  critical configuration, test results, and audit checkpoint.
+- Require an explicit `clear-root treasury enable` after successful
+  verification.
+- Provide status and reasoned disable operations.
+- Invalidate readiness after critical schema, storage, signer, restore,
+  reconciliation, or routing changes.
+- Reject treasurer requests while the gate is closed without consuming their
+  authorization nonce or bounded grant.
+
+The complete model is defined in
+[Root Commissioning and Treasury Readiness](ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
+
 ### Canonical keyset and CMU identity
 
 - Derive and expose the exact NUT-02 keyset ID.
@@ -28,30 +48,32 @@ financial service.
   databases, tests, and fixtures.
 - Treat every keyset as a separate CMU and balance.
 
-### Operator-approved keyset enrollment
+### Treasurer-authorized random keyset creation
 
-- Let the operator configure several keysets in a local registry.
-- Allow an externally created keyset secret or protected signer reference to be
-  enrolled through an offline administrative path.
-- Require explicit operator activation before Clear advertises the keyset,
-  accounts for its issuance, or accepts responsibility for redemption.
-- Enroll and activate the keyset before any release issuance. The operator must
-  not import a keyset and retrospectively assume responsibility for notes that
-  were signed outside the authoritative ledger.
-- Never accept a raw keyset secret through the public HTTP API.
-- Record the keyset descriptor, CMU, friendly name, activation status, database
-  location, and signer reference.
+- Let `clear-root` maintain a privileged bootstrap registry of treasurer
+  public keys.
+- Grant `keyset:create` as a bounded, single-use authorization by default.
+- Require a valid signed request from an active treasurer before creation.
+- Generate an independent random keyset secret inside the mint.
+- Encrypt each keyset secret at rest and never return it through the API.
+- Persist the signed request, consumed grant, keyset descriptor, CMU, friendly
+  name, lifecycle status, and ledger binding atomically.
+- Require explicit activation before Clear advertises the keyset, accounts for
+  issuance, or accepts responsibility for redemption.
+- Preserve the current master-derived keyset as a compatible legacy keyset.
 
-For the first release, operator installation of the local registry entry is the
-approval boundary. Signed treasury policy and remote HSM enforcement remain
+For the first release, `clear-root` and the operator token manage the bootstrap
+treasurer registry. Root-signed policy and remote HSM enforcement remain
 separate hardening work unless they can be completed without destabilizing the
 core multi-keyset model.
 
 The safe sequence is:
 
 ```text
-treasurer or custodian provides keyset
-  -> operator validates and activates it locally
+operator grants one keyset creation to treasurer
+  -> treasurer signs a keyset request
+  -> mint generates and encrypts a random keyset secret
+  -> operator activates it locally
   -> Clear creates or verifies its bound ledger
   -> issuance begins through Clear's recorded workflow
 ```
@@ -109,8 +131,12 @@ The release test suite should demonstrate:
 7. atomic rejection of concurrent double-spend attempts;
 8. correct restart and ledger-identity validation;
 9. operator authentication and secret redaction; and
-10. interoperability with Acorn or another wallet that supports custom units.
-11. NUT-18 request and payment-payload round trips for an exact CMU.
+10. commissioning failure leaves treasury operations disabled;
+11. successful verification followed by explicit treasury enablement;
+12. readiness invalidation after a critical configuration change;
+13. interoperability with Acorn or another wallet that supports custom units;
+    and
+14. NUT-18 request and payment-payload round trips for an exact CMU.
 
 ## Operational release work
 
@@ -145,5 +171,6 @@ multi-keyset model is stable.
 
 The first release is ready when one operator can safely configure at least two
 keysets, expose both through one Clear service, independently issue and redeem
-their Mint Notes, restart without identity drift, and demonstrate that no
-operation can accidentally combine or double-spend across their CMUs.
+their Mint Notes, restart without identity drift, complete root commissioning,
+explicitly enable treasury operations, and demonstrate that no operation can
+accidentally combine or double-spend across their CMUs.
