@@ -174,6 +174,79 @@ def issue_token(
     }
 
 
+def swap_token_for_amount(
+    mint_url: str,
+    inputs: list[dict[str, Any]],
+    amount: int,
+    *,
+    unit: str,
+    memo: str | None = None,
+) -> dict[str, Any]:
+    if amount <= 0:
+        raise TreasuryError("amount must be greater than zero")
+    input_total = sum(int(proof["amount"]) for proof in inputs)
+    if input_total < amount:
+        raise TreasuryError("insufficient input amount for swap")
+
+    keyset = request_json(mint_url, "GET", "/v1/keys")["keysets"][0]
+    keyset_id = keyset["id"]
+    keys = keyset["keys"]
+    if any(proof.get("id") != keyset_id for proof in inputs):
+        raise TreasuryError("wallet proofs are not for the mint's active keyset")
+
+    send_outputs = [
+        blind_output(denomination, keyset_id)
+        for denomination in split_amount(amount)
+    ]
+    change_amount = input_total - amount
+    change_outputs = [
+        blind_output(denomination, keyset_id)
+        for denomination in split_amount(change_amount)
+    ] if change_amount else []
+    outputs = [*send_outputs, *change_outputs]
+    missing = [
+        output.amount
+        for output in outputs
+        if str(output.amount) not in keys
+    ]
+    if missing:
+        raise TreasuryError(
+            "mint does not advertise keys for denominations: "
+            + ", ".join(str(each) for each in sorted(set(missing)))
+        )
+
+    swapped = request_json(
+        mint_url,
+        "POST",
+        "/v1/swap",
+        {"inputs": inputs, "outputs": [output.payload for output in outputs]},
+    )
+    promises = swapped["signatures"]
+    if len(promises) != len(outputs):
+        raise TreasuryError("mint returned an unexpected number of swap signatures")
+    proofs = [
+        unblind_signature(output, promise, keys[str(output.amount)])
+        for output, promise in zip(outputs, promises, strict=True)
+    ]
+    send_proofs = proofs[: len(send_outputs)]
+    change_proofs = proofs[len(send_outputs) :]
+    return {
+        "mint": mint_url.rstrip("/"),
+        "unit": unit,
+        "amount": amount,
+        "input_amount": input_total,
+        "change_amount": change_amount,
+        "token": encode_token_v3(
+            mint=mint_url,
+            proofs=send_proofs,
+            unit=unit,
+            memo=memo,
+        ),
+        "proofs": send_proofs,
+        "change_proofs": change_proofs,
+    }
+
+
 def proofs_from_token(token: str) -> tuple[str, str | None, list[dict[str, Any]]]:
     payload = decode_token_v3(token.strip())
     token_entries = payload.get("token")

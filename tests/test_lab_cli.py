@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from clear import lab_cli
 
 
@@ -371,6 +373,113 @@ def test_lab_cli_send_preserves_wallet_when_delivery_fails(
 
     assert lab_cli.main() == 1
     assert wallet_path.read_text(encoding="utf-8") == original
+
+
+def test_lab_cli_send_swaps_larger_proof_for_change(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    wallet_path = tmp_path / "clear-lab-wallet.json"
+    wallet_path.write_text(
+        """
+{
+  "version": 1,
+  "entries": [
+    {
+      "mint": "http://clear.example",
+      "unit": "cmu-0011223344556677",
+      "quote": "quote-id",
+      "amount": 32,
+      "memo": "float",
+      "proofs": [
+        {"amount": 32, "id": "keyset-id", "secret": "large", "C": "sig-large"}
+      ]
+    }
+  ]
+}
+""".lstrip(),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        lab_cli,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "currency": {"unit": "cmu-0011223344556677"}
+        },
+    )
+    monkeypatch.setattr(
+        lab_cli,
+        "discover_clear_support",
+        lambda address, *, mint_url, unit: {
+            "supported": True,
+            "mint": mint_url,
+            "unit": unit,
+            "recipient_pubkey": "11" * 32,
+            "relays": ["wss://relay.example"],
+        },
+    )
+    monkeypatch.setattr(
+        lab_cli,
+        "swap_token_for_amount",
+        lambda mint_url, inputs, amount, *, unit, memo=None: {
+            "mint": mint_url,
+            "unit": unit,
+            "amount": amount,
+            "input_amount": 32,
+            "change_amount": 7,
+            "token": "cashuAswapped",
+            "proofs": [
+                {"amount": 16, "id": "keyset-id", "secret": "s16", "C": "c16"},
+                {"amount": 8, "id": "keyset-id", "secret": "s8", "C": "c8"},
+                {"amount": 1, "id": "keyset-id", "secret": "s1", "C": "c1"},
+            ],
+            "change_proofs": [
+                {"amount": 4, "id": "keyset-id", "secret": "c4", "C": "cc4"},
+                {"amount": 2, "id": "keyset-id", "secret": "c2", "C": "cc2"},
+                {"amount": 1, "id": "keyset-id", "secret": "c1", "C": "cc1"},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        lab_cli,
+        "deliver_clear_token",
+        lambda discovery,
+        *,
+        token,
+        amount,
+        sender_secret,
+        memo=None,
+        relays=None,
+        expiration=None: {"delivery": discovery, "publish": {"status": "OK"}},
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-lab",
+            "--mint-url",
+            "http://clear.example",
+            "--wallet",
+            str(wallet_path),
+            "send",
+            "25",
+            "alice@example.com",
+            "--memo",
+            "send",
+        ],
+    )
+
+    assert lab_cli.main() == 0
+    output = capsys.readouterr().out
+    wallet = json.loads(wallet_path.read_text(encoding="utf-8"))
+    remaining_amount = sum(
+        proof["amount"]
+        for entry in wallet["entries"]
+        for proof in entry["proofs"]
+    )
+
+    assert '"amount": 25' in output
+    assert remaining_amount == 7
 
 
 def test_lab_cli_redeem_reads_token_from_stdin(monkeypatch, capsys) -> None:

@@ -54,3 +54,20 @@ def test_export_token_from_lab_wallet(tmp_path) -> None:
     assert decoded["memo"] == "disburse"
     assert [proof["amount"] for proof in decoded["token"][0]["proofs"]] == [8, 4, 1]
     assert wallet_summary(load_wallet(wallet_path), wallet_path)["balances"] == []
+
+
+def test_export_token_finds_exact_subset(tmp_path) -> None:
+    wallet_path = tmp_path / "data" / "clear-lab-wallet.json"
+    deposit_issue(issued([16, 8, 4, 1]), wallet_path)
+
+    exported = export_token(13, wallet_path, memo="subset")
+    decoded = decode_token_v3(exported["token"])
+
+    assert [proof["amount"] for proof in decoded["token"][0]["proofs"]] == [8, 4, 1]
+    assert wallet_summary(load_wallet(wallet_path), wallet_path)["balances"] == [
+        {
+            "mint": "http://clear.example",
+            "unit": "cmu-0011223344556677",
+            "amount": 16,
+        }
+    ]

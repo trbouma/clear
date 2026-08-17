@@ -20,9 +20,17 @@ from clear.lab_wallet import (
     deposit_issue,
     export_token,
     load_wallet,
+    replace_selected_with_change,
+    select_proofs_for_amount,
     wallet_summary,
 )
-from clear.treasury import TreasuryError, issue_token, redeem_token, request_json
+from clear.treasury import (
+    TreasuryError,
+    issue_token,
+    redeem_token,
+    request_json,
+    swap_token_for_amount,
+)
 
 DEFAULT_MINT_URL = "http://127.0.0.1:3338"
 CONFIGURE_KEYS = {
@@ -193,7 +201,7 @@ def send(args) -> int:
     if not discovery["supported"]:
         raise DeliveryError("recipient does not advertise compatible Clear support")
     wallet_path = _wallet_path(args)
-    pending = export_token(args.amount, wallet_path, memo=args.memo, remove=False)
+    pending = _export_or_swap(args.amount, wallet_path, memo=args.memo)
     delivery = deliver_clear_token(
         discovery,
         token=pending["token"],
@@ -206,6 +214,37 @@ def send(args) -> int:
     withdrawn = export_token(args.amount, wallet_path, memo=args.memo, remove=True)
     _print_json({**withdrawn, **delivery})
     return 0
+
+
+def _export_or_swap(amount: int, wallet_path: Path, *, memo: str | None = None) -> dict:
+    try:
+        return export_token(amount, wallet_path, memo=memo, remove=False)
+    except ValueError as exc:
+        if str(exc) != "wallet cannot export exact amount with current proof set":
+            raise
+
+    selected = select_proofs_for_amount(amount, wallet_path)
+    swapped = swap_token_for_amount(
+        selected["mint"],
+        selected["proofs"],
+        amount,
+        unit=selected["unit"],
+        memo=memo,
+    )
+    replacement_proofs = [*swapped["proofs"], *swapped["change_proofs"]]
+    replace_selected_with_change(
+        selected["amount"],
+        wallet_path,
+        change={
+            "mint": selected["mint"],
+            "unit": selected["unit"],
+            "quote": None,
+            "amount": selected["amount"],
+            "memo": memo,
+            "proofs": replacement_proofs,
+        },
+    )
+    return export_token(amount, wallet_path, memo=memo, remove=False)
 
 
 def wallet_balance(args) -> int:
@@ -222,7 +261,10 @@ def wallet_list(args) -> int:
 
 
 def withdraw(args) -> int:
-    _print_json(export_token(args.amount, _wallet_path(args), memo=args.memo))
+    wallet_path = _wallet_path(args)
+    _export_or_swap(args.amount, wallet_path, memo=args.memo)
+    withdrawn = export_token(args.amount, wallet_path, memo=args.memo, remove=True)
+    _print_json(withdrawn)
     return 0
 
 
