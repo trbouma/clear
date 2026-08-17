@@ -17,7 +17,7 @@ def test_split_amount_rejects_non_positive_values() -> None:
         treasury.split_amount(0)
 
 
-def test_issue_token_authorizes_quote_and_unblinds_signatures(monkeypatch) -> None:
+def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> None:
     calls = []
 
     def fake_request_json(mint_url, method, path, payload=None, *, token=None):
@@ -72,7 +72,7 @@ def test_issue_token_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
         },
     )
 
-    issued = treasury.issue_token(
+    issued = treasury.issue_units(
         "http://127.0.0.1:3339/",
         "operator-token",
         13,
@@ -155,7 +155,7 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
     ]
 
 
-def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
+def test_retire_token_decodes_proofs_and_retires(monkeypatch) -> None:
     calls = []
     proofs = [
         {
@@ -180,7 +180,7 @@ def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
 
     monkeypatch.setattr(treasury, "request_json", fake_request_json)
 
-    redeemed = treasury.redeem_token(
+    redeemed = treasury.retire_token(
         "http://clear.example/",
         "operator-token",
         token,
@@ -206,7 +206,7 @@ def test_redeem_token_decodes_proofs_and_retires(monkeypatch) -> None:
     ]
 
 
-def test_redeem_token_rejects_different_mint(monkeypatch) -> None:
+def test_retire_token_rejects_different_mint(monkeypatch) -> None:
     token = encode_token_v3(
         mint="http://other.example",
         proofs=[
@@ -229,4 +229,72 @@ def test_redeem_token_rejects_different_mint(monkeypatch) -> None:
     )
 
     with pytest.raises(treasury.TreasuryError, match="not configured mint"):
-        treasury.redeem_token("http://clear.example", "operator-token", token)
+        treasury.retire_token("http://clear.example", "operator-token", token)
+
+
+def test_retire_proofs_validates_unit_and_calls_operator_endpoint(monkeypatch) -> None:
+    calls = []
+    proofs = [
+        {
+            "amount": 8,
+            "id": "keyset-id",
+            "secret": "00" * 32,
+            "C": "02" + "11" * 32,
+        }
+    ]
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        if path == "/v1/info":
+            return {
+                "mint_url": "https://clear.example",
+                "currency": {"unit": "cmu-test"},
+            }
+        return {"status": "RETIRED", "amount": 8, "unit": "cmu-test"}
+
+    monkeypatch.setattr(treasury, "request_json", fake_request_json)
+
+    retired = treasury.retire_proofs(
+        "http://127.0.0.1:3339",
+        "operator-token",
+        proofs,
+        unit="cmu-test",
+        memo="expired",
+    )
+
+    assert retired["mint"] == "https://clear.example"
+    assert retired["unit"] == "cmu-test"
+    assert retired["amount"] == 8
+    assert calls[-1] == (
+        "http://127.0.0.1:3339",
+        "POST",
+        "/v1/operator/retire",
+        {"inputs": proofs, "memo": "expired"},
+        "operator-token",
+    )
+
+
+def test_retire_proofs_rejects_wrong_cmu(monkeypatch) -> None:
+    monkeypatch.setattr(
+        treasury,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "mint_url": "https://clear.example",
+            "currency": {"unit": "cmu-test"},
+        },
+    )
+
+    with pytest.raises(treasury.TreasuryError, match="not configured unit"):
+        treasury.retire_proofs(
+            "http://127.0.0.1:3339",
+            "operator-token",
+            [
+                {
+                    "amount": 1,
+                    "id": "keyset-id",
+                    "secret": "secret",
+                    "C": "signature",
+                }
+            ],
+            unit="cmu-other",
+        )

@@ -26,9 +26,10 @@ from clear.lab_wallet import (
 )
 from clear.treasury import (
     TreasuryError,
-    issue_token,
-    redeem_token,
+    issue_units,
     request_json,
+    retire_proofs,
+    retire_token,
     swap_token_for_amount,
 )
 
@@ -123,7 +124,7 @@ def configure(args) -> int:
 
 
 def issue(args) -> int:
-    issued = issue_token(
+    issued = issue_units(
         _api_url(args),
         _operator_token(),
         args.amount,
@@ -131,23 +132,98 @@ def issue(args) -> int:
     )
     if not args.to_token:
         summary = deposit_issue(issued, _wallet_path(args))
-        issued = {**issued, "wallet": summary}
+        issued = {
+            key: value
+            for key, value in issued.items()
+            if key not in {"token", "proofs"}
+        }
+        issued["wallet"] = summary
     _print_json(issued)
     return 0
 
 
-def redeem(args) -> int:
-    token = args.token or sys.stdin.read().strip()
-    if not token:
-        raise TreasuryError("token must be supplied as an argument or on stdin")
-    redeemed = redeem_token(
-        _api_url(args),
-        _operator_token(),
-        token,
-        memo=args.memo,
-    )
-    _print_json(redeemed)
+def _decode_proof_input(raw: str) -> tuple[list[dict], str | None]:
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise TreasuryError(
+            "retirement input must be a CMU amount, Cashu token, or proof JSON"
+        ) from exc
+    if isinstance(payload, list):
+        proofs = payload
+        unit = None
+    elif isinstance(payload, dict):
+        proofs = payload.get("proofs")
+        unit = payload.get("unit")
+    else:
+        raise TreasuryError("proof JSON must be a list or an object containing proofs")
+    if not isinstance(proofs, list) or not proofs:
+        raise TreasuryError("proof JSON must contain at least one proof")
+    if unit is not None and not isinstance(unit, str):
+        raise TreasuryError("proof JSON unit must be a string")
+    return proofs, unit
+
+
+def retire(args) -> int:
+    if args.proofs_file and args.value:
+        raise TreasuryError("use either a retirement value or --proofs-file, not both")
+
+    if args.value and args.value.isdecimal():
+        amount = int(args.value)
+        wallet_path = _wallet_path(args)
+        pending = _export_or_swap(
+            amount,
+            wallet_path,
+            api_url=_api_url(args),
+            memo=args.memo,
+        )
+        retired = retire_token(
+            _api_url(args),
+            _operator_token(),
+            pending["token"],
+            memo=args.memo,
+        )
+        export_token(amount, wallet_path, memo=args.memo, remove=True)
+        retired["wallet"] = wallet_summary(load_wallet(wallet_path), wallet_path)
+        _print_json(retired)
+        return 0
+
+    if args.proofs_file:
+        try:
+            raw = Path(args.proofs_file).read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            raise TreasuryError(f"unable to read proof file: {exc}") from exc
+    else:
+        raw = args.value or sys.stdin.read().strip()
+    if not raw:
+        raise TreasuryError(
+            "CMU amount, Cashu token, or proof JSON must be supplied"
+        )
+
+    if raw.startswith("cashu"):
+        retired = retire_token(
+            _api_url(args),
+            _operator_token(),
+            raw,
+            memo=args.memo,
+        )
+    else:
+        proofs, unit = _decode_proof_input(raw)
+        retired = retire_proofs(
+            _api_url(args),
+            _operator_token(),
+            proofs,
+            unit=unit,
+            memo=args.memo,
+        )
+    _print_json(retired)
     return 0
+
+
+def redeem(args) -> int:
+    """Compatibility command for the former retirement name."""
+
+    return retire(args)
 
 
 def summary(args) -> int:
@@ -182,6 +258,7 @@ def info(args) -> int:
         "circulation": {
             "issued": supply["issued"],
             "retired": supply["retired"],
+            "circulating": supply.get("circulating", supply["outstanding"]),
             "outstanding": supply["outstanding"],
         },
     }
@@ -355,23 +432,53 @@ def parser() -> argparse.ArgumentParser:
     address_parser.add_argument("address")
     address_parser.set_defaults(handler=address)
 
-    issue_parser = subcommands.add_parser("issue", help="Issue a test Cashu token.")
+    issue_parser = subcommands.add_parser(
+        "issue",
+        help="Issue test CMU into circulation.",
+    )
     issue_parser.add_argument("amount", type=int, help="Amount of CMU to issue.")
     issue_parser.add_argument("--memo", default=None, help="Optional quote memo.")
     issue_parser.add_argument(
         "--to-token",
         action="store_true",
-        help="Print the issued token immediately instead of storing it in the wallet.",
+        help=(
+            "Encode the issued CMU as a Cashu token immediately instead of "
+            "storing its proofs in the lab wallet."
+        ),
     )
     issue_parser.set_defaults(handler=issue)
 
-    redeem_parser = subcommands.add_parser("redeem", help="Redeem a test Cashu token.")
+    retire_parser = subcommands.add_parser(
+        "retire",
+        help="Remove CMU proofs permanently from circulation.",
+    )
+    retire_parser.add_argument(
+        "value",
+        nargs="?",
+        help=(
+            "CMU amount from the lab wallet or a cashuA token. Reads a token "
+            "or proof JSON from stdin when omitted."
+        ),
+    )
+    retire_parser.add_argument(
+        "--proofs-file",
+        default=None,
+        help="Read a proof list or {unit, proofs} object from a JSON file.",
+    )
+    retire_parser.add_argument("--memo", default=None, help="Optional retirement memo.")
+    retire_parser.set_defaults(handler=retire)
+
+    redeem_parser = subcommands.add_parser(
+        "redeem",
+        help="Compatibility alias for retire.",
+    )
     redeem_parser.add_argument(
-        "token",
+        "value",
         nargs="?",
         help="cashuA token string. Reads from stdin when omitted.",
     )
-    redeem_parser.add_argument("--memo", default=None, help="Optional redemption memo.")
+    redeem_parser.add_argument("--proofs-file", default=None, help=argparse.SUPPRESS)
+    redeem_parser.add_argument("--memo", default=None, help="Optional retirement memo.")
     redeem_parser.set_defaults(handler=redeem)
 
     withdraw_parser = subcommands.add_parser(

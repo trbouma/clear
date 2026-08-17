@@ -12,6 +12,7 @@ from typing import Any
 from coincurve import PrivateKey, PublicKey
 
 from clear.crypto import CURVE_ORDER, hash_to_curve
+from clear.models import Proof
 from clear.tokens import decode_token_v3, encode_token_v3
 
 
@@ -112,7 +113,7 @@ def unblind_signature(
     }
 
 
-def issue_token(
+def issue_units(
     mint_url: str,
     operator_token: str,
     amount: int,
@@ -180,6 +181,18 @@ def issue_token(
         "token": token,
         "proofs": proofs,
     }
+
+
+def issue_token(
+    mint_url: str,
+    operator_token: str,
+    amount: int,
+    *,
+    memo: str | None = None,
+) -> dict[str, Any]:
+    """Compatibility alias for callers using the old transport-focused name."""
+
+    return issue_units(mint_url, operator_token, amount, memo=memo)
 
 
 def swap_token_for_amount(
@@ -281,7 +294,79 @@ def proofs_from_token(token: str) -> tuple[str, str | None, list[dict[str, Any]]
     return mint.rstrip("/"), unit, proofs
 
 
-def redeem_token(
+def _validated_retirement_proofs(proofs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not proofs:
+        raise TreasuryError("at least one proof is required for retirement")
+    if len(proofs) > 128:
+        raise TreasuryError("retirement accepts at most 128 proofs")
+    try:
+        return [
+            Proof.model_validate(proof).model_dump(by_alias=True)
+            for proof in proofs
+        ]
+    except (TypeError, ValueError) as exc:
+        raise TreasuryError(f"invalid retirement proof: {exc}") from exc
+
+
+def _submit_retirement(
+    api_url: str,
+    operator_token: str,
+    proofs: list[dict[str, Any]],
+    *,
+    configured_mint: str,
+    unit: str | None,
+    memo: str | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "inputs": _validated_retirement_proofs(proofs),
+    }
+    if memo:
+        payload["memo"] = memo
+    retired = request_json(
+        api_url,
+        "POST",
+        "/v1/operator/retire",
+        payload,
+        token=operator_token,
+    )
+    return {
+        "mint": configured_mint,
+        "unit": retired.get("unit", unit),
+        "amount": retired["amount"],
+        "status": retired["status"],
+        "memo": memo,
+    }
+
+
+def retire_proofs(
+    mint_url: str,
+    operator_token: str,
+    proofs: list[dict[str, Any]],
+    *,
+    unit: str | None = None,
+    memo: str | None = None,
+) -> dict[str, Any]:
+    """Retire raw Cashu proofs from this mint's CMU circulation."""
+
+    api_url = mint_url.rstrip("/")
+    info = request_json(api_url, "GET", "/v1/info")
+    configured_mint = advertised_mint_url(info, api_url)
+    configured_unit = info.get("currency", {}).get("unit")
+    if unit is not None and configured_unit is not None and unit != configured_unit:
+        raise TreasuryError(
+            f"proofs are for unit {unit}, not configured unit {configured_unit}"
+        )
+    return _submit_retirement(
+        api_url,
+        operator_token,
+        proofs,
+        configured_mint=configured_mint,
+        unit=configured_unit or unit,
+        memo=memo,
+    )
+
+
+def retire_token(
     mint_url: str,
     operator_token: str,
     token: str,
@@ -297,20 +382,32 @@ def redeem_token(
             f"token is for mint {token_mint}, not configured mint {configured_mint}"
         )
 
-    payload: dict[str, Any] = {"inputs": proofs}
-    if memo:
-        payload["memo"] = memo
-    retired = request_json(
+    configured_unit = info.get("currency", {}).get("unit")
+    if (
+        token_unit is not None
+        and configured_unit is not None
+        and token_unit != configured_unit
+    ):
+        raise TreasuryError(
+            f"token is for unit {token_unit}, not configured unit {configured_unit}"
+        )
+    return _submit_retirement(
         api_url,
-        "POST",
-        "/v1/operator/retire",
-        payload,
-        token=operator_token,
+        operator_token,
+        proofs,
+        configured_mint=configured_mint,
+        unit=configured_unit or token_unit,
+        memo=memo,
     )
-    return {
-        "mint": configured_mint,
-        "unit": retired.get("unit", token_unit),
-        "amount": retired["amount"],
-        "status": retired["status"],
-        "memo": memo,
-    }
+
+
+def redeem_token(
+    mint_url: str,
+    operator_token: str,
+    token: str,
+    *,
+    memo: str | None = None,
+) -> dict[str, Any]:
+    """Compatibility alias for retirement of a Cashu-encoded Mint Note."""
+
+    return retire_token(mint_url, operator_token, token, memo=memo)

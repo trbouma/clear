@@ -9,7 +9,7 @@ production treasurer authority model.
 
 `clear-lab` is a privileged development utility for a Clear mint environment
 where the operator token and mint configuration are available. It lets the mint
-operator issue, hold, export, send, redeem, and summarize test Mint Notes
+operator issue, hold, export, send, retire, and summarize test CMU
 denominated in the mint's active Clear Mint Unit.
 
 The active unit is the keyset-bound protocol unit:
@@ -86,24 +86,29 @@ GET /docs
 }
 ```
 
-## Local lab wallet
+## Issuance and the local lab wallet
 
-By default, `clear-lab issue` stores issued proofs in a local JSON wallet:
+`clear-lab issue 25` authorizes and issues 25 CMU into circulation. Cashu
+proofs are the technical representation of those issued units; a Cashu token
+is an optional transport encoding.
+
+By default, the command stores the issued proofs in a local JSON wallet:
 
 ```text
 data/clear-lab-wallet.json
 ```
 
 This wallet is an operator-side convenience for testing. It is not the Acorn
-wallet and it is not a production treasury ledger.
+wallet and it is not a production treasury ledger. Ordinary issuance output
+does not print the bearer token or raw proofs after they are stored.
 
-Issue into the local lab wallet:
+Issue 25 CMU into the local lab wallet:
 
 ```sh
 poetry run clear-lab issue 25 --memo "test CMU"
 ```
 
-Issue and immediately print a Cashu token:
+Issue 25 CMU and immediately encode its proofs as a Cashu token:
 
 ```sh
 poetry run clear-lab issue 25 --memo "test CMU" --to-token
@@ -121,17 +126,32 @@ If the wallet cannot represent the requested amount exactly, `clear-lab send`
 can swap a larger proof at the mint, keep the change in the lab wallet, and
 deliver the requested amount.
 
-## Redeem and retire
+## Retirement
 
-Redeeming a token in the privileged lab context calls the Clear operator
-retirement path:
+`clear-lab retire` permanently removes CMU from circulation. Retire an amount
+held by the local lab wallet:
 
 ```sh
-poetry run clear-lab redeem "cashuA..." --memo "returned test token"
+poetry run clear-lab retire 25 --memo "program completed"
 ```
 
-The mint validates the proofs, marks them spent, and records retired supply.
-This is a Clear retirement outcome; it does not imply an external payout.
+Retire a Cashu token supplied on stdin:
+
+```sh
+printf '%s' "$token" | poetry run clear-lab retire --memo "returned units"
+```
+
+Raw proofs may be supplied as a JSON list, or as an object containing `unit`
+and `proofs`, through stdin or a file:
+
+```sh
+poetry run clear-lab retire --proofs-file returned-proofs.json
+```
+
+The mint validates the proofs, marks them spent, and records the retired CMU.
+`redeem` remains a compatibility alias for `retire`; new operator workflows
+should use the accounting term `retire`. Retirement does not imply an external
+payout.
 
 ## Supply summary
 
@@ -145,11 +165,13 @@ The summary reports:
 ```text
 issued
 retired
+circulating
 outstanding
 ```
 
-Outstanding means issued minus retired in the Clear mint accounting store. It
-does not mean every token is currently held by a reachable wallet.
+Circulating means issued minus retired in the Clear mint accounting store.
+`outstanding` is retained as a compatibility alias for the same amount. Neither
+field means every Mint Note is currently held by a reachable wallet.
 
 ## NIP-05 delivery
 

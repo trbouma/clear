@@ -266,12 +266,14 @@ class Store:
         totals = {row["action"]: row["amount"] for row in rows}
         issued = totals.get("issue", 0)
         retired = totals.get("retire", 0)
+        circulating = issued - retired
         return {
             "unit": self.keyset.unit,
             "keyset_id": self.keyset.id,
             "issued": issued,
             "retired": retired,
-            "outstanding": issued - retired,
+            "circulating": circulating,
+            "outstanding": circulating,
         }
 
     def _validate_outputs(self, outputs: list[BlindedMessage]) -> None:

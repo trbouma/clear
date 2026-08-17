@@ -275,6 +275,7 @@ def test_issue_swap_check_state_and_retire(tmp_path) -> None:
     assert retired.json()["amount"] == 4
     assert summary.json()["issued"] == 8
     assert summary.json()["retired"] == 4
+    assert summary.json()["circulating"] == 4
     assert summary.json()["outstanding"] == 4
     assert still_unspent.json()["states"][0]["state"] == "UNSPENT"
 
