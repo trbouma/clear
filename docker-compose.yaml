@@ -1,0 +1,46 @@
+services:
+  clear:
+    image: ${CLEAR_IMAGE:-clear-mint:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clear-mint
+    restart: unless-stopped
+    init: true
+    command:
+      - clear
+      - --host
+      - 0.0.0.0
+      - --port
+      - "3338"
+      - --database
+      - /app/data/clear.sqlite3
+      - --mint-url
+      - "${CLEAR_MINT_URL:-http://127.0.0.1:3338}"
+      - --log-level
+      - "${CLEAR_LOG_LEVEL:-info}"
+    environment:
+      CLEAR_MASTER_SECRET: "${CLEAR_MASTER_SECRET:?Generate CLEAR_MASTER_SECRET before starting}"
+      CLEAR_OPERATOR_TOKEN: "${CLEAR_OPERATOR_TOKEN:?Generate CLEAR_OPERATOR_TOKEN before starting}"
+      CLEAR_DATABASE: /app/data/clear.sqlite3
+      CLEAR_MINT_URL: "${CLEAR_MINT_URL:-http://127.0.0.1:3338}"
+      CLEAR_CURRENCY_NAME: "${CLEAR_CURRENCY_NAME:-Clear Mint Units}"
+      CLEAR_CURRENCY_ALIAS: "${CLEAR_CURRENCY_ALIAS:-}"
+      CLEAR_CURRENCY_UNIT_ALIAS: "${CLEAR_CURRENCY_UNIT_ALIAS:-}"
+      CLEAR_MAX_ORDER: "${CLEAR_MAX_ORDER:-20}"
+      CLEAR_ROOT_AUTHORITY_NPUB: "${CLEAR_ROOT_AUTHORITY_NPUB:-}"
+      CLEAR_LAB_WALLET: /app/data/clear-lab-wallet.json
+      CLEAR_LAB_NSEC: "${CLEAR_LAB_NSEC:-}"
+    ports:
+      - "${CLEAR_BIND_ADDRESS:-127.0.0.1}:${CLEAR_PORT:-3338}:3338"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    volumes:
+      - clear-data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+volumes:
+  clear-data:

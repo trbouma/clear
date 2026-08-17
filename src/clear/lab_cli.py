@@ -56,7 +56,7 @@ def _operator_token() -> str:
 
 
 def _sender_secret(args) -> str | None:
-    return args.nsec or os.getenv("CLEAR_LAB_NSEC")
+    return args.nsec or os.getenv("CLEAR_LAB_NSEC") or None
 
 
 def _print_json(payload: dict) -> None:

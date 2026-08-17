@@ -62,6 +62,34 @@ Read the full documentation with:
 poetry run mkdocs serve
 ```
 
+## Run with Docker
+
+Create `.env` from `.env.example`, then set `CLEAR_MASTER_SECRET` and
+`CLEAR_OPERATOR_TOKEN` to independently generated secrets. `CLEAR_MINT_URL`
+must be the URL that wallets will use to reach the mint; the loopback default
+is suitable only for local testing.
+
+```bash
+cp .env.example .env
+# Set both required secrets in .env using independent `openssl rand -hex 32` values.
+docker compose up --build --detach
+docker compose ps
+curl http://127.0.0.1:3338/health
+```
+
+The mint database and the privileged lab wallet are stored in the named
+`clear-data` volume. The same image includes `clear-lab`, which can be run in
+the privileged mint container with its injected operator environment:
+
+```bash
+docker compose exec clear clear-lab info
+docker compose exec clear clear-lab issue 25 --memo "Docker lab issue"
+docker compose exec clear clear-lab wallet balance
+docker compose exec clear clear-lab summary
+```
+
+`docker compose down` stops the deployment without removing the named volume.
+
 The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
 The accepted implementation boundary for the first release is described in

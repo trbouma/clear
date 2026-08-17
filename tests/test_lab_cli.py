@@ -275,7 +275,7 @@ def test_lab_cli_send_delivers_then_removes_from_local_wallet(
             },
         },
     )
-    monkeypatch.delenv("CLEAR_LAB_NSEC", raising=False)
+    monkeypatch.setenv("CLEAR_LAB_NSEC", "")
     monkeypatch.setattr(
         "sys.argv",
         [
