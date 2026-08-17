@@ -53,6 +53,25 @@ A Clear transfer can represent an allocation, gift, reimbursement, benefit, or
 exchange. Calling it a transfer keeps the wallet from implying that every CMU
 is money or a cash equivalent.
 
+## Example: gym guest passes
+
+A gym could issue each member a fixed number of transferable guest passes. A
+member holds those units in a compatible wallet and can transfer one to any
+guest. When the guest presents it for admission, the gym verifies the proof,
+accepts it, and retires the unit so it cannot be used again.
+
+```text
+gym issues guest-pass units
+  -> member holds and transfers them
+  -> guest presents one for admission
+  -> gym redeems and retires it
+```
+
+The gym determines how many units are issued, their validity period, and the
+service they represent. Holders control valid units between issuance and
+redemption. The passes are therefore transferable in-kind entitlements rather
+than cash or claims to monetary repayment.
+
 ## What works now
 
 The current lab system can:
@@ -82,4 +101,3 @@ should be used only with test units carrying no promise of financial value.
 [Read the milestone](https://github.com/trbouma/clear/blob/main/docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md){ .md-button .md-button--primary }
 [See how Clear is governed](governance.md){ .md-button }
 [Get started](getting-started.md){ .md-button }
-
