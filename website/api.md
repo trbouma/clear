@@ -47,7 +47,7 @@ name from this metadata while retaining the logical mint, complete protocol
 unit, and authenticated service endpoints as the balance identity and routes.
 
 The target protocol unit is `cmu-<keyset-id>`. The current implementation may
-still return a legacy `PTS` or `pts` value until the code and database migration
+still return a prototype unit value until the code and database migration
 is completed. Endpoint names and Cashu fields that use *proof* retain that
 technical meaning: a Cashu proof is the encoded spendable representation of a
 Mint Note.

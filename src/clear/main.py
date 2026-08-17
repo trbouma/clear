@@ -31,6 +31,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     keyset = Keyset(
         configured.master_secret,
         max_order=configured.max_order,
+        root_authority_npub=configured.root_authority_npub,
     )
     store = Store(configured.database_path, keyset)
 
@@ -42,7 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="Clear",
         description=(
-            "An experimental Cashu mint for organization-defined points "
+            "An experimental Cashu mint for organization-defined Clear Mint Units "
             "without Lightning settlement."
         ),
         version=__version__,
@@ -65,19 +66,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             token, configured.operator_token
         )
 
+    def policy_response():
+        return {
+            "mode": "lab",
+            "root_authority_npub": configured.root_authority_npub,
+            "enforced": False,
+        }
+
+    def currency_alias_response():
+        alias_base = configured.currency_alias or configured.currency_name
+        alias = (
+            configured.currency_alias
+            or f"{configured.currency_name} ({keyset.unit})"
+        )
+        return {
+            "friendly_alias": alias,
+            "friendly_unit_alias": configured.currency_unit_alias,
+            "friendly_alias_key": (
+                f"{alias_base.lower().replace(' ', '-')}:"
+                f"{keyset.fingerprint}"
+            ),
+            "identity_note": (
+                "Suggested wallet label only; balances must bind to mint URL, "
+                "unit, and keyset id."
+            ),
+        }
+
     @app.get("/")
     async def information():
         return {
             "name": "Clear",
             "version": __version__,
-            "description": "Organization-defined Cashu points",
+            "description": "Organization-defined Clear Mint Units",
             "currency": {
                 "name": configured.currency_name,
-                "display_unit": "pts",
+                "display_unit": "CMU",
                 "protocol_unit": keyset.unit,
                 "keyset_fingerprint": keyset.fingerprint,
                 "keyset_id": keyset.id,
+                **currency_alias_response(),
             },
+            "policy": policy_response(),
             "warning": "Developer-stage software; not security reviewed.",
         }
 
@@ -93,11 +122,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "description": f"{configured.currency_name} issued as Clear ecash",
             "currency": {
                 "name": configured.currency_name,
-                "display_unit": "pts",
+                "display_unit": "CMU",
                 "unit": keyset.unit,
                 "keyset_fingerprint": keyset.fingerprint,
                 "keyset_id": keyset.id,
+                **currency_alias_response(),
             },
+            "policy": policy_response(),
             "nuts": {
                 "4": {
                     "methods": [

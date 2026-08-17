@@ -18,9 +18,19 @@ def _scalar(secret: bytes) -> bytes:
     return value.to_bytes(32, "big")
 
 
-def derive_private_key(master_secret: str, amount: int) -> bytes:
+def _derivation_secret(master_secret: str, root_authority_npub: str | None) -> str:
+    if not root_authority_npub:
+        return master_secret
+    return f"{master_secret}|root-authority-npub:{root_authority_npub}"
+
+
+def derive_private_key(
+    master_secret: str,
+    amount: int,
+    root_authority_npub: str | None = None,
+) -> bytes:
     digest = hmac.new(
-        master_secret.encode(),
+        _derivation_secret(master_secret, root_authority_npub).encode(),
         f"clear-keyset-v2:{amount}".encode(),
         hashlib.sha256,
     ).digest()
@@ -41,9 +51,19 @@ def hash_to_curve(message: str) -> PublicKey:
 
 
 class Keyset:
-    def __init__(self, master_secret: str, max_order: int = 20):
+    def __init__(
+        self,
+        master_secret: str,
+        max_order: int = 20,
+        root_authority_npub: str | None = None,
+    ):
+        self.root_authority_npub = root_authority_npub
         self.private_keys = {
-            2**order: derive_private_key(master_secret, 2**order)
+            2**order: derive_private_key(
+                master_secret,
+                2**order,
+                root_authority_npub,
+            )
             for order in range(max_order + 1)
         }
         self.public_keys = {
@@ -55,7 +75,7 @@ class Keyset:
             for amount in sorted(self.public_keys)
         )
         self.fingerprint = "00" + hashlib.sha256(public_key_bytes).hexdigest()[:14]
-        self.unit = f"pts.{self.fingerprint}"
+        self.unit = f"cmu-{self.fingerprint}"
         preimage = ",".join(
             f"{amount}:{self.public_keys[amount]}"
             for amount in sorted(self.public_keys)

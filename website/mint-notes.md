@@ -100,7 +100,7 @@ Bitcoin, fiat, goods, or service payout; the issuer’s policy defines any
 external consequence.
 
 !!! warning "Implementation migration pending"
-    The current Clear code may still expose legacy `PTS` or `pts` identifiers.
+    The current Clear code may still expose older prototype unit identifiers.
     `cmu-<keyset-id>` is the documentation and target protocol contract. Code,
     API, database, and test migration will be reviewed separately.
 

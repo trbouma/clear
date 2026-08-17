@@ -11,11 +11,13 @@ bound to the exact NUT-02 keyset ID, for example
 different logical mints or CMUs together. One logical mint may expose an
 operator-approved **mint cluster** only when its instances synchronously
 coordinate authoritative issuance and spent-note state. A friendly name is
-presentation metadata, not the identity of a Clear Mint Unit.
+presentation metadata, not the identity of a Clear Mint Unit. When configured,
+the root authority npub is part of keyset derivation, so a new root authority
+creates a new CMU.
 
 Mint Note and CMU are the canonical documentation terms. *Cashu proof* remains
 the implementation term for the structure encoding a spendable note. The
-current code may still expose legacy `PTS` or `pts` identifiers until the code,
+current code may still expose older prototype unit identifiers until the code,
 API, database, and test migration is completed. See
 [Mint Notes Vocabulary](docs/MINT-NOTES-VOCABULARY.md).
 
@@ -36,9 +38,10 @@ not be used for financial value or critical organizational accounting.
 poetry install --with dev,docs
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
+export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
 poetry run clear --host 127.0.0.1 --port 3338 \
   --database ./data/clear.sqlite3 \
-  --currency-name "Example Points"
+  --currency-name "Example Credits"
 ```
 
 Then open [http://127.0.0.1:3338/](http://127.0.0.1:3338/),

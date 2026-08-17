@@ -19,7 +19,7 @@ For example:
 cmu-00a1b2c3d4e5f6
 ```
 
-The visible abbreviation **CMU**, pronounced “menu,” is not sufficient
+The visible abbreviation **CMU**, pronounced as the letters “C-M-U,” is not sufficient
 identity. Applications must retain the complete CMU and the authenticated
 issuer or policy domain that recognizes it. A mint endpoint is a service route:
 one logical mint may expose a mint cluster of authorized endpoints. Notes from
@@ -64,7 +64,7 @@ but it cannot silently declare the notes equivalent.
 
 !!! warning "Implementation migration pending"
     The current prototype already derives a keyset-bound unit but may still
-    expose the superseded `PTS` or `pts` syntax. The target identifier is
+    expose superseded prototype unit syntax. The target identifier is
     `cmu-<keyset-id>`. Code, API, database, and test migration remains separate
     work.
 

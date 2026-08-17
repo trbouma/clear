@@ -24,7 +24,7 @@ financial service.
 
 - Derive and expose the exact NUT-02 keyset ID.
 - Form the protocol unit as `cmu-<keyset-id>`.
-- Remove legacy `PTS` and `pts` identifiers from code, APIs, databases, tests,
+- Remove superseded prototype unit identifiers from code, APIs, databases, tests,
   and fixtures.
 - Treat every keyset as a separate CMU and balance.
 

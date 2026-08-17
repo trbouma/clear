@@ -291,8 +291,8 @@ change treasury membership.
 
 ```yaml
 currencies:
-  community-points:
-    policy_event_file: "./policies/community-points-v1.json"
+  community-mint-units:
+    policy_event_file: "./policies/community-mint-units-v1.json"
 ```
 
 The policy file is a complete NIP-01 event whose `pubkey` is the currency-root
@@ -350,10 +350,10 @@ unsigned successor event template:
 
 ```text
 clear policy replace-treasurer \
-  --policy community-points-v1.json \
+  --policy community-mint-units-v1.json \
   --old-npub npub1old... \
   --new-npub npub1new... \
-  --output community-points-v2.unsigned.json
+  --output community-mint-units-v2.unsigned.json
 ```
 
 Before the successor can be signed, the new treasurer key should sign a
@@ -365,7 +365,7 @@ is not required, because key loss or compromise is a primary reason for
 replacement.
 
 The currency root authority signs the template. The mint operator installs the
-resulting `community-points-v2.json` and restarts Clear using the normal policy
+resulting `community-mint-units-v2.json` and restarts Clear using the normal policy
 deployment ceremony. Activation immediately removes the old key's authority.
 Unconsumed authorizations and pending approvals from the previous policy
 version become invalid and must be recreated under the new policy. Already

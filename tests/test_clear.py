@@ -16,7 +16,10 @@ def settings(
     tmp_path,
     *,
     master_secret: str = MASTER_SECRET,
-    currency_name: str = "Example Points",
+    currency_name: str = "Example Credits",
+    root_authority_npub: str | None = None,
+    currency_alias: str | None = None,
+    currency_unit_alias: str | None = None,
 ) -> Settings:
     return Settings(
         database_path=tmp_path / "clear.sqlite3",
@@ -25,6 +28,9 @@ def settings(
         currency_name=currency_name,
         mint_url="https://clear.example",
         max_order=10,
+        root_authority_npub=root_authority_npub,
+        currency_alias=currency_alias,
+        currency_unit_alias=currency_unit_alias,
     )
 
 
@@ -88,18 +94,89 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         mint_info = client.get("/v1/info")
 
     assert health.json() == {"status": "ok"}
-    assert info.json()["currency"]["display_unit"] == "pts"
+    assert info.json()["currency"]["display_unit"] == "CMU"
     currency = info.json()["currency"]
-    assert currency["protocol_unit"] == f"pts.{currency['keyset_fingerprint']}"
+    assert currency["protocol_unit"] == f"cmu-{currency['keyset_fingerprint']}"
     assert keys.json()["keysets"][0]["unit"] == currency["protocol_unit"]
     assert keys.json()["keysets"][0]["id"].startswith("01")
     assert mint_info.json()["currency"] == {
-        "name": "Example Points",
-        "display_unit": "pts",
+        "name": "Example Credits",
+        "display_unit": "CMU",
         "unit": currency["protocol_unit"],
         "keyset_fingerprint": currency["keyset_fingerprint"],
         "keyset_id": currency["keyset_id"],
+        "friendly_alias": f"Example Credits ({currency['protocol_unit']})",
+        "friendly_unit_alias": None,
+        "friendly_alias_key": (
+            f"example-credits:{currency['keyset_fingerprint']}"
+        ),
+        "identity_note": (
+            "Suggested wallet label only; balances must bind to mint URL, "
+            "unit, and keyset id."
+        ),
     }
+    assert info.json()["currency"]["friendly_alias"] == (
+        f"Example Credits ({currency['protocol_unit']})"
+    )
+    assert info.json()["policy"] == {
+        "mode": "lab",
+        "root_authority_npub": None,
+        "enforced": False,
+    }
+    assert mint_info.json()["policy"] == info.json()["policy"]
+
+
+def test_root_authority_npub_is_reported_as_policy_metadata(tmp_path) -> None:
+    root_authority = "npub1clearrootauthority000000000000000000000000000000"
+    configured = settings(tmp_path, root_authority_npub=root_authority)
+    with TestClient(create_app(configured)) as client:
+        info = client.get("/v1/info")
+
+    assert info.json()["policy"] == {
+        "mode": "lab",
+        "root_authority_npub": root_authority,
+        "enforced": False,
+    }
+
+
+def test_currency_aliases_can_be_configured_for_wallet_display(tmp_path) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    with TestClient(create_app(configured)) as client:
+        info = client.get("/v1/info")
+
+    currency = info.json()["currency"]
+    assert currency["friendly_alias"] == "Harbour Lab Credits"
+    assert currency["friendly_unit_alias"] == "smiles"
+    assert currency["friendly_alias_key"] == (
+        f"harbour-lab-credits:{currency['keyset_fingerprint']}"
+    )
+
+
+def test_root_authority_npub_changes_the_active_keyset(tmp_path) -> None:
+    no_root = create_app(settings(tmp_path / "no-root"))
+    first_root = create_app(
+        settings(tmp_path / "first-root", root_authority_npub="npub1firstroot")
+    )
+    second_root = create_app(
+        settings(tmp_path / "second-root", root_authority_npub="npub1secondroot")
+    )
+
+    assert no_root.state.keyset.unit != first_root.state.keyset.unit
+    assert first_root.state.keyset.unit != second_root.state.keyset.unit
+    assert first_root.state.keyset.id != second_root.state.keyset.id
+
+
+def test_missing_root_authority_preserves_legacy_keyset_derivation() -> None:
+    legacy = Keyset(MASTER_SECRET, max_order=10)
+    explicit_none = Keyset(MASTER_SECRET, max_order=10, root_authority_npub=None)
+
+    assert explicit_none.unit == legacy.unit
+    assert explicit_none.id == legacy.id
+    assert explicit_none.public_keys == legacy.public_keys
 
 
 def test_authorized_issuance_is_idempotent(tmp_path) -> None:
@@ -222,7 +299,9 @@ def test_proofs_from_different_clear_currency_are_rejected(tmp_path) -> None:
 
 def test_friendly_name_does_not_change_currency_identity(tmp_path) -> None:
     first = create_app(settings(tmp_path / "first", currency_name="Harbour Credits"))
-    second = create_app(settings(tmp_path / "second", currency_name="Friendly Points"))
+    second = create_app(
+        settings(tmp_path / "second", currency_name="Friendly Credits")
+    )
 
     assert first.state.keyset.unit == second.state.keyset.unit
     assert first.state.keyset.id == second.state.keyset.id
@@ -237,3 +316,61 @@ def test_database_is_bound_to_one_keyset_currency(tmp_path) -> None:
     with pytest.raises(RuntimeError, match="does not match"):
         with TestClient(create_app(changed_secret)):
             pass
+
+
+def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) -> None:
+    dotenv_path = tmp_path / ".env"
+    database_path = tmp_path / "dotenv.sqlite3"
+    dotenv_path.write_text(
+        "\n".join(
+            [
+                f"CLEAR_MASTER_SECRET={MASTER_SECRET}",
+                f"CLEAR_OPERATOR_TOKEN={OPERATOR_TOKEN}",
+                f"CLEAR_DATABASE={database_path}",
+                "CLEAR_CURRENCY_NAME=Dotenv Credits",
+                "CLEAR_ROOT_AUTHORITY_NPUB=npub1dotenvrootauthority",
+                "CLEAR_CURRENCY_ALIAS=Dotenv Alias",
+                "CLEAR_CURRENCY_UNIT_ALIAS=beans",
+            ]
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("CLEAR_MASTER_SECRET", raising=False)
+    monkeypatch.delenv("CLEAR_OPERATOR_TOKEN", raising=False)
+    monkeypatch.delenv("CLEAR_DATABASE", raising=False)
+    monkeypatch.delenv("CLEAR_CURRENCY_NAME", raising=False)
+    monkeypatch.delenv("CLEAR_ROOT_AUTHORITY_NPUB", raising=False)
+    monkeypatch.delenv("CLEAR_CURRENCY_ALIAS", raising=False)
+    monkeypatch.delenv("CLEAR_CURRENCY_UNIT_ALIAS", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.master_secret == MASTER_SECRET
+    assert settings.operator_token == OPERATOR_TOKEN
+    assert settings.database_path == database_path
+    assert settings.currency_name == "Dotenv Credits"
+    assert settings.root_authority_npub == "npub1dotenvrootauthority"
+    assert settings.currency_alias == "Dotenv Alias"
+    assert settings.currency_unit_alias == "beans"
+
+
+def test_environment_values_override_dotenv_file(tmp_path, monkeypatch) -> None:
+    (tmp_path / ".env").write_text(
+        "\n".join(
+            [
+                f"CLEAR_MASTER_SECRET={MASTER_SECRET}",
+                f"CLEAR_OPERATOR_TOKEN={OPERATOR_TOKEN}",
+                "CLEAR_CURRENCY_NAME=Dotenv Credits",
+            ]
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLEAR_MASTER_SECRET", "22" * 32)
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "environment-token-is-long")
+    monkeypatch.setenv("CLEAR_CURRENCY_NAME", "Environment Credits")
+
+    settings = Settings.from_env()
+
+    assert settings.master_secret == "22" * 32
+    assert settings.operator_token == "environment-token-is-long"
+    assert settings.currency_name == "Environment Credits"

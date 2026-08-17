@@ -60,7 +60,7 @@ keysets, but it does not make their Mint Notes automatically interchangeable.
 A configured friendly name remains presentation metadata.
 
 !!! warning "Implementation migration pending"
-    The current code may still expose a legacy keyset-bound `PTS` or `pts`
+    The current code may still expose a prototype keyset-bound unit
     identifier. Migrating those fields and stored values to
     `cmu-<keyset-id>` is the next implementation step.
 

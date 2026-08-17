@@ -4,7 +4,7 @@
 
 This document defines the canonical terminology for Clear documentation and
 the target protocol contract. The current implementation may still expose
-legacy `PTS` or `pts` unit identifiers until the corresponding code, API,
+older prototype unit identifiers until the corresponding code, API,
 database, and test migration is completed.
 
 ## Overview
@@ -220,5 +220,5 @@ the issuer’s published policy.
 | Retirement | Policy outcome after redemption removes notes from circulation |
 
 Avoid **Treasury Note**, which already has an established meaning in government
-debt markets. Treat `PTS-<keyset-id>` and `pts.<identifier>` as superseded
+debt markets. Treat older experimental unit identifiers as superseded
 experimental vocabulary.

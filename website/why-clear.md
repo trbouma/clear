@@ -7,7 +7,7 @@ description: Why organizations may need private, transferable Mint Notes.
 
 Organizations often need to allocate value before they need a payment rail.
 A community may distribute food credits, a program may allocate service units,
-an event may issue participant points, or an emergency team may need a local
+an event may issue participant credits, or an emergency team may need a local
 clearing mechanism.
 
 Conventional account systems can do this, but they place every transfer inside
@@ -66,7 +66,7 @@ eligibility, acceptance, and settlement.
 Clear aims to give these vouchers cash-like flexibility: people hold them
 locally, present or transfer them directly, and do not need a named balance at
 the mint. Blind signatures provide transaction privacy, although wallets,
-networks, and redemption points can still reveal metadata. This is a privacy
+networks, and redemption locations can still reveal metadata. This is a privacy
 design, not a promise of perfect anonymity.
 
 Clear vouchers are not intended to function as legal tender. They are

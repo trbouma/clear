@@ -20,7 +20,7 @@ The protocol term for the bearer instrument is **Mint Note**. Each Mint Note is
 denominated in a keyset-bound **Clear Mint Unit**, identified as
 `cmu-<keyset-id>`. *Cashu proof* remains the implementation term for the data
 structure encoding a spendable note. Programs may still describe their
-real-world purpose using familiar words such as credits, vouchers, or points;
+real-world purpose using familiar words such as credits, vouchers, or allowances;
 those labels do not replace the canonical CMU identifier.
 
 ## Treasury before software
@@ -145,7 +145,7 @@ This approach can be especially useful when several independent providers need
 to cooperate without placing every recipient and transaction inside one shared
 application database. Providers choose which currencies they recognize, and
 holders can present proofs without treating a friendly label such as "food
-points" as sufficient evidence of who stands behind them.
+credits" as sufficient evidence of who stands behind them.
 
 ## Cash-like, not legal tender
 

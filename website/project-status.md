@@ -29,7 +29,7 @@ The first release is intentionally limited to one operator running one
 authoritative Clear deployment with several isolated keysets and CMUs. See the
 [Release Roadmap](release-roadmap.md) for the boundary and acceptance criteria.
 
-- migrate the protocol unit from legacy `PTS` or `pts` syntax to the canonical
+- migrate the protocol unit from superseded prototype unit syntax to the canonical
   `cmu-<keyset-id>` identifier across code, APIs, databases, tests, and fixtures;
 - update user-facing and protocol-facing code to distinguish Mint Notes from
   implementation-level Cashu proofs;

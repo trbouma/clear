@@ -22,7 +22,7 @@ description: Organization-defined Mint Notes with explicit issuance, redemption,
 ## Mint Notes that can circulate
 
 Many organizations already keep internal balances: program credits, community
-funds, service allowances, emergency allocations, event points, or other
+funds, service allowances, emergency allocations, event credits, or other
 limited-purpose value. Clear explores what happens when those balances become
 portable Mint Notes instead of rows tied to one application account.
 

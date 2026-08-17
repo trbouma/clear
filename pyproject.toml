@@ -1,23 +1,26 @@
 [tool.poetry]
 name = "clear-mint"
 version = "0.1.0"
-description = "A Cashu mint for organization-defined points without Lightning settlement"
+description = "A Cashu mint for organization-defined Clear Mint Units without Lightning settlement"
 authors = ["Tim Bouma"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "clear", from = "src" }]
 homepage = "https://trbouma.github.io/clear/"
 repository = "https://github.com/trbouma/clear"
-keywords = ["cashu", "ecash", "points", "local-first", "safebox"]
+keywords = ["cashu", "ecash", "mint-units", "local-first", "safebox"]
 
 [tool.poetry.scripts]
 clear = "clear.cli:main"
+clear-lab = "clear.lab_cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
 coincurve = ">=20.0.0,<22.0.0"
 fastapi = ">=0.115.0,<1.0.0"
 uvicorn = { version = ">=0.34.0,<1.0.0", extras = ["standard"] }
+python-dotenv = ">=1.2.0,<2.0.0"
+monstr = "^0.1.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3.0,<10.0.0"

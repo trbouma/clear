@@ -20,11 +20,18 @@ Generate independent development secrets:
 ```bash
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
+export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
+export CLEAR_CURRENCY_ALIAS="Harbour Lab Credits"
+export CLEAR_CURRENCY_UNIT_ALIAS="smiles"
 ```
 
 The master secret deterministically derives denomination keys and must remain
-local to the mint. The operator token protects routine issuance and retirement
-actions and should be managed separately.
+local to the mint. When `CLEAR_ROOT_AUTHORITY_NPUB` is configured, it is also
+included in keyset derivation so a root authority change creates a new CMU.
+The operator token protects routine lab issuance and retirement actions and
+should be managed separately.
+The optional currency alias and unit alias are wallet-facing display hints for
+this CMU.
 
 ## Start Clear
 
@@ -33,7 +40,7 @@ poetry run clear \
   --host 127.0.0.1 \
   --port 3338 \
   --database ./data/clear.sqlite3 \
-  --currency-name "Example Points"
+  --currency-name "Example Credits"
 ```
 
 Useful development paths:
@@ -43,6 +50,38 @@ Useful development paths:
 - `http://127.0.0.1:3338/docs`
 - `http://127.0.0.1:3338/v1/info`
 - `http://127.0.0.1:3338/v1/keys`
+
+## Lab CLI
+
+```bash
+poetry run clear-lab configure \
+  --currency-name "Harbour Credits" \
+  --currency-alias "Harbour Lab Credits" \
+  --currency-unit-alias "smiles" \
+  --root-authority-npub "npub..."
+poetry run clear-lab info
+poetry run clear-lab issue 25 --memo "wallet circulation test"
+poetry run clear-lab wallet balance
+poetry run clear-lab withdraw 25 --memo "disbursement"
+poetry run clear-lab issue 5 --memo "immediate token" --to-token
+poetry run clear-lab address alice@example.com
+poetry run clear-lab send 5 alice@example.com --memo "address delivery"
+poetry run clear-lab redeem "cashuA..." --memo "returned from wallet"
+poetry run clear-lab summary
+```
+
+A Lightning-address or NIP-05 well-known response can advertise lab Clear
+delivery with a `clear` object:
+
+```json
+{
+  "clear": {
+    "receive": "https://wallet.example/clear/receive",
+    "mints": ["http://127.0.0.1:3338"],
+    "units": ["cmu-0011223344556677"]
+  }
+}
+```
 
 ## Run checks
 
@@ -55,14 +94,16 @@ poetry run mkdocs build --strict
 Clear reports the generated protocol unit and keyset identifiers at `/` and
 `/v1/keys`. Record them with the organization's issuance policy before issuing
 Mint Notes.
+The `/v1/info` response also includes a suggested wallet alias. Wallets may
+display it, but must still bind balances to the mint URL, CMU, and keyset id.
 
 !!! warning
     The target unit is `cmu-<keyset-id>` and is bound to the exact keyset.
-    Changing the master secret or denomination set creates a new keyset and a
-    new CMU. Clear refuses to open an existing database when the configured
-    keyset identity does not match.
+    Changing the master secret, configured root authority npub, or denomination
+    set creates a new keyset and a new CMU. Clear refuses to open an existing
+    database when the configured keyset identity does not match.
 
 !!! note "Current implementation vocabulary"
     Until the code migration is completed, the running prototype may report a
-    legacy `PTS` or `pts` unit instead of `cmu-<keyset-id>`. Do not rewrite an
+    prototype unit instead of `cmu-<keyset-id>`. Do not rewrite an
     existing database value by hand.
