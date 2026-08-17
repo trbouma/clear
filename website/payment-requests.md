@@ -1,12 +1,12 @@
 ---
-title: CMU Payment Requests
-description: Receiver-created payment requests for Mint Notes in one exact CMU.
+title: CMU Transfer Requests
+description: Receiver-created transfer requests for Mint Notes in one exact CMU.
 ---
 
-# CMU Payment Requests
+# CMU Transfer Requests
 
-A Clear payment does not need to begin with a Lightning invoice. The receiving
-wallet can create a Cashu NUT-18 payment request for a particular Clear Mint Unit:
+A Clear transfer does not need to begin with a Lightning invoice. The receiving
+wallet can create a Cashu NUT-18 request for a particular Clear Mint Unit:
 
 ```text
 cmu-<keyset-id>
@@ -40,7 +40,7 @@ a strict mint list. It can request a fixed amount or leave the amount open.
 Wallets must explicitly support custom CMU units. A wallet limited to `sat` or
 other familiar units may correctly decode the request but still decline it.
 
-The request may be delivered as a QR code and the resulting payment payload
+The request may be delivered as a QR code and the resulting transfer payload
 may travel through HTTPS POST, Nostr NIP-17, or an in-band protocol.
 
 ## What the receiver checks
@@ -54,8 +54,8 @@ The receiving wallet checks that:
 - the value covers the amount after input fees; and
 - the mint confirms the proofs are unspent by successfully refreshing them.
 
-A payment remains pending until the proofs have been validated and refreshed.
-The payment request itself is not proof of payment.
+A transfer remains pending until the proofs have been validated and refreshed.
+The request itself is not proof that the transfer was accepted.
 
 ## Release boundary
 
@@ -64,4 +64,4 @@ mint-cluster version may list several endpoints only when they serve the same
 logical mint, keyset, and CMU.
 
 The detailed design and acceptance tests are maintained in the
-[CMU Payment Request design](https://github.com/trbouma/clear/blob/main/docs/CMU-PAYMENT-REQUEST-DESIGN.md).
+[CMU transfer request design](https://github.com/trbouma/clear/blob/main/docs/CMU-PAYMENT-REQUEST-DESIGN.md).

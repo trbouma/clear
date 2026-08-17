@@ -36,7 +36,7 @@ combine the balances simply because they share an operator or friendly name.
 - operator-approved local keyset enrollment;
 - one isolated authoritative ledger per CMU;
 - complete issuance, swap, state-check, redemption, and retirement flows;
-- NUT-18 payment requests for one exact CMU and strict Clear endpoint;
+- NUT-18 transfer requests for one exact CMU and strict Clear endpoint;
 - cross-CMU rejection and concurrent double-spend tests;
 - restart, backup, and ledger-identity checks; and
 - live wallet interoperability.

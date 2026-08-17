@@ -11,7 +11,7 @@ protocol experiment, not a production mint.
 ## Implemented
 
 - deterministic denomination key derivation;
-- keyset-bound protocol-unit derivation using legacy identifier syntax;
+- canonical `cmu-<keyset-id>` protocol-unit derivation;
 - database enforcement of mint identity;
 - Cashu v2 keyset identity;
 - public key and keyset discovery;
@@ -21,7 +21,28 @@ protocol experiment, not a production mint.
 - proof signature validation and spent-state checks;
 - protected proof retirement;
 - SQLite supply and audit accounting;
+- Docker deployment with separate public and privileged API URLs;
+- wallet-facing currency and unit aliases;
+- privileged `clear-lab` issuance, treasury wallet, exact export, send, and
+  retirement workflows;
+- issued, retired, circulating, and local-wallet balance inspection;
+- NIP-05 Clear capability discovery;
+- NIP-59 kind `1059` delivery with inner kind `7379`;
+- tested pending transfer interoperability with Acorn and Safebox Web; and
 - FastAPI, Poetry CLI, tests, and documentation.
+
+## August 2026 transferable CMU milestone
+
+Clear now demonstrates organization-issued CMUs moving from a mint-operated
+treasury to a recipient wallet through a public mint, NIP-05 discovery, Nostr
+relay delivery, Acorn receipt storage, and Safebox Web display.
+
+This is the first end-to-end product-family proof that an organization-defined
+unit can leave the issuer's application boundary as a private bearer transfer.
+It remains a lab milestone: recipient finalization into spendable kind `7380`
+proof state and onward wallet spending are not complete.
+
+[Read the complete milestone](https://github.com/trbouma/clear/blob/main/docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md){ .md-button .md-button--primary }
 
 ## Next
 
@@ -29,8 +50,6 @@ The first release is intentionally limited to one operator running one
 authoritative Clear deployment with several isolated keysets and CMUs. See the
 [Release Roadmap](release-roadmap.md) for the boundary and acceptance criteria.
 
-- migrate the protocol unit from superseded prototype unit syntax to the canonical
-  `cmu-<keyset-id>` identifier across code, APIs, databases, tests, and fixtures;
 - update user-facing and protocol-facing code to distinguish Mint Notes from
   implementation-level Cashu proofs;
 - replace the global operator token with signed, currency-scoped treasurer
@@ -50,7 +69,7 @@ authoritative Clear deployment with several isolated keysets and CMUs. See the
 - separate durable governance-root identity from operational keysets without
   treating their distinct CMUs as interchangeable;
 - introduce isolated multi-currency routing and ledgers;
-- implement the NUT-18 CMU payment-request profile and shared wallet codecs;
+- implement the NUT-18 CMU transfer-request profile and shared wallet codecs;
 - test interoperability with Acorn and other custom-unit-capable wallets;
 - define a signed currency policy record;
 - add operator approval scopes and multi-party authorization;

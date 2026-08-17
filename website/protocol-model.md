@@ -59,10 +59,9 @@ Each new keyset creates a new CMU. A currency root may authorize several
 keysets, but it does not make their Mint Notes automatically interchangeable.
 A configured friendly name remains presentation metadata.
 
-!!! warning "Implementation migration pending"
-    The current code may still expose a prototype keyset-bound unit
-    identifier. Migrating those fields and stored values to
-    `cmu-<keyset-id>` is the next implementation step.
+!!! note "Canonical identifier implemented"
+    The current service exposes `cmu-<keyset-id>` across API responses,
+    database identity, and circulating tokens.
 
 ## Clear redemption and retirement
 

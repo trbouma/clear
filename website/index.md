@@ -14,6 +14,7 @@ description: Organization-defined Mint Notes with explicit issuance, redemption,
 <p class="clear-intro">Clear gives a treasurer an explicit way to issue and retire organization-defined value while Cashu provides blinded Mint Notes, private transfer, and double-spend protection.</p>
 
 [Why Clear?](why-clear.md){ .md-button .md-button--primary }
+[Organization-issued value](organization-issued-value.md){ .md-button .md-button--primary }
 [Get started](getting-started.md){ .md-button }
 [View the source](https://github.com/trbouma/clear){ .md-button }
 
@@ -46,6 +47,13 @@ ecash. Their technical representation remains a Cashu proof.
 The difference is at the boundary: no Lightning invoice creates or redeems the
 notes. A designated treasurer authorizes issuance and accepts Mint Notes for
 redemption and retirement according to the organization's published policy.
+
+The working lab milestone now carries that model across product boundaries:
+Clear issues CMUs into a treasury wallet, sends an encrypted transfer to a
+NIP-05 address, Acorn stores the incoming kind `7379` transfer separately from
+cash, and Safebox Web presents it as a pending Clear Balance.
+
+[See the organization-issued value milestone](organization-issued-value.md){ .md-button .md-button--primary }
 
 <div class="clear-grid" markdown>
 

@@ -3,9 +3,8 @@
 ## Status
 
 This document defines the canonical terminology for Clear documentation and
-the target protocol contract. The current implementation may still expose
-older prototype unit identifiers until the corresponding code, API,
-database, and test migration is completed.
+the protocol contract. The current implementation exposes canonical
+`cmu-<keyset-id>` identifiers across code, API, database identity, and tests.
 
 ## Overview
 

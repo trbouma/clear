@@ -24,8 +24,8 @@ financial service.
 
 - Derive and expose the exact NUT-02 keyset ID.
 - Form the protocol unit as `cmu-<keyset-id>`.
-- Remove superseded prototype unit identifiers from code, APIs, databases, tests,
-  and fixtures.
+- Use canonical `cmu-<keyset-id>` identifiers consistently across code, APIs,
+  databases, tests, and fixtures.
 - Treat every keyset as a separate CMU and balance.
 
 ### Operator-approved keyset enrollment
@@ -85,7 +85,7 @@ treasurer or custodian provides keyset
 - Keep *Mint Note* as the holder-facing term and *Cashu proof* as the technical
   data-structure term.
 
-### CMU payment requests
+### CMU transfer requests
 
 - Implement the Clear profile of Cashu NUT-18 without changing its wire format.
 - Put the exact `cmu-<keyset-id>` in the request unit field.
@@ -93,7 +93,7 @@ treasurer or custodian provides keyset
 - Provide bounded, reusable request and payload codecs for wallet integration.
 - Validate request ID, CMU, proof keyset IDs, mint, amount, input fees, and
   single-use state before finalization.
-- Treat the payment as pending until the receiver refreshes the proofs.
+- Treat the transfer as pending until the receiver refreshes the proofs.
 
 ## Minimum verification
 

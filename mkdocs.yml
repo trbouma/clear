@@ -38,12 +38,13 @@ nav:
   - Home: index.md
   - Understand Clear:
       - Why Clear?: why-clear.md
+      - Organization-Issued Value: organization-issued-value.md
       - Mint Notes and CMU: mint-notes.md
       - Currency Model: currency-model.md
       - How Clear Is Governed: governance.md
       - Old Function, New Tools: old-function-new-tools.md
       - Protocol Model: protocol-model.md
-      - CMU Payment Requests: payment-requests.md
+      - CMU Transfer Requests: payment-requests.md
       - Product Family: product-family.md
   - Operate Clear:
       - Getting Started: getting-started.md

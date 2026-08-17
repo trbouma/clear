@@ -99,10 +99,9 @@ removing the note from circulation. Retirement does not by itself promise a
 Bitcoin, fiat, goods, or service payout; the issuer’s policy defines any
 external consequence.
 
-!!! warning "Implementation migration pending"
-    The current Clear code may still expose older prototype unit identifiers.
-    `cmu-<keyset-id>` is the documentation and target protocol contract. Code,
-    API, database, and test migration will be reviewed separately.
+!!! note "Canonical unit"
+    Clear now exposes `cmu-<keyset-id>` as the protocol contract across its
+    API, database identity, and circulating tokens.
 
 The complete normative vocabulary is maintained in
 [the repository specification](https://github.com/trbouma/clear/blob/main/docs/MINT-NOTES-VOCABULARY.md).

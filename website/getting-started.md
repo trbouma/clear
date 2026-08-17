@@ -121,6 +121,5 @@ display it, but must still bind balances to the mint URL, CMU, and keyset id.
     database when the configured keyset identity does not match.
 
 !!! note "Current implementation vocabulary"
-    Until the code migration is completed, the running prototype may report a
-    prototype unit instead of `cmu-<keyset-id>`. Do not rewrite an
-    existing database value by hand.
+    The running service reports `cmu-<keyset-id>`. Do not rewrite an existing
+    database's unit or keyset identity by hand.

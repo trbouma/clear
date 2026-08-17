@@ -48,8 +48,7 @@ complete protocol unit, and authenticated service endpoints as the balance
 identity and routes. The privileged lab CLI may contact the service through a
 different internal API URL, but circulating tokens always use `mint_url`.
 
-The target protocol unit is `cmu-<keyset-id>`. The current implementation may
-still return a prototype unit value until the code and database migration
-is completed. Endpoint names and Cashu fields that use *proof* retain that
+The protocol unit is `cmu-<keyset-id>` and is returned consistently by the
+current API. Endpoint names and Cashu fields that use *proof* retain that
 technical meaning: a Cashu proof is the encoded spendable representation of a
 Mint Note.

@@ -62,11 +62,11 @@ operational keyset does: the new keyset defines a new CMU and a distinct
 balance. The root authority may authorize an explicit exchange or migration,
 but it cannot silently declare the notes equivalent.
 
-!!! warning "Implementation migration pending"
-    The current prototype already derives a keyset-bound unit but may still
-    expose superseded prototype unit syntax. The target identifier is
-    `cmu-<keyset-id>`. Code, API, database, and test migration remains separate
-    work.
+!!! note "Canonical unit implemented"
+    Clear derives and exposes the canonical `cmu-<keyset-id>` identifier
+    through its API, database identity, and circulating tokens. Existing
+    deployments remain bound to the keyset identity recorded when their
+    database was created.
 
 ## Supply equation
 

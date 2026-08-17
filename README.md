@@ -26,8 +26,8 @@ creates a new CMU.
 
 Mint Note and CMU are the canonical documentation terms. *Cashu proof* remains
 the implementation term for the structure encoding a spendable note. The
-current code may still expose older prototype unit identifiers until the code,
-API, database, and test migration is completed. See
+running service exposes canonical `cmu-<keyset-id>` units across its API,
+tokens, database identity, and tests. See
 [Mint Notes Vocabulary](docs/MINT-NOTES-VOCABULARY.md).
 
 ## Current milestone
@@ -36,6 +36,10 @@ API, database, and test migration is completed. See
 - `clear` mint quotes authorized by an operator rather than a paid invoice
 - operator-authorized Mint Note redemption and proof retirement
 - atomic SQLite issuance, swap, retirement, and spent-proof accounting
+- privileged `clear-lab` treasury issuance, exact export, send, and retirement
+- canonical keyset-bound CMUs with wallet-facing aliases
+- NIP-05 discovery and private NIP-59 kind `7379` delivery
+- pending Clear transfer interoperability with Acorn and Safebox Web
 - FastAPI service, Poetry entry point, tests, and MkDocs documentation
 
 Clear is developer-stage software. It has not been security reviewed and must
@@ -107,6 +111,8 @@ The accepted implementation boundary for the first release is described in
 The current privileged lab issuance, local JSON lab wallet, token retirement,
 and NIP-59 delivery path are described in
 [Lab CMU Issuance and Delivery](docs/LAB-CMU-ISSUANCE-AND-DELIVERY.md).
+The complete cross-product milestone is recorded in
+[Transferable Clear Mint Unit Milestone](docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md).
 
 ## Relationship to Cashu
 
