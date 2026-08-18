@@ -8,6 +8,11 @@ description: The canonical vocabulary for Clear mints, Mint Notes, denominations
 Clear distinguishes the issuer, the bearer instrument it issues, and the unit
 used to denominate that instrument.
 
+A **transferable unit** is the general category for a fungible unit that can
+move between holders under an issuer's policy. A **Clear Mint Unit (CMU)** is
+Clear's concrete form of a transferable unit. A **Mint Note** is the unique
+bearer instrument that represents a fixed quantity of that CMU.
+
 ```text
 Mint
 └── operates a keyset
@@ -36,7 +41,7 @@ Examples include:
 ## Clear Mint Unit
 
 A **Clear Mint Unit**, abbreviated **CMU** and pronounced as the letters
-“C-M-U,” is Clear's concrete form of the generic mint-unit concept. It is
+“C-M-U,” is Clear's concrete form of a transferable unit. It is
 defined by a mint keyset, and its name reflects Clear's role in issuing,
 redeeming, and clearing Mint Notes under an explicit policy. Its canonical
 protocol identifier is:

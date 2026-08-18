@@ -28,9 +28,9 @@ single **Cash Balance**: broadly transferable, general-purpose value that can
 move between people and settle through the Bitcoin and Lightning networks.
 
 Clear adds **Clear Balances** alongside that cash balance. The plural matters:
-each balance is a distinct issuer-defined credit with its own mint, Clear Mint
-Unit, and policy. A Clear balance may represent food credits, service units,
-member benefits, event allowances, or other products and in-kind services. It
+each balance holds a distinct issuer-defined **transferable unit** with its own
+mint, Clear Mint Unit, and policy. A Clear balance may represent food credits,
+service units, member benefits, event allowances, or other products and in-kind services. It
 can circulate privately between wallets, but it is useful where the relevant
 issuer and participating providers recognize it; it is not presumed to be cash
 or universally interchangeable with another Clear balance.

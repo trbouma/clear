@@ -18,6 +18,15 @@ Mint
         └── issues Mint Notes denominated in that CMU
 ```
 
+At the product-model level, a CMU belongs to the broader category of
+**transferable units**. The hierarchy is:
+
+```text
+Transferable unit
+└── Clear Mint Unit (CMU)
+    └── represented by transferable Mint Notes
+```
+
 ## Mint
 
 A **Mint** is a cryptographic issuer and redeemer of bearer instruments.
@@ -48,6 +57,22 @@ A Mint Note is:
 
 Examples include a 1 CMU Mint Note, a 64 CMU Mint Note, and a 1024 CMU Mint
 Note. Wallets may combine notes of the same CMU to express a total amount.
+
+## Transferable unit
+
+A **transferable unit** is a fungible unit whose control can move between
+holders under an issuer's policy. It is the general category for units that can
+circulate independently of an account maintained for each holder.
+
+Transferability does not imply that a unit is cash, legal tender, universally
+accepted, or redeemable for money. A transferable unit may instead represent a
+guest pass, service credit, allowance, benefit, voucher, or another bounded
+entitlement. Its issuer defines the equivalence domain, acceptance rules, and
+redemption or retirement policy.
+
+Clear Mint Unit is the exact Clear protocol term for a transferable unit
+defined by a Clear keyset. Mint Notes are the unique bearer instruments that
+represent quantities of that unit.
 
 ## Clear Mint Unit
 
@@ -211,6 +236,7 @@ the issuer’s published policy.
 | --- | --- |
 | Mint | Cryptographic issuer and redeemer |
 | Mint Note | Bearer instrument issued by a mint keyset |
+| Transferable unit | General category for a fungible unit that can move between holders under an issuer's policy |
 | Clear Mint Unit (CMU) | Keyset-defined unit of account |
 | `cmu-<keyset-id>` | Canonical protocol unit identifier |
 | Mint cluster | Approved mint instances serving one CMU with coordinated double-spend state |

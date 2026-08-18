@@ -9,11 +9,43 @@ Clear demonstrates a simple but consequential idea: an organization can issue
 its own private, transferable units without pretending those units are cash or
 placing every holder inside one central account application.
 
+**Transferable unit** is the broad category: a fungible unit that can move
+between holders under an issuer's rules. **Clear Mint Unit (CMU)** is Clear's
+concrete, keyset-bound implementation of that category, carried in unique
+bearer Mint Notes.
+
 The units may represent food credits, member benefits, service allowances,
 event credits, local vouchers, or another promise defined by the issuer. Clear
-provides the Mint Notes, transfer mechanics, double-spend protection, and supply
-accounting. The organization remains responsible for explaining and honouring
-what the units mean.
+provides the issuance, circulation and redemption machinery. This includes the
+Mint Notes, transfer mechanics, double-spend protection, and supply accounting.
+The organization remains responsible for explaining and honouring what the
+units mean.
+
+## An old treasury function
+
+A treasury may receive funds, recognize an obligation, or allocate a resource,
+then issue units that holders can circulate, exchange, present, or return for
+redemption. Once redeemed, the units may be retired or reissued according to
+the program's policy.
+
+The same functional pattern can support mundane instruments such as drink
+vouchers and gym guest passes, as well as ownership interests, debt claims, or
+other financial instruments. The machinery may be similar while the meaning is
+not. Securities and other regulated instruments require specialized legal,
+governance, transfer, disclosure, and compliance rules that Clear does not
+supply merely by issuing a token.
+
+```text
+treasury receives or recognizes value, resources, or obligations
+  -> authorized issuance creates transferable units
+  -> holders circulate or exchange the units
+  -> a recognized party accepts them for redemption
+  -> the treasury retires or reissues the redeemed units
+```
+
+Clear supplies that technical lifecycle. Each issuing program supplies the
+authority, meaning, eligibility rules, transfer restrictions, redemption
+consequences, and legal framework.
 
 ## From a program to a transferable unit
 
@@ -69,8 +101,8 @@ gym issues guest-pass units
 
 The gym determines how many units are issued, their validity period, and the
 service they represent. Holders control valid units between issuance and
-redemption. The passes are therefore transferable in-kind entitlements rather
-than cash or claims to monetary repayment.
+redemption. The passes are therefore transferable units representing in-kind
+entitlements rather than cash or claims to monetary repayment.
 
 ## What works now
 

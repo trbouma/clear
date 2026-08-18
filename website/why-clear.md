@@ -42,6 +42,10 @@ A Lightning-backed Cashu mint issues Mint Notes after receiving bitcoin and
 redeems notes to pay a Lightning invoice. Clear intentionally removes that
 coupling.
 
+**Clear provides the issuance, circulation and redemption machinery.** The
+issuer's policy determines what enters the treasury, what the resulting units
+represent, who may use them, and what redemption accomplishes.
+
 The organization defines:
 
 - who may authorize issuance;

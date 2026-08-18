@@ -13,8 +13,12 @@ do we hold? Who may allocate them? Under what rules? Who carries out the
 decision? What record proves that the decision was made properly?
 
 Clear does not invent those questions or claim that software can settle them.
-It gives an established treasury function a new way to issue, circulate, and
-retire organization-defined value.
+
+> **Clear provides the issuance, circulation and redemption machinery.**
+
+It gives an established treasury function a digital way to create transferable
+units, let them move between holders, accept them back, and account for their
+retirement or reissue.
 
 The protocol term for the bearer instrument is **Mint Note**. Each Mint Note is
 denominated in a keyset-bound **Clear Mint Unit**, identified as
@@ -22,6 +26,36 @@ denominated in a keyset-bound **Clear Mint Unit**, identified as
 structure encoding a spendable note. Programs may still describe their
 real-world purpose using familiar words such as credits, vouchers, or allowances;
 those labels do not replace the canonical CMU identifier.
+
+## One machinery, many instruments
+
+A treasury may receive funds, recognize an obligation, or allocate a resource
+and then issue units representing a claim, entitlement, interest, or right
+under a defined policy. Holders may circulate, gift, exchange, resell, present,
+or redeem those units when the policy permits.
+
+This pattern is not limited to currency. It can describe drink vouchers, guest
+passes, service credits, warehouse claims, ownership interests, debt claims,
+and many other instruments. Stocks and securities are a particularly important
+class because their issuance, sale, transfer, disclosure, custody, and
+redemption may be subject to extensive regulation.
+
+The shared technical lifecycle does not make the instruments legally or
+economically equivalent:
+
+```text
+treasury receives or recognizes value, resources, or obligations
+  -> authority approves issuance
+  -> transferable units enter circulation
+  -> holders transfer, exchange, or present them
+  -> a recognized party accepts them for redemption
+  -> redeemed units are retired or reissued under policy
+```
+
+Clear provides the cryptographic and accounting machinery for that lifecycle.
+The issuing program must provide the instrument's meaning, governing authority,
+holder eligibility, transfer restrictions, acceptance rules, redemption
+consequences, and applicable legal and regulatory framework.
 
 ## Treasury before software
 

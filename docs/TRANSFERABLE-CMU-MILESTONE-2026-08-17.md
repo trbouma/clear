@@ -5,7 +5,8 @@ Date: 2026-08-17
 ## Summary
 
 Clear, Safebox Acorn, and Safebox Web now demonstrate the first complete
-delivery path for organization-issued Clear Mint Units (CMUs).
+delivery path for organization-issued **transferable units**, represented in
+Clear as Clear Mint Units (CMUs).
 
 An organization can operate a Clear mint, define a named credit program, issue
 CMUs into a privileged treasury wallet, inspect issued and retired supply, and
@@ -13,8 +14,10 @@ send an exact amount to a recipient's NIP-05 address. The recipient can discover
 the encrypted transfer from a Nostr relay and see it as a pending Clear
 transfer in Safebox Web, separate from cash payments.
 
-This milestone establishes a practical foundation for transferable,
-organization-defined value. It is still a lab implementation. Recipient
+This milestone establishes a practical foundation for organization-defined
+transferable units. Transferability does not make a CMU cash: each unit remains
+bounded by its issuer, equivalence domain, and policy. It is still a lab
+implementation. Recipient
 finalization into spendable Clear proof state and onward wallet spending remain
 the next major implementation stage.
 
