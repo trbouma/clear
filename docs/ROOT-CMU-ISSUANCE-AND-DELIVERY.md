@@ -163,8 +163,14 @@ poetry run clear-root retire --proofs-file returned-proofs.json
 
 The mint validates the proofs, marks them spent, and records the retired CMU.
 `redeem` remains a compatibility alias for `retire`; new operator workflows
-should use the accounting term `retire`. Retirement does not imply an external
-payout.
+should use the generalized lifecycle and accounting term `retire`.
+
+Redemption is the normal holder-initiated reason for retirement. Expiration,
+revocation, cancellation, or reconciliation may also lead to retirement under
+a future policy and enforcement model. The current command retires proofs that
+are presented to it and records the optional `--memo`; it does not automatically
+expire units, revoke unpresented bearer notes, or store a structured retirement
+reason. Retirement does not imply an external payout.
 
 ## Supply summary
 

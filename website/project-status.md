@@ -28,7 +28,9 @@ protocol experiment, not a production mint.
 - issued, retired, circulating, and local-wallet balance inspection;
 - NIP-05 Clear capability discovery;
 - NIP-59 kind `1059` delivery with inner kind `7379`;
-- tested pending transfer interoperability with Acorn and Safebox Web; and
+- tested pending transfer interoperability with Acorn and Safebox Web;
+- recipient acceptance into separate kind `7380` spendable proof state and
+  kind `7381` append-only Clear history; and
 - FastAPI, Poetry CLI, tests, and documentation.
 
 ## August 2026 transferable CMU milestone
@@ -38,9 +40,10 @@ treasury to a recipient wallet through a public mint, NIP-05 discovery, Nostr
 relay delivery, Acorn receipt storage, and Safebox Web display.
 
 This is the first end-to-end product-family proof that an organization-defined
-unit can leave the issuer's application boundary as a private bearer transfer.
-It remains a lab milestone: recipient finalization into spendable kind `7380`
-proof state and onward wallet spending are not complete.
+unit can leave the issuer's application boundary as a private bearer transfer
+and be accepted into a distinct spendable Clear Balance. It remains a lab
+milestone: onward wallet spending and stronger crash recovery around acceptance
+are not complete.
 
 [Read the complete milestone](https://github.com/trbouma/clear/blob/main/docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md){ .md-button .md-button--primary }
 

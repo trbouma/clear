@@ -220,15 +220,45 @@ Documentation should use *Mint Note* when discussing what a holder owns or
 transfers, and *proof* when discussing Cashu structures, signature validation,
 nullifiers, API fields, or implementation behavior.
 
-## Redemption and retirement
+## Redemption, retirement, expiration, and revocation
 
 **Redemption** is the protocol action in which a holder returns a Mint Note to
 its issuing mint and the mint validates and consumes it.
 
-**Retirement** is a Clear policy and accounting outcome. A redeemed note may be
-permanently retired from circulation without implying a payout in Bitcoin,
-fiat, goods, or another asset. Any such external consequence must come from
-the issuer’s published policy.
+**Retirement** is the generalized terminal lifecycle and accounting outcome in
+which units are permanently removed from circulation. Redemption is the normal
+holder-initiated path to retirement, but issuer policy may also call for
+retirement after expiration, revocation, cancellation, reconciliation, or
+another authorized event.
+
+```text
+redemption ──────┐
+expiration ──────┤
+revocation ──────┼──> retirement
+cancellation ────┤
+reconciliation ──┘
+```
+
+**Expiration** means that a policy-defined time or condition has made units no
+longer valid for circulation or acceptance. **Revocation** is an exceptional
+authority-initiated invalidation rather than an ordinary holder redemption.
+Each requires an explicit enforcement and accounting design; neither should be
+inferred merely from a memo or friendly label.
+
+The current `retire` operation consumes presented Mint Notes, marks their
+proofs spent, and records their amount as retired supply. Automatic expiration
+and administrative revocation of unpresented bearer notes are not yet separate
+implemented operations.
+
+An issuer may currently state an expiry date in its external redemption policy
+and use that date when deciding whether or how to honour a returned note. That
+policy does not change proof validity: expiry is not encoded in the proof, is
+not checked by swaps or proof-state endpoints, and does not automatically
+retire outstanding units. Wallets may display the policy, but must not present
+it as protocol enforcement.
+
+Retirement does not imply a payout in Bitcoin, fiat, goods, or another asset.
+Any external consequence must come from the issuer’s published policy.
 
 ## Preferred terminology
 
@@ -242,7 +272,10 @@ the issuer’s published policy.
 | Mint cluster | Approved mint instances serving one CMU with coordinated double-spend state |
 | Denomination | Fixed amount represented by a Mint Note |
 | Cashu proof | Technical representation of a spendable Mint Note |
-| Retirement | Policy outcome after redemption removes notes from circulation |
+| Redemption | Holder returns Mint Notes to the issuer for validation and consumption |
+| Retirement | Generalized terminal outcome that permanently removes units from circulation |
+| Expiration | Policy-defined time or condition after which units are no longer valid |
+| Revocation | Exceptional authority-initiated invalidation rather than ordinary redemption |
 
 Avoid **Treasury Note**, which already has an established meaning in government
 debt markets. Treat older experimental unit identifiers as superseded

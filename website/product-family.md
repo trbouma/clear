@@ -8,9 +8,9 @@ description: How Clear fits with Safebox Web, Acorn, Grove, Spurline, Mainstay, 
 Clear is a sibling service, not the wallet or the unified application.
 
 It follows the shared principle **good boundaries, not barriers**. Clear keeps
-its mint, currency, and governance boundaries explicit while standard Cashu
-and Nostr interfaces allow wallets, applications, and local infrastructure to
-work with it.
+its mint, unit, and governance boundaries explicit while standard Cashu and
+Nostr interfaces allow wallets, applications, and local infrastructure to work
+with it.
 
 ```text
                          Mainstay
@@ -36,9 +36,9 @@ confirmed state, and pending state in plain language.
 Spurline can preserve wallet state and signed policy records. Grove can
 preserve supporting policy documents or evidence.
 
-Clear adds an issuance boundary to the family. It does not become a global
-source of authority: each organization remains responsible for its own policy,
-key custody, governance, and recognition.
+Clear adds issuance, circulation and redemption machinery to the family. It
+does not become a global source of authority: each organization remains
+responsible for its own policy, key custody, governance, and recognition.
 
 ## Local economies inside Mainstay
 
@@ -65,7 +65,7 @@ provider settlement. Mainstay supplies a coherent user experience, Acorn holds
 the Mint Notes, Spurline carries local signed events, and Lockbox can host the
 complete local runtime.
 
-Clear currencies remain voluntary, limited-recognition instruments rather than
-legal tender. They extend the family from payment continuity into local
-economic coordination without requiring every Mainstay or Lockbox deployment
-to operate a mint.
+Clear units remain voluntary, limited-recognition instruments rather than legal
+tender. They extend the family from payment continuity into local economic
+coordination without requiring every Mainstay or Lockbox deployment to operate
+a mint.

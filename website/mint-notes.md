@@ -99,10 +99,16 @@ blind signatures may also be described as a **Chaumian Note**.
 ## Redemption and retirement
 
 Redemption means returning a Mint Note to its issuing mint for validation and
-consumption. Clear may record that redemption as retirement, permanently
-removing the note from circulation. Retirement does not by itself promise a
-Bitcoin, fiat, goods, or service payout; the issuer’s policy defines any
-external consequence.
+consumption. Retirement is the broader terminal outcome: units are permanently
+removed from circulation. Redemption is the normal path to retirement, but an
+issuer's policy may also require retirement following expiration, revocation,
+cancellation, reconciliation, or another authorized event.
+
+The current `retire` operation consumes presented notes and records retired
+supply. Automatic expiration and administrative revocation of unpresented
+bearer notes require separate enforcement mechanisms and are not yet
+implemented. Retirement does not by itself promise a Bitcoin, fiat, goods, or
+service payout; the issuer’s policy defines any external consequence.
 
 !!! note "Canonical unit"
     Clear now exposes `cmu-<keyset-id>` as the protocol contract across its

@@ -1,6 +1,6 @@
 ---
 title: Organization-Issued Value
-description: How Clear lets an organization define, issue, transfer, and retire its own bounded units.
+description: How Clear lets an organization define, issue, circulate and redeem its own bounded units.
 ---
 
 # Organization-issued value
@@ -114,18 +114,20 @@ The current lab system can:
 - select an exact transfer amount and retain change;
 - discover Clear support through a recipient's NIP-05 address;
 - deliver an encrypted kind `7379` transfer through NIP-59;
-- let Acorn store the transfer separately from cash; and
-- let Safebox Web display or delete the pending transfer.
+- let Acorn store the transfer separately from cash;
+- accept the transfer into spendable kind `7380` Clear proof state;
+- append kind `7381` Clear transaction history; and
+- let Safebox Web display, accept, or delete the pending transfer.
 
 This is a meaningful interoperability milestone across three independently
 deployable products.
 
 ## What comes next
 
-The next wallet stage will accept pending transfers into spendable Clear proof
-state and enable onward transfers from an ordinary wallet. The production
-authority stage will replace the privileged root operator token with signed,
-currency-scoped treasurer authorization.
+The next wallet stage will make accepted Clear balances transferable onward
+from an ordinary wallet and strengthen crash recovery around mint mutation and
+relay persistence. The production authority stage will replace the privileged
+root operator token with signed, currency-scoped treasurer authorization.
 
 Until those stages and an independent security review are complete, Clear
 should be used only with test units carrying no promise of financial value.

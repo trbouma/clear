@@ -165,8 +165,8 @@ Providers return proofs for retirement and settlement
 The limited recognition is intentional. These vouchers do not need to become
 universal money. Their value comes from a clear promise made by a known
 organization and recognized by a defined network of participants. A food-bank
-voucher and a church transportation voucher remain separate currencies even if
-both use Clear.
+voucher and a church transportation voucher remain separate transferable units
+under separate programs even if both use Clear.
 
 Clear handles issuance evidence, bearer proofs, swaps, spent-state checks, and
 retirement. It does not decide eligibility or perform the real-world settlement
@@ -200,9 +200,9 @@ of redemption can still reveal information.
 The design goal is therefore **cash-like privacy and optionality**, not a
 guarantee that every use is unobservable.
 
-Clear currencies are not intended to be legal tender. Legal tender is a legal
-status attached to a jurisdiction's officially recognized money. In Canada,
-for example, the
+Clear units do not become legal tender merely because they can circulate. Legal
+tender is a legal status attached to a jurisdiction's officially recognized
+money. In Canada, for example, the
 [Bank of Canada describes legal tender](https://www.bankofcanada.ca/2021/01/about-legal-tender/)
 as money approved for paying debts. A Clear voucher makes no such claim. No one
 outside its participating network is expected or required to recognize it, and

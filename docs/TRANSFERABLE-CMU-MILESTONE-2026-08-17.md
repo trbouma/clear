@@ -11,15 +11,15 @@ Clear as Clear Mint Units (CMUs).
 An organization can operate a Clear mint, define a named credit program, issue
 CMUs into a privileged treasury wallet, inspect issued and retired supply, and
 send an exact amount to a recipient's NIP-05 address. The recipient can discover
-the encrypted transfer from a Nostr relay and see it as a pending Clear
-transfer in Safebox Web, separate from cash payments.
+the encrypted transfer from a Nostr relay, see it as a pending Clear transfer in
+Safebox Web, and accept it into a separate spendable Clear Balance.
 
 This milestone establishes a practical foundation for organization-defined
 transferable units. Transferability does not make a CMU cash: each unit remains
 bounded by its issuer, equivalence domain, and policy. It is still a lab
-implementation. Recipient
-finalization into spendable Clear proof state and onward wallet spending remain
-the next major implementation stage.
+implementation. Recipient acceptance into spendable Clear proof state is now
+implemented; onward wallet spending and stronger acceptance crash recovery
+remain the next major implementation stage.
 
 ## Product model
 
@@ -54,7 +54,11 @@ organization configures Clear mint
        containing inner kind 7379 Clear transfer
   -> Acorn unwraps and validates the transfer
   -> Acorn stores it in a separate pending Clear journal
-  -> Safebox Web displays the exact mint and CMU as a Clear Balance
+  -> Safebox Web displays the exact mint and CMU as pending
+  -> recipient accepts the transfer
+  -> Acorn refreshes the proofs with the issuing mint
+  -> Acorn stores kind 7380 spendable state and kind 7381 history
+  -> Safebox Web displays the exact mint and CMU as a spendable Clear Balance
 ```
 
 The tested deployment used a public Clear mint URL, a reverse proxy, Docker,
@@ -142,7 +146,7 @@ Acorn deliberately separates Clear transfer receipts from ordinary ecash:
 - kind `7378` remains the incoming cash/ecash path;
 - kind `7379` is the incoming Clear transfer path;
 - cash proofs remain in kind `7375`;
-- future spendable Clear proofs use kind `7380`; and
+- spendable Clear proofs use kind `7380`; and
 - Clear transaction history uses kind `7381`.
 
 Safebox Web presents one singular **Cash Balance** and plural **Clear
@@ -162,22 +166,23 @@ This milestone does not establish production readiness.
   person even though the product model treats them as separate roles.
 - Keyset rotation creates a distinct CMU; it does not silently preserve
   currency equivalence.
-- Recipient wallets can receive and dismiss pending transfers, but cannot yet
-  finalize and spend them through the complete Clear wallet workflow.
+- Recipient wallets can receive, dismiss, and accept pending transfers into
+  spendable Clear balances, but cannot yet send them onward through the complete
+  Clear wallet workflow.
 
 Use only test units with no promise of financial value.
 
 ## Next implementation stage
 
-The next end-to-end milestone is:
+Pending-transfer validation, mint refresh, kind `7380` proof storage, kind
+`7381` history, bearer-material removal, and explicit accept or delete controls
+are implemented. The next end-to-end milestone is:
 
-1. validate and refresh a pending kind `7379` token against its Clear mint;
-2. persist resulting proofs in encrypted kind `7380` state;
-3. append the balance change to kind `7381` history;
-4. remove bearer material from the pending receipt;
-5. expose explicit accept and reject controls;
-6. spend or send from one exact Clear balance; and
-7. preserve crash recovery across mint mutation and relay persistence.
+1. preserve crash recovery across mint mutation and relay persistence;
+2. select proofs from one exact Clear balance;
+3. create and deliver an exact-amount kind `7379` transfer;
+4. retain change in the same mint and CMU; and
+5. record the outgoing transfer in append-only history.
 
 After that foundation is reliable, the privileged root bootstrap authority can be
 replaced with separately installable, signed, currency-scoped treasurer

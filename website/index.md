@@ -1,6 +1,6 @@
 ---
 title: Clear
-description: Organization-defined Mint Notes with explicit issuance, redemption, and retirement.
+description: Issuance, circulation and redemption machinery for organization-defined transferable units.
 ---
 
 <section class="clear-hero" markdown>
@@ -11,7 +11,7 @@ description: Organization-defined Mint Notes with explicit issuance, redemption,
 
 <p class="clear-tagline">Private, transferable Mint Notes for organizations and communities.</p>
 
-<p class="clear-intro">Clear gives a treasurer an explicit way to issue and retire organization-defined value while Cashu provides blinded Mint Notes, private transfer, and double-spend protection.</p>
+<p class="clear-intro">Organizations have always needed ways to allocate and circulate value. Clear provides the issuance, circulation and redemption machinery for organization-defined transferable units, using the Cashu protocol for private bearer notes and double-spend protection. Clear marries this age-old treasury function and responsibility with new protocols to unlock new ways for organizations and communities to coordinate value.</p>
 
 [Why Clear?](why-clear.md){ .md-button .md-button--primary }
 [Organization-issued value](organization-issued-value.md){ .md-button .md-button--primary }
@@ -30,10 +30,10 @@ move between people and settle through the Bitcoin and Lightning networks.
 Clear adds **Clear Balances** alongside that cash balance. The plural matters:
 each balance holds a distinct issuer-defined **transferable unit** with its own
 mint, Clear Mint Unit, and policy. A Clear balance may represent food credits,
-service units, member benefits, event allowances, or other products and in-kind services. It
-can circulate privately between wallets, but it is useful where the relevant
-issuer and participating providers recognize it; it is not presumed to be cash
-or universally interchangeable with another Clear balance.
+service units, member benefits, event allowances, or other products and in-kind
+services. It can circulate privately between wallets, but it is useful where
+the relevant issuer and participating providers recognize it; it is not
+presumed to be cash or universally interchangeable with another Clear balance.
 
 ## Mint Notes that can circulate
 
@@ -51,7 +51,8 @@ redemption and retirement according to the organization's published policy.
 The working lab milestone now carries that model across product boundaries:
 Clear issues CMUs into a treasury wallet, sends an encrypted transfer to a
 NIP-05 address, Acorn stores the incoming kind `7379` transfer separately from
-cash, and Safebox Web presents it as a pending Clear Balance.
+cash, and Safebox Web lets the recipient accept it into the corresponding
+spendable Clear Balance.
 
 [See the organization-issued value milestone](organization-issued-value.md){ .md-button .md-button--primary }
 
@@ -59,10 +60,10 @@ cash, and Safebox Web presents it as a pending Clear Balance.
 
 <article class="clear-card" markdown>
 
-### Authorize
+### Issue
 
-A treasurer approves a precise issuance amount. Clear does not infer authority
-from a payment invoice.
+A treasurer authorizes a precise amount, and Clear issues the Mint Notes. Clear
+does not infer authority from a payment invoice.
 
 </article>
 
@@ -77,10 +78,10 @@ prevents the underlying Cashu proofs from being spent twice.
 
 <article class="clear-card" markdown>
 
-### Retire
+### Redeem
 
-Redeemed Mint Notes are permanently marked spent and recorded as retired
-supply. No Lightning payout is implied.
+The issuer accepts returned Mint Notes under its policy. Clear marks them spent
+and records retired supply without implying a Lightning payout.
 
 </article>
 
@@ -108,10 +109,10 @@ promises appear to be one balance.
 
 ## Authority stays understandable
 
-Clear separates the organization that governs a currency, the operator that
-runs the mint, and the treasurers who authorize routine issuance and
-retirement. Even when one person fills several roles, each role uses a distinct
-key and leaves different evidence.
+Clear separates the organization that governs a transferable-unit program, the
+operator that runs the mint, and the treasurers who authorize routine issuance,
+redemption, and retirement. Even when one person fills several roles, each role
+uses a distinct key and leaves different evidence.
 
 [See how Clear is governed](governance.md){ .md-button }
 
@@ -124,18 +125,19 @@ service:
 - **Acorn** safeguards user-controlled keys, funds, and records.
 - **Grove** preserves encrypted blobs.
 - **Spurline** preserves and synchronizes Nostr events.
-- **Clear** issues and redeems Mint Notes denominated in keyset-bound CMUs.
+- **Clear** provides issuance, circulation and redemption machinery for Mint
+  Notes denominated in keyset-bound CMUs.
 - **Mainstay** is the future unified application.
 - **Lockbox** is the hardware-first local appliance.
 
-Clear remains independently deployable. Mainstay and Safebox Web can eventually
-make its currencies understandable without hiding who issued them or what each
+Clear remains independently deployable. Mainstay and Safebox Web can make its
+transferable units understandable without hiding who issued them or what each
 one promises.
 
-**Good boundaries, not barriers.** Clear remains the authority for its own
-currency and proof state; it does not become the wallet, relay, application, or
+**Good boundaries, not barriers.** Clear remains the authority for its own Mint
+Notes and proof state; it does not become the wallet, relay, application, or
 universal issuer. Cashu and Nostr interfaces let the family cooperate without
-blurring those responsibilities or making separate currencies interchangeable.
+blurring those responsibilities or making separate units interchangeable.
 
 !!! warning "Experimental software"
     Clear is an early protocol and product experiment. It has not been security

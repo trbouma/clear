@@ -73,7 +73,7 @@ but it cannot silently declare the notes equivalent.
 Clear records a simple supply relationship:
 
 ```text
-outstanding = Mint Notes issued - Mint Notes redeemed and retired
+outstanding = Mint Notes issued - Mint Notes retired
 ```
 
 Swaps within one CMU do not change supply. They consume old Cashu proofs and
@@ -91,10 +91,22 @@ what its Mint Notes represent.
 ## Redemption and retirement
 
 Redemption is the protocol action of returning a Mint Note to its issuing mint
-for validation and consumption. Retirement is the Clear accounting outcome
-when that redeemed note is permanently removed from circulation. Neither term
-by itself promises cash, debt discharge, or delivery of a good. Those meanings
-come from the issuer's policy.
+for validation and consumption. Retirement is the generalized Clear accounting
+outcome when units are permanently removed from circulation. Redemption is one
+cause of retirement; expiration, revocation, cancellation, or reconciliation
+may be others when an issuer's policy and an enforceable protocol mechanism
+support them.
+
+The current mint retires presented proofs by marking them spent. It does not yet
+automatically expire units or revoke unpresented bearer notes. Neither
+redemption nor retirement by itself promises cash, debt discharge, or delivery
+of a good. Those meanings come from the issuer's policy.
+
+For now, an expiry date can exist only in the issuer's external redemption
+policy. The issuer may use it when deciding whether or how to honour a returned
+note, but Clear does not encode the date into proofs, enforce it during swaps,
+or automatically move expired outstanding supply into retired accounting. See
+the [Release Roadmap](release-roadmap.md) for the deferred protocol work.
 
 ## Future exchange
 

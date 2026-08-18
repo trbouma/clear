@@ -1,5 +1,5 @@
 site_name: Clear
-site_description: Organization-defined Mint Notes with explicit issuance, redemption, and retirement.
+site_description: Issuance, circulation and redemption machinery for organization-defined transferable units.
 site_url: https://trbouma.github.io/clear/
 repo_url: https://github.com/trbouma/clear
 repo_name: trbouma/clear
@@ -40,7 +40,7 @@ nav:
       - Why Clear?: why-clear.md
       - Organization-Issued Value: organization-issued-value.md
       - Mint Notes and CMU: mint-notes.md
-      - Currency Model: currency-model.md
+      - Unit and Currency Model: currency-model.md
       - How Clear Is Governed: governance.md
       - Old Function, New Tools: old-function-new-tools.md
       - Protocol Model: protocol-model.md

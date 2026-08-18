@@ -161,6 +161,8 @@ The first release does not include:
 - issuance of one CMU across independently operating databases;
 - quorum or partition handling;
 - automatic exchange between CMUs;
+- proof- or keyset-enforced expiration;
+- administrative revocation of unpresented bearer notes;
 - implicit equivalence across keyset rotation; or
 - production claims before independent security review.
 

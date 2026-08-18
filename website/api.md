@@ -40,6 +40,17 @@ or another trusted local mint environment.
 | `POST` | `/v1/operator/retire` | Validate and permanently retire proofs |
 | `GET` | `/v1/operator/summary` | Read issued, retired, and outstanding supply |
 
+`retire` is deliberately the generalized API term. It consumes presented Mint
+Notes, marks their proofs spent, and records the amount as permanently removed
+from circulation. Holder redemption is the normal reason for retirement, but
+issuer policy may also associate retirement with expiration, revocation,
+cancellation, or reconciliation. The current API accepts presented proofs and
+an optional memo; it does not yet expose a structured retirement-reason field,
+automatic expiration, or revocation of unpresented bearer notes.
+
+Any current expiry date belongs to the issuer's external redemption policy. It
+is not a proof attribute and is not enforced by the Clear API.
+
 The interactive OpenAPI description is available at `/docs` while the service
 is running.
 

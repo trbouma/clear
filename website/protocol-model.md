@@ -76,6 +76,13 @@ melt-to-payment behavior:
 4. Their secrets are atomically marked spent, completing protocol redemption.
 5. The amount is recorded as retired supply.
 
+Retirement is the generalized terminal state, while redemption describes the
+normal holder-initiated event that reaches it. A future policy profile could
+also retire units because they expired, were revoked or cancelled, or required
+reconciliation. Those paths need explicit authorization, proof-selection, and
+accounting semantics. The current endpoint retires only proofs presented to the
+mint; it does not invalidate unseen bearer notes automatically.
+
 ## Compatibility boundary
 
 Mint Notes use normal Cashu proof structures and swaps. However, `clear` is

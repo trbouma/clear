@@ -60,10 +60,33 @@ Mint clusters are deliberately deferred until the single-deployment,
 multi-keyset model is boring and reliable. Periodic synchronization alone is
 not enough to prevent two mint instances from accepting the same note.
 
+## Future feature: protocol-enforced expiry
+
+Expiry is outside the current Clear proof protocol. An issuer may publish an
+expiry date as part of its program policy and apply that policy when deciding
+whether or how to redeem returned Mint Notes. The date is not encoded in the
+proof, does not alter signature validation, and does not automatically stop a
+wallet from holding or transferring the note.
+
+A future protocol-enforced design would need to:
+
+- bind expiry or other lifecycle attributes cryptographically to the unit or
+  proof;
+- preserve those restrictions through blinded issuance and swaps;
+- define mint behavior before and after expiry;
+- distinguish expiry from holder redemption and administrative revocation;
+- define wallet display, clock, grace-period, and offline behavior; and
+- reconcile expired outstanding supply into retired accounting.
+
+Clear will not add an unsigned expiry field to proofs or tokens. Editable
+metadata would create the appearance of enforcement without changing what the
+mint actually validates.
+
 !!! note "Release posture"
     The first release remains experimental and unaudited. Its purpose is to
     establish a clean multi-keyset protocol and operational foundation before
-    distributed issuance is attempted.
+    distributed issuance or protocol-enforced lifecycle conditions are
+    attempted.
 
 The detailed engineering checklist is maintained in the
 [first-release scope](https://github.com/trbouma/clear/blob/main/docs/FIRST-RELEASE-SCOPE.md).
