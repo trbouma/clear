@@ -129,6 +129,28 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
     assert mint_info.json()["policy"] == info.json()["policy"]
 
 
+def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    with TestClient(create_app(configured)) as client:
+        homepage = client.get("/", headers={"Accept": "text/html"})
+        information = client.get("/", headers={"Accept": "application/json"})
+
+    assert homepage.status_code == 200
+    assert homepage.headers["content-type"].startswith("text/html")
+    assert "Harbour Lab Credits" in homepage.text
+    assert "smiles" in homepage.text
+    assert "https://clear.example" in homepage.text
+    assert "Copy mint URL" in homepage.text
+    assert "Organization-issued transferable units" in homepage.text
+    assert information.json()["currency"]["friendly_alias"] == (
+        "Harbour Lab Credits"
+    )
+
+
 def test_root_authority_npub_is_reported_as_policy_metadata(tmp_path) -> None:
     root_authority = "npub1clearrootauthority000000000000000000000000000000"
     configured = settings(tmp_path, root_authority_npub=root_authority)

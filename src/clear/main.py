@@ -8,11 +8,12 @@ from ipaddress import ip_address
 
 from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from clear import __version__
 from clear.config import Settings
 from clear.crypto import Keyset
+from clear.homepage import render_homepage
 from clear.models import (
     CheckStateRequest,
     MintQuoteRequest,
@@ -115,8 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ),
         }
 
-    @app.get("/")
-    async def information():
+    def information_response():
         return {
             "name": "Clear",
             "version": __version__,
@@ -132,6 +132,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "policy": policy_response(),
             "warning": "Developer-stage software; not security reviewed.",
         }
+
+    @app.get("/", response_model=None)
+    async def information(request: Request):
+        accept = request.headers.get("accept", "").lower()
+        if "text/html" in accept:
+            return HTMLResponse(
+                render_homepage(
+                    version=__version__,
+                    mint_url=configured.mint_url,
+                    currency_name=configured.currency_name,
+                    currency_alias=configured.currency_alias,
+                    currency_unit_alias=configured.currency_unit_alias,
+                    protocol_unit=keyset.unit,
+                    keyset_id=keyset.id,
+                    root_authority_configured=(
+                        configured.root_authority_npub is not None
+                    ),
+                )
+            )
+        return information_response()
 
     @app.get("/health")
     async def health():
