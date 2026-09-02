@@ -18,6 +18,13 @@ One operator
 This is a developer or pilot release, not yet a production-grade or audited
 financial service.
 
+Treasurers are optional in this release. A mint may remain in single-operator
+mode, where `clear-root` is the local treasury authority path. When treasurers
+are configured, Clear uses a strict first-release invariant: one active
+treasurer `npub` resolves to exactly one CMU, and one CMU has exactly one
+active treasurer `npub`. The detailed model is defined in
+[First-Release Treasurer and CMU Authority Model](FIRST-RELEASE-TREASURER-CMU-AUTHORITY-MODEL.md).
+
 ## Required capability
 
 ### Root commissioning and treasury gate
@@ -52,7 +59,14 @@ The complete model is defined in
 
 - Let `clear-root` maintain a privileged bootstrap registry of treasurer
   public keys.
-- Grant `keyset:create` as a bounded, single-use authorization by default.
+- Store only treasurer `npub` values. Treasurer `nsec` values must stay with
+  treasurers and must never enter mint configuration, storage, logs, backups,
+  or API requests.
+- Bind one active treasurer `npub` to one CMU for the first release.
+- Make `clear-root treasurer grant <npub>` the single-use operator action that
+  sets up one keyset/CMU creation path for that treasurer.
+- Reject `grant` for an active treasurer `npub` that has already produced a
+  keyset/CMU.
 - Require a valid signed request from an active treasurer before creation.
 - Generate an independent random keyset secret inside the mint.
 - Encrypt each keyset secret at rest and never return it through the API.
@@ -61,6 +75,8 @@ The complete model is defined in
 - Require explicit activation before Clear advertises the keyset, accounts for
   issuance, or accepts responsibility for redemption.
 - Preserve the current master-derived keyset as a compatible legacy keyset.
+- Rotate treasurer authority for an existing CMU by replacing the authorized
+  `npub`, not by rotating the keyset or changing the CMU.
 
 For the first release, `clear-root` and the operator token manage the bootstrap
 treasurer registry. Root-signed policy and remote HSM enforcement remain
@@ -73,6 +89,7 @@ The safe sequence is:
 operator grants one keyset creation to treasurer
   -> treasurer signs a keyset request
   -> mint generates and encrypts a random keyset secret
+  -> grant is consumed and cannot create another keyset
   -> operator activates it locally
   -> Clear creates or verifies its bound ledger
   -> issuance begins through Clear's recorded workflow
@@ -103,6 +120,10 @@ operator grants one keyset creation to treasurer
 
 - Show the complete CMU, keyset ID, friendly name, and active status.
 - Provide supply summaries per CMU.
+- Put whole-unit lifecycle operations under `clear-root cmu`, including
+  `suspend`, `resume`, `redemption-only`, and `retire`.
+- Keep top-level `clear-root retire` scoped to presented Mint Notes, amounts,
+  tokens, or proofs.
 - Make operator actions auditable and idempotent.
 - Keep *Mint Note* as the holder-facing term and *Cashu proof* as the technical
   data-structure term.

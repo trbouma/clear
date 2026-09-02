@@ -36,6 +36,11 @@ A treasurer does not receive the raw keyset secret merely by authorizing its
 creation. A mint operator does not gain governance authority merely because the
 running service can access encrypted key material.
 
+The treasurer private key (`nsec`) remains outside Clear. The mint records and
+verifies only the treasurer public key (`npub`) or its normalized public-key
+form. No Clear configuration file, database row, API request, log entry, backup,
+or operator command should contain a treasurer `nsec`.
+
 The initial implementation may use `clear-root` and the operator token to
 add or remove treasurer public keys. This is an explicitly privileged
 bootstrap registry. A root-signed policy replaces that boundary in the
@@ -56,13 +61,25 @@ A grant records:
 - the granting authority and audit reference; and
 - consumed time and resulting keyset ID, when used.
 
-Rotation requires a new grant. This allows one treasurer identity to authorize
-more than one keyset over time without giving it permanent, unbounded creation
-authority.
+In the first release, `clear-root treasurer grant <npub>` sets up one
+keyset/CMU creation path for that treasurer. The grant is consumed when the
+keyset is created. If that treasurer `npub` has already produced a keyset, a
+second grant for the same active treasurer must fail instead of creating
+another CMU.
+
+Keyset rotation requires an explicit future procedure. In the first release,
+one treasurer identity authorizes at most one CMU at a time; allowing one
+treasurer identity to authorize multiple CMUs is deferred until explicit
+selection and policy rules exist.
 
 Removing a treasurer prevents future authorizations. It does not invalidate a
 keyset already created, alter its CMU, or invalidate its circulating Mint
 Notes.
+
+Replacing the authorized treasurer `npub` for an existing CMU is treasurer
+authority rotation, not keyset rotation. It changes who may authorize future
+actions for that CMU, but it does not change the keyset, CMU, ledger, wallet
+balance identity, or existing Mint Notes.
 
 ## Keyset generation
 
@@ -119,6 +136,12 @@ Each persisted keyset has an explicit state:
 
 Creating a successor keyset creates a new CMU. It does not silently continue
 or merge the old balance.
+
+Whole-CMU lifecycle transitions use an explicit `clear-root cmu` command group,
+for example `clear-root cmu suspend`, `clear-root cmu redemption-only`, and
+`clear-root cmu retire`. The top-level `clear-root retire` command remains
+reserved for retiring presented Mint Notes, amounts, tokens, or proofs from
+circulation.
 
 ## Migration
 
@@ -183,7 +206,7 @@ The prototype remains consolidated under `clear-root`:
 clear-root treasurer add <npub>
 clear-root treasurer remove <npub>
 clear-root treasurer list
-clear-root treasurer grant <npub> --scope keyset:create --uses 1
+clear-root treasurer grant <npub>
 clear-root keyset create --authorization <signed-request>
 clear-root keyset list
 ```
@@ -197,3 +220,8 @@ non-loopback clients, even when they present the correct bearer token.
 The treasurer private key never enters mint configuration. A future extracted
 treasury CLI can create and sign the authorization while preserving the same
 request and audit formats.
+
+In the first-release treasury CLI flow, the treasurer's `nsec` derives an
+`npub`, and the mint resolves that `npub` to exactly one CMU. If the `npub` is
+unknown, rotated out, suspended, or ambiguously associated with more than one
+CMU, the command fails closed.

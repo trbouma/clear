@@ -120,6 +120,9 @@ docker compose exec clear clear-root summary
 
 The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
+The accepted first-release rule that treasurers are optional, and that one
+active treasurer `npub` maps to one CMU, is described in
+[First-Release Treasurer and CMU Authority Model](docs/FIRST-RELEASE-TREASURER-CMU-AUTHORITY-MODEL.md).
 The accepted custody and creation model for new keysets is described in
 [Treasurer-Authorized Random Keysets](docs/TREASURER-AUTHORIZED-RANDOM-KEYSETS-DESIGN.md).
 The required acceptance gate before treasurer access is described in
