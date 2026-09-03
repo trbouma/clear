@@ -226,11 +226,47 @@ The following failures are expected and should be treated as safety features:
 
 ## After Onboarding
 
-After this first slice, the mint can advertise the new CMU and bind it to the
-authorized treasurer record. Remote treasurer issuance and retirement commands
-are separate follow-on work. Until those commands exist, `clear-root` remains
-the privileged local operator path for existing issue, wallet, send, retire,
-summary, and inspection operations.
+After onboarding, the treasurer can issue Mint Notes for their CMU:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  issue 25 \
+  --memo "Workshop credits"
+```
+
+By default, issued proofs are stored in a local treasurer wallet. The default
+wallet path is derived from the mint URL and the treasurer `npub`:
+
+```text
+~/.clear/treasury-wallets/<mint-host>-<mint-hash>/<treasurer-npub>.json
+```
+
+This keeps different treasurer keys and different mints in separate local
+wallet files. The path can be overridden with `--wallet` or
+`CLEAR_TREASURY_WALLET`.
+
+The treasurer can inspect the local wallet balance with:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  wallet balance
+```
+
+Or issue directly to a token instead of storing the proofs:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  issue 25 \
+  --memo "Workshop credits" \
+  --to-token
+```
+
+Remote treasurer send and retirement commands are separate follow-on work. Until
+those commands exist, `clear-root` remains the privileged local operator path
+for existing send, retire, summary, and inspection operations.
 
 Treasurer key rotation for an existing CMU belongs under:
 

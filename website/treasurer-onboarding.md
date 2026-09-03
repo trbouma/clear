@@ -161,6 +161,43 @@ These failures are expected:
   rejected; and
 - `clear-root` refuses non-loopback operator API URLs.
 
-Remote treasurer issuance and retirement commands are follow-on work. This
-first slice onboards the treasurer, consumes the signed grant, creates the
-CMU, and advertises its keyset.
+## 9. Treasurer Issues Mint Notes
+
+After onboarding, the treasurer can issue Mint Notes for their CMU:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  issue 25 \
+  --memo "Workshop credits"
+```
+
+By default, issued proofs are stored in a local treasurer wallet. The wallet
+path is derived from the mint URL and treasurer `npub`:
+
+```text
+~/.clear/treasury-wallets/<mint-host>-<mint-hash>/<treasurer-npub>.json
+```
+
+Different `nsec`s and different mints therefore get different wallet files.
+The path can be overridden with `--wallet` or `CLEAR_TREASURY_WALLET`.
+
+Check the local wallet with:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  wallet balance
+```
+
+To issue directly to a token instead of the local wallet:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  issue 25 \
+  --memo "Workshop credits" \
+  --to-token
+```
+
+Remote treasurer send and retirement commands are follow-on work.

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from stroma import Event, Keys
 
 from clear import treasury
 from clear.tokens import decode_token_v3, encode_token_v3
+from clear.treasury_auth import TREASURY_EVENT_KIND
 
 
 def test_split_amount_into_supported_denominations() -> None:
@@ -96,6 +98,98 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
         None,
         "operator-token",
     )
+
+
+def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> None:
+    calls = []
+    treasurer = Keys(priv_k="1".zfill(64))
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((method, path, payload, token))
+        if path == "/v1/treasury/cmus/info":
+            event = Event.load(payload["event"], validate=True)
+            assert event is not None
+            assert event.kind == TREASURY_EVENT_KIND
+            assert event.pub_key == treasurer.public_key_hex()
+            return {
+                "unit": "cmu-created",
+                "keyset_id": "keyset-created",
+                "friendly_name": "Treasurer Credits",
+                "status": "active",
+            }
+        if path == "/v1/info":
+            return {"mint_url": "https://clear.example"}
+        if path == "/v1/keys/keyset-created":
+            return {
+                "keysets": [
+                    {
+                        "id": "keyset-created",
+                        "keys": {"1": "pub1", "4": "pub4", "8": "pub8"},
+                    }
+                ]
+            }
+        if path == "/v1/mint/quote/clear":
+            return {"quote": "quote-id"}
+        if path == "/v1/treasury/quotes/quote-id/authorize":
+            event = Event.load(payload["event"], validate=True)
+            assert event is not None
+            assert event.pub_key == treasurer.public_key_hex()
+            return {"quote": "quote-id", "amount_paid": 13}
+        if path == "/v1/mint/clear":
+            return {
+                "signatures": [
+                    {"C_": "promise-8"},
+                    {"C_": "promise-4"},
+                    {"C_": "promise-1"},
+                ]
+            }
+        raise AssertionError(path)
+
+    class FakeOutput:
+        def __init__(self, amount):
+            self.amount = amount
+            self.payload = {
+                "amount": amount,
+                "id": "keyset-created",
+                "B_": f"B-{amount}",
+            }
+
+    monkeypatch.setattr(treasury, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        treasury,
+        "blind_output",
+        lambda amount, keyset_id: FakeOutput(amount),
+    )
+    monkeypatch.setattr(
+        treasury,
+        "unblind_signature",
+        lambda output, promise, mint_public_key: {
+            "amount": output.amount,
+            "id": output.payload["id"],
+            "secret": f"secret-{output.amount}",
+            "C": promise["C_"],
+        },
+    )
+
+    issued = treasury.issue_treasury_units(
+        "https://clear.example/",
+        treasurer.private_key_bech32(),
+        13,
+        memo="test issuance",
+    )
+
+    assert issued["mint"] == "https://clear.example"
+    assert issued["unit"] == "cmu-created"
+    assert issued["keyset_id"] == "keyset-created"
+    assert [proof["amount"] for proof in issued["proofs"]] == [8, 4, 1]
+    assert calls[3] == (
+        "POST",
+        "/v1/mint/quote/clear",
+        {"amount": 13, "unit": "cmu-created", "memo": "test issuance"},
+        None,
+    )
+    assert calls[4][0:2] == ("POST", "/v1/treasury/quotes/quote-id/authorize")
+    assert calls[4][3] is None
 
 
 def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> None:

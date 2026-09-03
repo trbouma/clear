@@ -733,6 +733,53 @@ class Store:
             "treasurer_pubkey": event["pubkey"],
         }
 
+    def authorize_quote_from_treasury_envelope(
+        self,
+        envelope: dict,
+        *,
+        mint_url: str,
+    ) -> dict:
+        try:
+            payload, event = verify_envelope(
+                envelope,
+                expected_action="quote:authorize",
+                expected_mint=mint_url,
+            )
+        except TreasuryAuthError as exc:
+            raise ClearError(str(exc)) from exc
+        quote_id = payload.get("quote_id")
+        if not isinstance(quote_id, str) or not quote_id:
+            raise ClearError("treasury request quote_id is missing")
+        now = self._now()
+        with self._transaction() as connection:
+            if connection.execute(
+                "SELECT 1 FROM treasury_nonces WHERE nonce = ?",
+                (payload["nonce"],),
+            ).fetchone():
+                raise ClearError("treasury request nonce has already been used")
+            quote = connection.execute(
+                "SELECT * FROM mint_quotes WHERE id = ?", (quote_id,)
+            ).fetchone()
+            if quote is None:
+                raise ClearError("quote not found")
+            cmu = connection.execute(
+                """
+                SELECT c.* FROM cmus c
+                JOIN treasurers t ON t.npub = c.treasurer_npub
+                WHERE c.keyset_id = ? AND c.status = 'active' AND t.status = 'active'
+                """,
+                (quote["keyset_id"],),
+            ).fetchone()
+            if cmu is None:
+                raise ClearError("quote is not bound to an active treasurer CMU")
+            if not self._grant_matches_pubkey(cmu["treasurer_npub"], event["pubkey"]):
+                raise ClearError("treasury signature does not match quote CMU")
+            connection.execute(
+                "INSERT INTO treasury_nonces VALUES (?, ?, ?, ?)",
+                (payload["nonce"], event["pubkey"], payload["action"], now),
+            )
+        return self.authorize_quote(quote_id)
+
     def _pending_cmu_grant(self, connection, grant_id: str):
         grant = connection.execute(
             "SELECT * FROM treasurer_grants WHERE id = ?", (grant_id,)

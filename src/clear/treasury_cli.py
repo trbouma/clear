@@ -3,20 +3,25 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
-from clear.treasury import TreasuryError, request_json
+from clear.root_wallet import deposit_issue, load_wallet, wallet_summary
+from clear.treasury import TreasuryError, issue_treasury_units, request_json
 from clear.treasury_auth import (
     TreasuryAuthError,
     build_cmu_create_envelope,
     build_cmu_info_envelope,
     npub_from_nsec,
 )
+
+DEFAULT_TREASURY_WALLET_BASE = Path("~/.clear/treasury-wallets").expanduser()
 
 
 def _print_json(payload: dict) -> None:
@@ -28,6 +33,20 @@ def _treasurer_nsec(args) -> str:
     if not nsec:
         raise TreasuryError("treasurer nsec must be supplied with --nsec")
     return nsec
+
+
+def _wallet_path(args, nsec: str | None = None) -> Path:
+    if args.wallet:
+        return Path(args.wallet).expanduser()
+    if env_path := os.getenv("CLEAR_TREASURY_WALLET"):
+        return Path(env_path).expanduser()
+    if nsec is None:
+        nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    host = urlparse(mint).netloc or mint.replace("://", "_")
+    treasurer_npub = npub_from_nsec(nsec)
+    digest = hashlib.sha256(mint.encode()).hexdigest()[:12]
+    return DEFAULT_TREASURY_WALLET_BASE / f"{host}-{digest}" / f"{treasurer_npub}.json"
 
 
 def cmu_create(args) -> int:
@@ -45,6 +64,44 @@ def cmu_create(args) -> int:
         {
             **result,
             "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
+def issue(args) -> int:
+    nsec = _treasurer_nsec(args)
+    issued = issue_treasury_units(
+        args.mint.rstrip("/"),
+        nsec,
+        args.amount,
+        memo=args.memo,
+        lifetime_seconds=args.lifetime,
+    )
+    if not args.to_token:
+        summary = deposit_issue(issued, _wallet_path(args, nsec))
+        issued = {
+            key: value
+            for key, value in issued.items()
+            if key not in {"token", "proofs"}
+        }
+        issued["wallet"] = summary
+    _print_json(
+        {
+            **issued,
+            "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
+def wallet_balance(args) -> int:
+    nsec = _treasurer_nsec(args)
+    path = _wallet_path(args, nsec)
+    _print_json(
+        {
+            "treasurer_npub": npub_from_nsec(nsec),
+            **wallet_summary(load_wallet(path), path),
         }
     )
     return 0
@@ -86,8 +143,38 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         default=None,
         help="Treasurer nsec. Defaults to CLEAR_TREASURER_NSEC.",
     )
+    result.add_argument(
+        "--wallet",
+        default=None,
+        help=(
+            "Treasurer wallet JSON path. Defaults to CLEAR_TREASURY_WALLET or "
+            "~/.clear/treasury-wallets/<mint>/<treasurer-npub>.json."
+        ),
+    )
 
     subcommands = result.add_subparsers(dest="command", required=True)
+    issue_parser = subcommands.add_parser(
+        "issue",
+        help="Issue CMU controlled by the treasurer nsec into the treasury wallet.",
+    )
+    issue_parser.add_argument("amount", type=int, help="Amount of CMU to issue.")
+    issue_parser.add_argument("--memo", default=None, help="Optional quote memo.")
+    issue_parser.add_argument(
+        "--to-token",
+        action="store_true",
+        help=(
+            "Encode the issued CMU as a Cashu token immediately instead of "
+            "storing its proofs in the treasury wallet."
+        ),
+    )
+    issue_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    issue_parser.set_defaults(handler=issue)
+
     cmu_parser = subcommands.add_parser("cmu", help="Treasurer CMU actions.")
     cmu_subcommands = cmu_parser.add_subparsers(dest="cmu_command", required=True)
     cmu_create_parser = cmu_subcommands.add_parser(
@@ -114,6 +201,20 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     cmu_info_parser.set_defaults(handler=cmu_info)
+
+    wallet_parser = subcommands.add_parser(
+        "wallet",
+        help="Manage local treasury wallet.",
+    )
+    wallet_subcommands = wallet_parser.add_subparsers(
+        dest="wallet_command",
+        required=True,
+    )
+    balance_parser = wallet_subcommands.add_parser(
+        "balance",
+        help="Show local treasury wallet balances.",
+    )
+    balance_parser.set_defaults(handler=wallet_balance)
     return result
 
 

@@ -195,6 +195,110 @@ def issue_token(
     return issue_units(mint_url, operator_token, amount, memo=memo)
 
 
+def issue_treasury_units(
+    mint_url: str,
+    nsec: str,
+    amount: int,
+    *,
+    memo: str | None = None,
+    lifetime_seconds: int = 300,
+) -> dict[str, Any]:
+    from clear.treasury_auth import (
+        build_cmu_info_envelope,
+        build_quote_authorize_envelope,
+    )
+
+    api_url = mint_url.rstrip("/")
+    cmu = request_json(
+        api_url,
+        "POST",
+        "/v1/treasury/cmus/info",
+        build_cmu_info_envelope(
+            mint=api_url,
+            nsec=nsec,
+            lifetime_seconds=lifetime_seconds,
+        ),
+    )
+    token_mint_url = advertised_mint_url(
+        request_json(api_url, "GET", "/v1/info"),
+        api_url,
+    )
+    keyset_response = request_json(
+        api_url,
+        "GET",
+        f"/v1/keys/{cmu['keyset_id']}",
+    )
+    keysets = keyset_response.get("keysets") or []
+    if len(keysets) != 1:
+        raise TreasuryError("mint returned an unexpected keyset response")
+    keyset = keysets[0]
+    keys = keyset["keys"]
+
+    denominations = split_amount(amount)
+    missing = [
+        denomination
+        for denomination in denominations
+        if str(denomination) not in keys
+    ]
+    if missing:
+        raise TreasuryError(
+            "mint does not advertise keys for denominations: "
+            + ", ".join(str(each) for each in missing)
+        )
+
+    quote_payload: dict[str, Any] = {"amount": amount, "unit": cmu["unit"]}
+    if memo:
+        quote_payload["memo"] = memo
+    quote = request_json(api_url, "POST", "/v1/mint/quote/clear", quote_payload)
+    request_json(
+        api_url,
+        "POST",
+        f"/v1/treasury/quotes/{quote['quote']}/authorize",
+        build_quote_authorize_envelope(
+            mint=api_url,
+            quote_id=quote["quote"],
+            nsec=nsec,
+            lifetime_seconds=lifetime_seconds,
+        ),
+    )
+
+    outputs = [
+        blind_output(denomination, cmu["keyset_id"])
+        for denomination in denominations
+    ]
+    minted = request_json(
+        api_url,
+        "POST",
+        "/v1/mint/clear",
+        {"quote": quote["quote"], "outputs": [output.payload for output in outputs]},
+    )
+
+    promises = minted["signatures"]
+    if len(promises) != len(outputs):
+        raise TreasuryError("mint returned an unexpected number of signatures")
+
+    proofs = [
+        unblind_signature(output, promise, keys[str(output.amount)])
+        for output, promise in zip(outputs, promises, strict=True)
+    ]
+    token = encode_token_v3(
+        mint=token_mint_url,
+        proofs=proofs,
+        unit=cmu["unit"],
+        memo=memo,
+    )
+    return {
+        "mint": token_mint_url,
+        "unit": cmu["unit"],
+        "keyset_id": cmu["keyset_id"],
+        "quote": quote["quote"],
+        "amount": amount,
+        "memo": memo,
+        "token": token,
+        "proofs": proofs,
+    }
+
+
 def swap_token_for_amount(
     mint_url: str,
     inputs: list[dict[str, Any]],

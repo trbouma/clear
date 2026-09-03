@@ -9,7 +9,11 @@ from clear.config import Settings
 from clear.crypto import CURVE_ORDER, Keyset, hash_to_curve
 from clear.main import create_app
 from clear.store import ClearError
-from clear.treasury_auth import build_cmu_create_envelope, build_cmu_info_envelope
+from clear.treasury_auth import (
+    build_cmu_create_envelope,
+    build_cmu_info_envelope,
+    build_quote_authorize_envelope,
+)
 
 MASTER_SECRET = "11" * 32
 OPERATOR_TOKEN = "operator-token-that-is-long-enough"
@@ -681,6 +685,88 @@ def test_treasury_cmu_info_rejects_unbound_treasurer(tmp_path) -> None:
 
     assert response.status_code == 400
     assert "does not control an active CMU" in response.json()["detail"]
+
+
+def test_treasurer_can_authorize_quote_for_bound_cmu(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Treasurer Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        quote = client.post(
+            "/v1/mint/quote/clear",
+            json={"amount": 8, "unit": cmu["unit"]},
+        ).json()
+        response = client.post(
+            f"/v1/treasury/quotes/{quote['quote']}/authorize",
+            json=build_quote_authorize_envelope(
+                mint="https://clear.example",
+                quote_id=quote["quote"],
+                nsec=treasurer.private_key_bech32(),
+            ),
+        )
+
+    assert response.status_code == 200
+    assert response.json()["amount_paid"] == 8
+
+
+def test_treasury_quote_authorization_rejects_wrong_treasurer(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    wrong = Keys(priv_k="2".zfill(64))
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": treasurer.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": treasurer.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Treasurer Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        quote = client.post(
+            "/v1/mint/quote/clear",
+            json={"amount": 8, "unit": cmu["unit"]},
+        ).json()
+        response = client.post(
+            f"/v1/treasury/quotes/{quote['quote']}/authorize",
+            json=build_quote_authorize_envelope(
+                mint="https://clear.example",
+                quote_id=quote["quote"],
+                nsec=wrong.private_key_bech32(),
+            ),
+        )
+
+    assert response.status_code == 400
+    assert "does not match quote CMU" in response.json()["detail"]
 
 
 def test_treasury_route_rejects_signature_from_wrong_treasurer(tmp_path) -> None:
