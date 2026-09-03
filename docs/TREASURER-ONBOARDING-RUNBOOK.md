@@ -198,6 +198,18 @@ active CMU controlled by that treasurer key and fails closed if the key is
 unknown, rotated out, inactive, or ambiguously associated with more than one
 active CMU.
 
+The treasurer can inspect total supply for that CMU with:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  cmu summary
+```
+
+This is different from `wallet balance`: `cmu summary` reports mint-side issued,
+retired, circulating, and outstanding totals for the whole CMU; `wallet balance`
+reports only proofs held in the treasurer's local wallet file.
+
 ## Step 8: Operator Verifies the Result
 
 The operator verifies that the grant was consumed and the new CMU exists:
@@ -310,8 +322,8 @@ authorizes treasury actions and selects the local wallet; it is not reused as
 the delivery sender key.
 
 Remote treasurer retirement is separate follow-on work. Until that command
-exists, `clear-root` remains the privileged local operator path for retire,
-summary, and inspection operations.
+exists, `clear-root` remains the privileged local operator path for retiring
+presented proofs.
 
 Treasurer key rotation for an existing CMU belongs under:
 

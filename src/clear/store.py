@@ -487,7 +487,7 @@ class Store:
                 "INSERT INTO issue_batches VALUES (?, ?, ?, ?)",
                 (request_hash, quote_id, amount, json.dumps(signatures)),
             )
-            self._audit(connection, "issue", amount, quote_id)
+            self._audit(connection, "issue", amount, quote_id, quote["keyset_id"])
             return signatures
 
     def swap(self, inputs: list[Proof], outputs: list[BlindedMessage]) -> list[dict]:
@@ -537,23 +537,72 @@ class Store:
 
     def summary(self) -> dict:
         with self._connection() as connection:
-            rows = connection.execute(
-                "SELECT action, COALESCE(SUM(amount), 0) amount FROM audit_log "
-                "WHERE keyset_id = ? GROUP BY action",
-                (self.keyset.id,),
-            ).fetchall()
+            return self._summary_for_keyset_id(connection, self.keyset.id)
+
+    @staticmethod
+    def _summary_for_keyset_id(connection, keyset_id: str) -> dict:
+        cmu = connection.execute(
+            "SELECT unit, keyset_id FROM cmus WHERE keyset_id = ?",
+            (keyset_id,),
+        ).fetchone()
+        if cmu is None:
+            raise ClearError("CMU not found")
+        rows = connection.execute(
+            "SELECT action, COALESCE(SUM(amount), 0) amount FROM audit_log "
+            "WHERE keyset_id = ? GROUP BY action",
+            (keyset_id,),
+        ).fetchall()
         totals = {row["action"]: row["amount"] for row in rows}
         issued = totals.get("issue", 0)
         retired = totals.get("retire", 0)
         circulating = issued - retired
         return {
-            "unit": self.keyset.unit,
-            "keyset_id": self.keyset.id,
+            "unit": cmu["unit"],
+            "keyset_id": cmu["keyset_id"],
             "issued": issued,
             "retired": retired,
             "circulating": circulating,
             "outstanding": circulating,
         }
+
+    def _active_cmu_for_treasury_pubkey(self, connection, pubkey: str):
+        rows = connection.execute(
+            """
+            SELECT c.* FROM cmus c
+            JOIN treasurers t ON t.npub = c.treasurer_npub
+            WHERE t.status = 'active' AND c.status = 'active'
+            ORDER BY c.created_at, c.keyset_id
+            """
+        ).fetchall()
+        matches = [
+            row
+            for row in rows
+            if self._grant_matches_pubkey(row["treasurer_npub"], pubkey)
+        ]
+        if not matches:
+            raise ClearError("treasurer does not control an active CMU")
+        if len(matches) > 1:
+            raise ClearError("treasurer controls multiple active CMUs")
+        return matches[0]
+
+    @staticmethod
+    def _record_treasury_nonce(
+        connection,
+        *,
+        nonce: str,
+        pubkey: str,
+        action: str,
+        now: int,
+    ) -> None:
+        if connection.execute(
+            "SELECT 1 FROM treasury_nonces WHERE nonce = ?",
+            (nonce,),
+        ).fetchone():
+            raise ClearError("treasury request nonce has already been used")
+        connection.execute(
+            "INSERT INTO treasury_nonces VALUES (?, ?, ?, ?)",
+            (nonce, pubkey, action, now),
+        )
 
     def add_treasurer(self, npub: str) -> dict:
         normalized = self._normalize_npub(npub)
@@ -771,34 +820,46 @@ class Store:
             raise ClearError(str(exc)) from exc
         now = self._now()
         with self._transaction() as connection:
-            if connection.execute(
-                "SELECT 1 FROM treasury_nonces WHERE nonce = ?",
-                (payload["nonce"],),
-            ).fetchone():
-                raise ClearError("treasury request nonce has already been used")
-            rows = connection.execute(
-                """
-                SELECT c.* FROM cmus c
-                JOIN treasurers t ON t.npub = c.treasurer_npub
-                WHERE t.status = 'active' AND c.status = 'active'
-                ORDER BY c.created_at, c.keyset_id
-                """
-            ).fetchall()
-            matches = [
-                row
-                for row in rows
-                if self._grant_matches_pubkey(row["treasurer_npub"], event["pubkey"])
-            ]
-            if not matches:
-                raise ClearError("treasurer does not control an active CMU")
-            if len(matches) > 1:
-                raise ClearError("treasurer controls multiple active CMUs")
-            connection.execute(
-                "INSERT INTO treasury_nonces VALUES (?, ?, ?, ?)",
-                (payload["nonce"], event["pubkey"], payload["action"], now),
+            self._record_treasury_nonce(
+                connection,
+                nonce=payload["nonce"],
+                pubkey=event["pubkey"],
+                action=payload["action"],
+                now=now,
             )
+            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"])
         return {
-            **self._cmu_response(matches[0]),
+            **self._cmu_response(cmu),
+            "treasurer_pubkey": event["pubkey"],
+        }
+
+    def cmu_summary_from_treasury_envelope(
+        self,
+        envelope: dict,
+        *,
+        mint_url: str,
+    ) -> dict:
+        try:
+            payload, event = verify_envelope(
+                envelope,
+                expected_action="cmu:summary",
+                expected_mint=mint_url,
+            )
+        except TreasuryAuthError as exc:
+            raise ClearError(str(exc)) from exc
+        now = self._now()
+        with self._transaction() as connection:
+            self._record_treasury_nonce(
+                connection,
+                nonce=payload["nonce"],
+                pubkey=event["pubkey"],
+                action=payload["action"],
+                now=now,
+            )
+            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"])
+            summary = self._summary_for_keyset_id(connection, cmu["keyset_id"])
+        return {
+            **summary,
             "treasurer_pubkey": event["pubkey"],
         }
 

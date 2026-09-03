@@ -12,6 +12,7 @@ from clear.store import ClearError
 from clear.treasury_auth import (
     build_cmu_create_envelope,
     build_cmu_info_envelope,
+    build_cmu_summary_envelope,
     build_quote_authorize_envelope,
 )
 
@@ -735,6 +736,65 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
     assert response.json()["friendly_unit_alias"] == "credits"
     assert response.json()["treasurer_npub"] == npub
     assert response.json()["treasurer_pubkey"] == treasurer.public_key_hex()
+    assert replay.status_code == 400
+    assert "nonce has already been used" in replay.json()["detail"]
+
+
+def test_treasurer_can_inspect_bound_cmu_supply_summary(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    app = create_app(configured)
+    with TestClient(app) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Treasurer Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        created_keyset = app.state.store.keysets[cmu["keyset_id"]]
+        proof = issue_proof(
+            client,
+            created_keyset,
+            amount=8,
+            secret="treasurer-summary-secret",
+        )
+        retired = client.post(
+            "/v1/operator/retire",
+            json={"inputs": [proof], "memo": "program completed"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        envelope = build_cmu_summary_envelope(
+            mint="https://clear.example",
+            nsec=treasurer.private_key_bech32(),
+        )
+        response = client.post("/v1/treasury/cmus/summary", json=envelope)
+        replay = client.post("/v1/treasury/cmus/summary", json=envelope)
+
+    assert retired.status_code == 200
+    assert response.status_code == 200
+    assert response.json() == {
+        "unit": cmu["unit"],
+        "keyset_id": cmu["keyset_id"],
+        "issued": 8,
+        "retired": 8,
+        "circulating": 0,
+        "outstanding": 0,
+        "treasurer_pubkey": treasurer.public_key_hex(),
+    }
     assert replay.status_code == 400
     assert "nonce has already been used" in replay.json()["detail"]
 

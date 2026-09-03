@@ -94,6 +94,23 @@ def build_cmu_info_envelope(
     return {"payload": payload, "event": sign_payload(payload, nsec)}
 
 
+def build_cmu_summary_envelope(
+    *,
+    mint: str,
+    nsec: str,
+    lifetime_seconds: int = 300,
+) -> dict[str, Any]:
+    now = int(time.time())
+    payload = {
+        "action": "cmu:summary",
+        "mint": mint.rstrip("/"),
+        "nonce": secrets.token_hex(32),
+        "created_at": now,
+        "expires_at": now + lifetime_seconds,
+    }
+    return {"payload": payload, "event": sign_payload(payload, nsec)}
+
+
 def build_quote_authorize_envelope(
     *,
     mint: str,

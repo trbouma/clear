@@ -35,6 +35,7 @@ from clear.treasury_auth import (
     TreasuryAuthError,
     build_cmu_create_envelope,
     build_cmu_info_envelope,
+    build_cmu_summary_envelope,
     npub_from_nsec,
 )
 
@@ -231,6 +232,24 @@ def cmu_info(args) -> int:
     return 0
 
 
+def cmu_summary(args) -> int:
+    nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    envelope = build_cmu_summary_envelope(
+        mint=mint,
+        nsec=nsec,
+        lifetime_seconds=args.lifetime,
+    )
+    result = request_json(mint, "POST", "/v1/treasury/cmus/summary", envelope)
+    _print_json(
+        {
+            **result,
+            "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
 def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
         prog=prog,
@@ -347,6 +366,17 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     cmu_info_parser.set_defaults(handler=cmu_info)
+    cmu_summary_parser = cmu_subcommands.add_parser(
+        "summary",
+        help="Show supply totals for the CMU controlled by the treasurer nsec.",
+    )
+    cmu_summary_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    cmu_summary_parser.set_defaults(handler=cmu_summary)
 
     wallet_parser = subcommands.add_parser(
         "wallet",

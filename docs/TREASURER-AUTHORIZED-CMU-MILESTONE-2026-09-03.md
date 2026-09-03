@@ -124,6 +124,10 @@ clear-treasury --mint https://clear.safebox.dev \
 
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
+  cmu summary
+
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
   issue 25 \
   --memo "Food share allocation"
 

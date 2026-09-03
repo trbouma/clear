@@ -115,6 +115,60 @@ def test_treasury_cli_cmu_info_signs_and_posts_envelope(monkeypatch, capsys) -> 
     assert calls[0][4] is None
 
 
+def test_treasury_cli_cmu_summary_signs_and_posts_envelope(
+    monkeypatch,
+    capsys,
+) -> None:
+    calls = []
+    treasurer = Keys(priv_k="1".zfill(64))
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        event = Event.load(payload["event"], validate=True)
+        assert event is not None
+        content = json.loads(event.content)
+        assert event.kind == TREASURY_EVENT_KIND
+        assert event.pub_key == treasurer.public_key_hex()
+        assert content["action"] == "cmu:summary"
+        assert content["mint"] == "https://clear.example"
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "issued": 25,
+            "retired": 5,
+            "circulating": 20,
+            "outstanding": 20,
+            "treasurer_pubkey": treasurer.public_key_hex(),
+        }
+
+    monkeypatch.setattr(treasury_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example/",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "cmu",
+            "summary",
+        ],
+    )
+
+    assert treasury_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["unit"] == "cmu-created"
+    assert output["outstanding"] == 20
+    assert output["treasurer_npub"] == treasurer.public_key_bech32()
+    assert calls[0][:3] == (
+        "https://clear.example",
+        "POST",
+        "/v1/treasury/cmus/summary",
+    )
+    assert calls[0][4] is None
+
+
 def test_treasury_cli_issue_deposits_to_treasurer_wallet(
     monkeypatch, capsys, tmp_path
 ) -> None:
