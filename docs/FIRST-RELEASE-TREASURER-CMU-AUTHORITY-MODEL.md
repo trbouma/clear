@@ -65,6 +65,41 @@ treasurer `nsec`.
 The operator runbook for this ceremony is
 [Treasurer Onboarding Runbook](TREASURER-ONBOARDING-RUNBOOK.md).
 
+## Friendly Display Metadata
+
+Friendly display metadata is not CMU identity. Wallets and applications may
+show a human name such as `Food Share Credits` and a unit label such as
+`shares`, but balances must still bind to:
+
+```text
+mint URL + cmu-<keyset-id> + keyset ID
+```
+
+At CMU creation time, the treasurer may set the initial wallet-facing display
+metadata as part of the signed grant-consumption request:
+
+```text
+clear-treasury cmu create <grant-id> \
+  --name "Food Share Credits" \
+  --unit-alias "shares"
+```
+
+After the CMU exists, display metadata changes are operator-mediated. The
+treasurer requests the change out of band, and the mint operator applies it
+with the privileged local root CLI:
+
+```text
+clear-root cmu label cmu-<keyset-id> \
+  --name "Food Share Credits" \
+  --unit-alias "shares"
+```
+
+This keeps the mint operator responsible for the metadata the mint publicly
+advertises, while still letting the treasurer choose the initial presentation
+for the unit they are authorized to create. Changing friendly labels does not
+change the keyset, CMU, ledger, treasurer authority, existing Mint Notes, or
+holder balances.
+
 In the `clear-root` command model, `add` and `grant` have distinct meanings:
 
 - `clear-root treasurer keygen` generates a local `npub`/`nsec` pair and

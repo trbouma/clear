@@ -60,6 +60,7 @@ def build_cmu_create_envelope(
     grant_id: str,
     name: str | None,
     nsec: str,
+    unit_alias: str | None = None,
     lifetime_seconds: int = 300,
 ) -> dict[str, Any]:
     now = int(time.time())
@@ -68,6 +69,7 @@ def build_cmu_create_envelope(
         "grant_id": grant_id,
         "mint": mint.rstrip("/"),
         "name": name,
+        "unit_alias": unit_alias,
         "nonce": secrets.token_hex(32),
         "created_at": now,
         "expires_at": now + lifetime_seconds,

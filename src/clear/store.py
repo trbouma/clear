@@ -114,6 +114,7 @@ class Store:
                     fingerprint TEXT NOT NULL,
                     status TEXT NOT NULL,
                     friendly_name TEXT,
+                    friendly_unit_alias TEXT,
                     treasurer_npub TEXT,
                     material_kind TEXT NOT NULL,
                     encrypted_secret TEXT,
@@ -136,6 +137,7 @@ class Store:
                 ("schema_version", str(SCHEMA_VERSION)),
             )
             self._bind_mint_identity(connection)
+            self._ensure_cmu_display_columns(connection)
             self._ensure_legacy_cmu(connection)
             self._load_persisted_keysets(connection)
 
@@ -197,11 +199,12 @@ class Store:
             """
             INSERT OR IGNORE INTO cmus(
                 keyset_id, unit, fingerprint, status, friendly_name,
-                treasurer_npub, material_kind, encrypted_secret, public_keys,
-                max_order, created_at, activated_at
+                friendly_unit_alias, treasurer_npub, material_kind,
+                encrypted_secret, public_keys, max_order, created_at, activated_at
             )
             VALUES (
-                ?, ?, ?, 'active', NULL, NULL, 'legacy-derived-v1', NULL, ?, ?, ?, ?
+                ?, ?, ?, 'active', NULL, NULL, NULL, 'legacy-derived-v1', NULL,
+                ?, ?, ?, ?
             )
             """,
             (
@@ -296,7 +299,39 @@ class Store:
             response["keys"] = {
                 str(amount): key for amount, key in keyset.public_keys.items()
             }
+        metadata = self._cmu_display_metadata(keyset.id)
+        response.update(metadata)
         return response
+
+    @staticmethod
+    def _ensure_cmu_display_columns(connection) -> None:
+        columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(cmus)").fetchall()
+        }
+        if "friendly_unit_alias" not in columns:
+            connection.execute("ALTER TABLE cmus ADD COLUMN friendly_unit_alias TEXT")
+
+    def _cmu_display_metadata(self, keyset_id: str) -> dict:
+        with self._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT friendly_name, friendly_unit_alias
+                FROM cmus WHERE keyset_id = ?
+                """,
+                (keyset_id,),
+            ).fetchone()
+        if row is None:
+            return {
+                "friendly_name": None,
+                "friendly_alias": None,
+                "friendly_unit_alias": None,
+            }
+        return {
+            "friendly_name": row["friendly_name"],
+            "friendly_alias": row["friendly_name"],
+            "friendly_unit_alias": row["friendly_unit_alias"],
+        }
 
     def _cmu_status(self, keyset_id: str) -> str:
         with self._connection() as connection:
@@ -619,7 +654,12 @@ class Store:
             self._audit(connection, "treasurer:grant-consume", 0, grant_id)
         return self.get_treasurer_grant(grant_id)
 
-    def create_cmu(self, grant_id: str, friendly_name: str | None = None) -> dict:
+    def create_cmu(
+        self,
+        grant_id: str,
+        friendly_name: str | None = None,
+        friendly_unit_alias: str | None = None,
+    ) -> dict:
         keyset, secret = Keyset.random(max_order=len(self.keyset.public_keys) - 1)
         encrypted_secret = self._encrypt_keyset_secret(secret)
         now = self._now()
@@ -632,6 +672,7 @@ class Store:
                 encrypted_secret,
                 now,
                 friendly_name=friendly_name,
+                friendly_unit_alias=friendly_unit_alias,
             )
         self.keysets[keyset.id] = keyset
         self.keyset_order.append(keyset.id)
@@ -657,6 +698,12 @@ class Store:
         friendly_name = payload.get("name")
         if friendly_name is not None and not isinstance(friendly_name, str):
             raise ClearError("treasury request CMU name must be a string")
+        friendly_unit_alias = payload.get("unit_alias")
+        if friendly_unit_alias is not None and not isinstance(
+            friendly_unit_alias,
+            str,
+        ):
+            raise ClearError("treasury request CMU unit alias must be a string")
         keyset, secret = Keyset.random(max_order=len(self.keyset.public_keys) - 1)
         encrypted_secret = self._encrypt_keyset_secret(secret)
         now = self._now()
@@ -680,6 +727,7 @@ class Store:
                 encrypted_secret,
                 now,
                 friendly_name=friendly_name,
+                friendly_unit_alias=friendly_unit_alias,
                 action="cmu:create:treasury",
             )
         self.keysets[keyset.id] = keyset
@@ -819,22 +867,24 @@ class Store:
         now: int,
         *,
         friendly_name: str | None,
+        friendly_unit_alias: str | None,
         action: str = "cmu:create",
     ) -> dict:
         connection.execute(
             """
             INSERT INTO cmus(
                 keyset_id, unit, fingerprint, status, friendly_name,
-                treasurer_npub, material_kind, encrypted_secret, public_keys,
-                max_order, created_at, activated_at
+                friendly_unit_alias, treasurer_npub, material_kind,
+                encrypted_secret, public_keys, max_order, created_at, activated_at
             )
-            VALUES (?, ?, ?, 'active', ?, ?, 'random-encrypted-v1', ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, 'active', ?, ?, ?, 'random-encrypted-v1', ?, ?, ?, ?, ?)
             """,
             (
                 keyset.id,
                 keyset.unit,
                 keyset.fingerprint,
                 friendly_name,
+                friendly_unit_alias,
                 grant["npub"],
                 encrypted_secret,
                 json.dumps(keyset.public_keys, sort_keys=True),
@@ -857,6 +907,7 @@ class Store:
                 "fingerprint": keyset.fingerprint,
                 "status": "active",
                 "friendly_name": friendly_name,
+                "friendly_unit_alias": friendly_unit_alias,
                 "treasurer_npub": grant["npub"],
                 "material_kind": "random-encrypted-v1",
                 "created_at": now,
@@ -873,6 +924,49 @@ class Store:
         if row is None:
             raise ClearError("CMU not found")
         return self._cmu_response(row)
+
+    def update_cmu_label(
+        self,
+        unit_or_keyset_id: str,
+        *,
+        friendly_name: str | None = None,
+        friendly_unit_alias: str | None = None,
+    ) -> dict:
+        if friendly_name is None and friendly_unit_alias is None:
+            raise ClearError("at least one CMU label value must be supplied")
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ? OR unit = ?",
+                (unit_or_keyset_id, unit_or_keyset_id),
+            ).fetchone()
+            if existing is None:
+                raise ClearError("CMU not found")
+            next_name = (
+                friendly_name
+                if friendly_name is not None
+                else existing["friendly_name"]
+            )
+            next_unit_alias = (
+                friendly_unit_alias
+                if friendly_unit_alias is not None
+                else existing["friendly_unit_alias"]
+            )
+            connection.execute(
+                """
+                UPDATE cmus
+                SET friendly_name = ?, friendly_unit_alias = ?
+                WHERE keyset_id = ?
+                """,
+                (next_name, next_unit_alias, existing["keyset_id"]),
+            )
+            self._audit(
+                connection,
+                "cmu:label",
+                0,
+                unit_or_keyset_id,
+                existing["keyset_id"],
+            )
+        return self.get_cmu(unit_or_keyset_id)
 
     def list_cmus(self) -> dict:
         with self._connection() as connection:
@@ -914,6 +1008,8 @@ class Store:
             "keyset_fingerprint": row["fingerprint"],
             "status": row["status"],
             "friendly_name": row["friendly_name"],
+            "friendly_alias": row["friendly_name"],
+            "friendly_unit_alias": row["friendly_unit_alias"],
             "treasurer_npub": row["treasurer_npub"],
             "material_kind": row["material_kind"],
             "created_at": row["created_at"],

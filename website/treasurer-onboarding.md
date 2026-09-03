@@ -83,7 +83,8 @@ The treasurer consumes the grant with their `nsec`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
 
 Or with the key in the environment:
@@ -92,8 +93,26 @@ Or with the key in the environment:
 export CLEAR_TREASURER_NSEC=nsec1...
 clear-treasury --mint https://clear.safebox.dev \
   cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
+
+At creation time, the treasurer may choose `--name` and `--unit-alias` as
+display hints for the CMU they are authorized to create. Wallets still bind
+balances to the mint URL, canonical `cmu-<keyset-id>` unit, and keyset ID.
+
+After the CMU exists, display metadata changes are operator-mediated. The
+treasurer requests the change out of band, and the mint operator applies it:
+
+```bash
+docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+  --name "Food Share Credits" \
+  --unit-alias "shares"
+```
+
+The first argument can be the canonical CMU unit or the raw keyset ID. Label
+changes do not change the keyset, CMU, ledger, treasurer authority, existing
+Mint Notes, or holder balances.
 
 The CLI signs the request. The mint verifies the treasurer key, mint URL,
 grant, and replay nonce before generating and encrypting the new keyset secret.
@@ -143,7 +162,8 @@ grant from inside the container:
 
 ```bash
 docker compose exec clear clear-root cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
 
 Prefer the `clear-treasury` flow when the operator and treasurer are meant to

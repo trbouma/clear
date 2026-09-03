@@ -899,6 +899,7 @@ def test_root_cli_cmu_create_calls_operator_endpoint(monkeypatch, capsys) -> Non
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
             "friendly_name": payload["name"],
+            "friendly_unit_alias": payload["unit_alias"],
             "status": "active",
         }
 
@@ -914,6 +915,8 @@ def test_root_cli_cmu_create_calls_operator_endpoint(monkeypatch, capsys) -> Non
             "grant-id",
             "--name",
             "Gym Guest Passes",
+            "--unit-alias",
+            "passes",
         ],
     )
 
@@ -924,7 +927,11 @@ def test_root_cli_cmu_create_calls_operator_endpoint(monkeypatch, capsys) -> Non
             "http://127.0.0.1:3339",
             "POST",
             "/v1/operator/cmus",
-            {"grant_id": "grant-id", "name": "Gym Guest Passes"},
+            {
+                "grant_id": "grant-id",
+                "name": "Gym Guest Passes",
+                "unit_alias": "passes",
+            },
             "operator-token",
         )
     ]
@@ -958,6 +965,53 @@ def test_root_cli_cmu_list_calls_operator_endpoint(monkeypatch, capsys) -> None:
             "GET",
             "/v1/operator/cmus",
             None,
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_cmu_label_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "friendly_name": payload["name"],
+            "friendly_unit_alias": payload["unit_alias"],
+            "status": "active",
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "cmu",
+            "label",
+            "cmu-created",
+            "--name",
+            "Food Share Credits",
+            "--unit-alias",
+            "shares",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"friendly_name": "Food Share Credits"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/cmus/cmu-created/label",
+            {
+                "name": "Food Share Credits",
+                "unit_alias": "shares",
+            },
             "operator-token",
         )
     ]

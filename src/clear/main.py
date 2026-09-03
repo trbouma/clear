@@ -17,6 +17,7 @@ from clear.homepage import render_homepage
 from clear.models import (
     CheckStateRequest,
     CMUCreateRequest,
+    CMULabelRequest,
     MintQuoteRequest,
     MintRequest,
     RetireRequest,
@@ -352,9 +353,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if error := operator_access_error(request, authorization):
             return error
         try:
-            return store.create_cmu(body.grant_id, friendly_name=body.name)
+            return store.create_cmu(
+                body.grant_id,
+                friendly_name=body.name,
+                friendly_unit_alias=body.unit_alias,
+            )
         except ClearError as exc:
             return _protocol_error(str(exc), 15000)
+
+    @app.post("/v1/operator/cmus/{unit_or_keyset_id}/label")
+    async def label_cmu(
+        unit_or_keyset_id: str,
+        body: CMULabelRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.update_cmu_label(
+                unit_or_keyset_id,
+                friendly_name=body.name,
+                friendly_unit_alias=body.unit_alias,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15004)
 
     @app.post("/v1/treasury/cmus")
     async def create_cmu_from_treasury(body: TreasuryEnvelopeRequest):

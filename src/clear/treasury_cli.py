@@ -73,6 +73,7 @@ def cmu_create(args) -> int:
         mint=mint,
         grant_id=args.grant_id,
         name=args.name,
+        unit_alias=args.unit_alias,
         nsec=nsec,
         lifetime_seconds=args.lifetime,
     )
@@ -323,6 +324,11 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     )
     cmu_create_parser.add_argument("grant_id")
     cmu_create_parser.add_argument("--name", default=None, help="Friendly CMU name.")
+    cmu_create_parser.add_argument(
+        "--unit-alias",
+        default=None,
+        help="Friendly unit label, for example credits, passes, or meals.",
+    )
     cmu_create_parser.add_argument(
         "--lifetime",
         type=int,

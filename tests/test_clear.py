@@ -461,7 +461,11 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
         ).json()
         created = client.post(
             "/v1/operator/cmus",
-            json={"grant_id": grant["id"], "name": "Gym Guest Passes"},
+            json={
+                "grant_id": grant["id"],
+                "name": "Gym Guest Passes",
+                "unit_alias": "passes",
+            },
             headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
         )
         duplicate_create = client.post(
@@ -486,6 +490,8 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
     assert cmu["unit"].startswith("cmu-")
     assert cmu["keyset_id"].startswith("01")
     assert cmu["friendly_name"] == "Gym Guest Passes"
+    assert cmu["friendly_alias"] == "Gym Guest Passes"
+    assert cmu["friendly_unit_alias"] == "passes"
     assert cmu["treasurer_npub"] == npub
     assert cmu["material_kind"] == "random-encrypted-v1"
     assert cmu["status"] == "active"
@@ -501,6 +507,8 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
     }
     assert keys.status_code == 200
     assert keys.json()["keysets"][0]["unit"] == cmu["unit"]
+    assert keys.json()["keysets"][0]["friendly_alias"] == "Gym Guest Passes"
+    assert keys.json()["keysets"][0]["friendly_unit_alias"] == "passes"
     assert keys.json()["keysets"][0]["keys"]
     assert grants == [
         {
@@ -512,6 +520,55 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
             "keyset_id": cmu["keyset_id"],
         }
     ]
+
+
+def test_operator_can_update_cmu_display_labels(tmp_path) -> None:
+    configured = settings(tmp_path)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Old Name"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        updated = client.post(
+            f"/v1/operator/cmus/{created['unit']}/label",
+            json={"name": "Food Share Credits", "unit_alias": "shares"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        keyset = client.get(f"/v1/keys/{created['keyset_id']}").json()["keysets"][0]
+        partial = client.post(
+            f"/v1/operator/cmus/{created['keyset_id']}/label",
+            json={"unit_alias": "meals"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        empty = client.post(
+            f"/v1/operator/cmus/{created['unit']}/label",
+            json={},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+
+    assert updated.status_code == 200
+    assert updated.json()["friendly_name"] == "Food Share Credits"
+    assert updated.json()["friendly_alias"] == "Food Share Credits"
+    assert updated.json()["friendly_unit_alias"] == "shares"
+    assert keyset["friendly_alias"] == "Food Share Credits"
+    assert keyset["friendly_unit_alias"] == "shares"
+    assert partial.status_code == 200
+    assert partial.json()["friendly_name"] == "Food Share Credits"
+    assert partial.json()["friendly_unit_alias"] == "meals"
+    assert empty.status_code == 400
+    assert "at least one" in empty.json()["detail"]
 
 
 def test_created_cmu_keyset_survives_restart(tmp_path) -> None:
@@ -618,6 +675,7 @@ def test_treasurer_can_consume_grant_over_public_treasury_route(tmp_path) -> Non
             mint="https://clear.example",
             grant_id=grant["id"],
             name="Treasurer Credits",
+            unit_alias="credits",
             nsec=treasurer.private_key_bech32(),
         )
         created = client.post("/v1/treasury/cmus", json=envelope)
@@ -625,6 +683,7 @@ def test_treasurer_can_consume_grant_over_public_treasury_route(tmp_path) -> Non
 
     assert created.status_code == 200
     assert created.json()["friendly_name"] == "Treasurer Credits"
+    assert created.json()["friendly_unit_alias"] == "credits"
     assert created.json()["treasurer_npub"] == npub
     assert replay.status_code == 400
     assert "not pending" in replay.json()["detail"]
@@ -651,6 +710,7 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
                 mint="https://clear.example",
                 grant_id=grant["id"],
                 name="Treasurer Credits",
+                unit_alias="credits",
                 nsec=treasurer.private_key_bech32(),
             ),
         ).json()
@@ -665,6 +725,7 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
     assert response.json()["unit"] == created["unit"]
     assert response.json()["keyset_id"] == created["keyset_id"]
     assert response.json()["friendly_name"] == "Treasurer Credits"
+    assert response.json()["friendly_unit_alias"] == "credits"
     assert response.json()["treasurer_npub"] == npub
     assert response.json()["treasurer_pubkey"] == treasurer.public_key_hex()
     assert replay.status_code == 400

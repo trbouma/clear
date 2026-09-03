@@ -126,7 +126,8 @@ The treasurer consumes the grant with the treasury CLI and their own `nsec`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
 
 The treasurer may also provide the private key through the environment:
@@ -135,8 +136,27 @@ The treasurer may also provide the private key through the environment:
 export CLEAR_TREASURER_NSEC=nsec1...
 clear-treasury --mint https://clear.safebox.dev \
   cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
+
+At creation time, the treasurer may choose `--name` and `--unit-alias` as
+wallet-facing display hints for the CMU they are authorized to create. Wallets
+must still bind balances to the mint URL, canonical `cmu-<keyset-id>` unit,
+and keyset ID.
+
+After the CMU exists, display metadata changes are operator-mediated. The
+treasurer requests the change out of band, and the mint operator applies it:
+
+```bash
+docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+  --name "Food Share Credits" \
+  --unit-alias "shares"
+```
+
+The first argument may be either the canonical `cmu-<keyset-id>` unit or the
+raw keyset ID. Label changes do not change the keyset, CMU, ledger, treasurer
+authority, existing Mint Notes, or holder balances.
 
 The treasury CLI derives the `npub` from the `nsec`, signs the request, and
 sends the signed envelope to the mint's public treasury route. The mint checks
@@ -204,7 +224,8 @@ operator can consume a pending grant from inside the mint container:
 
 ```bash
 docker compose exec clear clear-root cmu create <grant-id> \
-  --name "Gym Guest Passes"
+  --name "Gym Guest Passes" \
+  --unit-alias "passes"
 ```
 
 This is not the normal separated-custody treasurer flow because the treasurer

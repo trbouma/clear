@@ -329,6 +329,8 @@ def cmu_create(args) -> int:
     payload = {"grant_id": args.grant_id}
     if args.name:
         payload["name"] = args.name
+    if args.unit_alias:
+        payload["unit_alias"] = args.unit_alias
     result = request_json(
         _api_url(args),
         "POST",
@@ -345,6 +347,23 @@ def cmu_list(args) -> int:
         _api_url(args),
         "GET",
         "/v1/operator/cmus",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def cmu_label(args) -> int:
+    payload = {}
+    if args.name:
+        payload["name"] = args.name
+    if args.unit_alias:
+        payload["unit_alias"] = args.unit_alias
+    result = request_json(
+        _api_url(args),
+        "POST",
+        f"/v1/operator/cmus/{args.cmu}/label",
+        payload,
         token=_operator_token(),
     )
     _print_json(result)
@@ -685,12 +704,29 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     )
     cmu_create_parser.add_argument("grant_id")
     cmu_create_parser.add_argument("--name", default=None, help="Friendly CMU name.")
+    cmu_create_parser.add_argument(
+        "--unit-alias",
+        default=None,
+        help="Friendly unit label, for example credits, passes, or meals.",
+    )
     cmu_create_parser.set_defaults(handler=cmu_create)
     cmu_list_parser = cmu_subcommands.add_parser(
         "list",
         help="List CMU records.",
     )
     cmu_list_parser.set_defaults(handler=cmu_list)
+    cmu_label_parser = cmu_subcommands.add_parser(
+        "label",
+        help="Update wallet-facing CMU display labels.",
+    )
+    cmu_label_parser.add_argument("cmu", help="CMU unit or keyset ID.")
+    cmu_label_parser.add_argument("--name", default=None, help="Friendly CMU name.")
+    cmu_label_parser.add_argument(
+        "--unit-alias",
+        default=None,
+        help="Friendly unit label, for example credits, passes, or meals.",
+    )
+    cmu_label_parser.set_defaults(handler=cmu_label)
 
     wallet_parser = subcommands.add_parser("wallet", help="Manage local root wallet.")
     wallet_subcommands = wallet_parser.add_subparsers(

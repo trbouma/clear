@@ -64,6 +64,12 @@ class TreasurerGrantRequest(BaseModel):
 class CMUCreateRequest(BaseModel):
     grant_id: str = Field(min_length=1, max_length=128)
     name: str | None = Field(default=None, min_length=1, max_length=120)
+    unit_alias: str | None = Field(default=None, min_length=1, max_length=40)
+
+
+class CMULabelRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    unit_alias: str | None = Field(default=None, min_length=1, max_length=40)
 
 
 class TreasuryEnvelopeRequest(BaseModel):

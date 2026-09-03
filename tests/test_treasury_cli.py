@@ -25,10 +25,12 @@ def test_treasury_cli_cmu_create_signs_and_posts_envelope(monkeypatch, capsys) -
         assert content["grant_id"] == "grant-id"
         assert content["mint"] == "https://clear.example"
         assert content["name"] == "Gym Guest Passes"
+        assert content["unit_alias"] == "passes"
         return {
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
             "friendly_name": content["name"],
+            "friendly_unit_alias": content["unit_alias"],
             "status": "active",
         }
 
@@ -46,6 +48,8 @@ def test_treasury_cli_cmu_create_signs_and_posts_envelope(monkeypatch, capsys) -
             "grant-id",
             "--name",
             "Gym Guest Passes",
+            "--unit-alias",
+            "passes",
         ],
     )
 
@@ -53,6 +57,7 @@ def test_treasury_cli_cmu_create_signs_and_posts_envelope(monkeypatch, capsys) -
     output = json.loads(capsys.readouterr().out)
 
     assert output["unit"] == "cmu-created"
+    assert output["friendly_unit_alias"] == "passes"
     assert output["treasurer_npub"] == treasurer.public_key_bech32()
     assert calls[0][:3] == (
         "https://clear.example",
