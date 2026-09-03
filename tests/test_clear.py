@@ -200,6 +200,8 @@ def test_currency_aliases_can_be_configured_for_wallet_display(tmp_path) -> None
     )
     with TestClient(create_app(configured)) as client:
         info = client.get("/v1/info")
+        keysets = client.get("/v1/keysets")
+        keys = client.get(f"/v1/keys/{info.json()['currency']['keyset_id']}")
 
     currency = info.json()["currency"]
     assert currency["friendly_alias"] == "Harbour Lab Credits"
@@ -207,6 +209,11 @@ def test_currency_aliases_can_be_configured_for_wallet_display(tmp_path) -> None
     assert currency["friendly_alias_key"] == (
         f"harbour-lab-credits:{currency['keyset_fingerprint']}"
     )
+    assert keysets.json()["keysets"][0]["friendly_alias"] == "Harbour Lab Credits"
+    assert keysets.json()["keysets"][0]["friendly_name"] == "Harbour Lab Credits"
+    assert keysets.json()["keysets"][0]["friendly_unit_alias"] == "smiles"
+    assert keys.json()["keysets"][0]["friendly_alias"] == "Harbour Lab Credits"
+    assert keys.json()["keysets"][0]["friendly_unit_alias"] == "smiles"
 
 
 def test_root_authority_npub_changes_the_active_keyset(tmp_path) -> None:

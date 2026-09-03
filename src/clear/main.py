@@ -44,6 +44,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         configured.database_path,
         keyset,
         key_encryption_key=configured.key_encryption_key or configured.master_secret,
+        legacy_friendly_name=(
+            configured.currency_alias
+            or f"{configured.currency_name} ({keyset.unit})"
+        ),
+        legacy_friendly_unit_alias=configured.currency_unit_alias,
     )
 
     @asynccontextmanager

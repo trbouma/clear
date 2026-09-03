@@ -32,10 +32,14 @@ class Store:
         keyset: Keyset,
         *,
         key_encryption_key: str | None = None,
+        legacy_friendly_name: str | None = None,
+        legacy_friendly_unit_alias: str | None = None,
     ):
         self.database_path = database_path
         self.keyset = keyset
         self.key_encryption_key = key_encryption_key
+        self.legacy_friendly_name = legacy_friendly_name
+        self.legacy_friendly_unit_alias = legacy_friendly_unit_alias
         self.keysets: dict[str, Keyset] = {keyset.id: keyset}
         self.keyset_order: list[str] = [keyset.id]
 
@@ -139,6 +143,7 @@ class Store:
             self._bind_mint_identity(connection)
             self._ensure_cmu_display_columns(connection)
             self._ensure_legacy_cmu(connection)
+            self._ensure_legacy_cmu_display_metadata(connection)
             self._load_persisted_keysets(connection)
 
     def _bind_mint_identity(self, connection) -> None:
@@ -215,6 +220,22 @@ class Store:
                 len(self.keyset.public_keys) - 1,
                 now,
                 now,
+            ),
+        )
+
+    def _ensure_legacy_cmu_display_metadata(self, connection) -> None:
+        connection.execute(
+            """
+            UPDATE cmus
+            SET
+                friendly_name = COALESCE(friendly_name, ?),
+                friendly_unit_alias = COALESCE(friendly_unit_alias, ?)
+            WHERE keyset_id = ?
+            """,
+            (
+                self.legacy_friendly_name,
+                self.legacy_friendly_unit_alias,
+                self.keyset.id,
             ),
         )
 
