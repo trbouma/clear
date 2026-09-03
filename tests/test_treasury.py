@@ -199,7 +199,7 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
         calls.append((mint_url, method, path))
         if path == "/v1/info":
             return {"mint_url": "https://clear.example"}
-        if path == "/v1/keys":
+        if path == "/v1/keys/keyset-id":
             return {
                 "keysets": [
                     {"id": "keyset-id", "keys": {"1": "pub1"}}
@@ -244,7 +244,7 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
     )
     assert calls == [
         ("http://127.0.0.1:3339", "GET", "/v1/info"),
-        ("http://127.0.0.1:3339", "GET", "/v1/keys"),
+        ("http://127.0.0.1:3339", "GET", "/v1/keys/keyset-id"),
         ("http://127.0.0.1:3339", "POST", "/v1/swap"),
     ]
 

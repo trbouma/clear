@@ -12,8 +12,25 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
-from clear.root_wallet import deposit_issue, load_wallet, wallet_summary
-from clear.treasury import TreasuryError, issue_treasury_units, request_json
+from clear.root_delivery import (
+    DeliveryError,
+    deliver_clear_token,
+    discover_clear_support,
+)
+from clear.root_wallet import (
+    deposit_issue,
+    export_token,
+    load_wallet,
+    replace_selected_with_change,
+    select_proofs_for_amount,
+    wallet_summary,
+)
+from clear.treasury import (
+    TreasuryError,
+    issue_treasury_units,
+    request_json,
+    swap_token_for_amount,
+)
 from clear.treasury_auth import (
     TreasuryAuthError,
     build_cmu_create_envelope,
@@ -89,6 +106,94 @@ def issue(args) -> int:
     _print_json(
         {
             **issued,
+            "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
+def _cmu_info(mint: str, nsec: str, lifetime_seconds: int) -> dict:
+    envelope = build_cmu_info_envelope(
+        mint=mint,
+        nsec=nsec,
+        lifetime_seconds=lifetime_seconds,
+    )
+    return request_json(mint, "POST", "/v1/treasury/cmus/info", envelope)
+
+
+def _export_or_swap(
+    amount: int,
+    wallet_path: Path,
+    *,
+    mint_url: str,
+    unit: str,
+    memo: str | None = None,
+) -> dict:
+    try:
+        return export_token(amount, wallet_path, memo=memo, remove=False)
+    except ValueError as exc:
+        if str(exc) != "wallet cannot export exact amount with current proof set":
+            raise
+
+    selected = select_proofs_for_amount(amount, wallet_path)
+    if selected["mint"] != mint_url or selected["unit"] != unit:
+        raise TreasuryError("selected wallet proofs are not for this treasurer CMU")
+    swapped = swap_token_for_amount(
+        mint_url,
+        selected["proofs"],
+        amount,
+        unit=unit,
+        memo=memo,
+    )
+    replacement_proofs = [*swapped["proofs"], *swapped["change_proofs"]]
+    replace_selected_with_change(
+        selected["amount"],
+        wallet_path,
+        change={
+            "mint": swapped["mint"],
+            "unit": unit,
+            "quote": None,
+            "amount": selected["amount"],
+            "memo": memo,
+            "proofs": replacement_proofs,
+        },
+    )
+    return export_token(amount, wallet_path, memo=memo, remove=False)
+
+
+def send(args) -> int:
+    nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    cmu = _cmu_info(mint, nsec, args.lifetime)
+    discovery = discover_clear_support(
+        args.address,
+        mint_url=mint,
+        unit=cmu["unit"],
+    )
+    if not discovery["supported"]:
+        raise DeliveryError("recipient does not advertise compatible Clear support")
+    wallet_path = _wallet_path(args, nsec)
+    pending = _export_or_swap(
+        args.amount,
+        wallet_path,
+        mint_url=mint,
+        unit=cmu["unit"],
+        memo=args.memo,
+    )
+    delivery = deliver_clear_token(
+        discovery,
+        token=pending["token"],
+        amount=args.amount,
+        sender_secret=args.sender_nsec,
+        memo=args.memo,
+        relays=args.relay,
+        expiration=args.expiration,
+    )
+    withdrawn = export_token(args.amount, wallet_path, memo=args.memo, remove=True)
+    _print_json(
+        {
+            **withdrawn,
+            **delivery,
             "treasurer_npub": npub_from_nsec(nsec),
         }
     )
@@ -174,6 +279,41 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     issue_parser.set_defaults(handler=issue)
+
+    send_parser = subcommands.add_parser(
+        "send",
+        help="Withdraw and deliver a token from the treasury wallet.",
+    )
+    send_parser.add_argument("amount", type=int)
+    send_parser.add_argument("address")
+    send_parser.add_argument("--memo", default=None)
+    send_parser.add_argument(
+        "--sender-nsec",
+        default=None,
+        help=(
+            "Optional Nostr sender nsec for delivery. Defaults to an ephemeral "
+            "sender key."
+        ),
+    )
+    send_parser.add_argument(
+        "--relay",
+        action="append",
+        default=None,
+        help="Relay to publish to. Repeatable. Defaults to recipient relay hints.",
+    )
+    send_parser.add_argument(
+        "--expiration",
+        type=int,
+        default=None,
+        help="Optional Unix timestamp for the gift-wrap expiration tag.",
+    )
+    send_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    send_parser.set_defaults(handler=send)
 
     cmu_parser = subcommands.add_parser("cmu", help="Treasurer CMU actions.")
     cmu_subcommands = cmu_parser.add_subparsers(dest="cmu_command", required=True)

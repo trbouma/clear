@@ -6,6 +6,7 @@ import json
 from stroma import Event, Keys
 
 from clear import treasury_cli
+from clear.root_wallet import deposit_issue, load_wallet
 from clear.treasury_auth import TREASURY_EVENT_KIND
 
 
@@ -262,6 +263,198 @@ def test_treasury_wallet_default_path_is_scoped_by_nsec_and_mint(
     assert second.public_key_bech32() in str(second_path)
     assert first_path != second_path
     assert first_path != other_mint_path
+
+
+def test_treasury_cli_send_delivers_exact_token_from_wallet(
+    monkeypatch, capsys, tmp_path
+) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    wallet_path = tmp_path / "treasury-wallet.json"
+    deposit_issue(
+        {
+            "mint": "https://clear.example",
+            "unit": "cmu-created",
+            "quote": "quote-id",
+            "amount": 13,
+            "memo": None,
+            "proofs": [
+                {"amount": 8, "id": "keyset-created", "secret": "s1", "C": "c1"},
+                {"amount": 4, "id": "keyset-created", "secret": "s2", "C": "c2"},
+                {"amount": 1, "id": "keyset-created", "secret": "s3", "C": "c3"},
+            ],
+        },
+        wallet_path,
+    )
+
+    monkeypatch.setattr(
+        treasury_cli,
+        "_cmu_info",
+        lambda mint, nsec, lifetime_seconds: {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+        },
+    )
+    monkeypatch.setattr(
+        treasury_cli,
+        "discover_clear_support",
+        lambda address, *, mint_url, unit: {
+            "address": address,
+            "supported": True,
+            "mint": mint_url,
+            "unit": unit,
+            "recipient_pubkey": "22" * 32,
+            "relays": ["wss://relay.example"],
+        },
+    )
+
+    def fake_deliver(
+        discovery,
+        *,
+        token,
+        amount,
+        sender_secret=None,
+        memo=None,
+        relays=None,
+        expiration=None,
+    ):
+        assert token.startswith("cashuA")
+        assert amount == 13
+        assert sender_secret is None
+        assert memo == "Gift"
+        assert relays == ["wss://override.example"]
+        assert expiration == 123
+        return {
+            "delivery": discovery,
+            "publish": {"status": "OK", "verified": True},
+        }
+
+    monkeypatch.setattr(treasury_cli, "deliver_clear_token", fake_deliver)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "--wallet",
+            str(wallet_path),
+            "send",
+            "13",
+            "alice@example.com",
+            "--memo",
+            "Gift",
+            "--relay",
+            "wss://override.example",
+            "--expiration",
+            "123",
+        ],
+    )
+
+    assert treasury_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["amount"] == 13
+    assert output["treasurer_npub"] == treasurer.public_key_bech32()
+    assert output["publish"]["verified"] is True
+    assert load_wallet(wallet_path)["entries"] == []
+
+
+def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
+    monkeypatch, tmp_path
+) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    wallet_path = tmp_path / "treasury-wallet.json"
+    deposit_issue(
+        {
+            "mint": "https://clear.example",
+            "unit": "cmu-created",
+            "quote": "quote-id",
+            "amount": 16,
+            "memo": None,
+            "proofs": [
+                {"amount": 16, "id": "keyset-created", "secret": "s16", "C": "c16"},
+            ],
+        },
+        wallet_path,
+    )
+
+    monkeypatch.setattr(
+        treasury_cli,
+        "_cmu_info",
+        lambda mint, nsec, lifetime_seconds: {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+        },
+    )
+    monkeypatch.setattr(
+        treasury_cli,
+        "discover_clear_support",
+        lambda address, *, mint_url, unit: {
+            "address": address,
+            "supported": True,
+            "mint": mint_url,
+            "unit": unit,
+            "recipient_pubkey": "22" * 32,
+            "relays": ["wss://relay.example"],
+        },
+    )
+
+    def fake_swap(mint_url, inputs, amount, *, unit, memo=None):
+        assert mint_url == "https://clear.example"
+        assert inputs == [
+            {"amount": 16, "id": "keyset-created", "secret": "s16", "C": "c16"}
+        ]
+        assert amount == 13
+        assert unit == "cmu-created"
+        return {
+            "mint": mint_url,
+            "unit": unit,
+            "amount": amount,
+            "input_amount": 16,
+            "change_amount": 3,
+            "token": "cashuAsend",
+            "proofs": [
+                {"amount": 8, "id": "keyset-created", "secret": "s8", "C": "c8"},
+                {"amount": 4, "id": "keyset-created", "secret": "s4", "C": "c4"},
+                {"amount": 1, "id": "keyset-created", "secret": "s1", "C": "c1"},
+            ],
+            "change_proofs": [
+                {"amount": 2, "id": "keyset-created", "secret": "s2", "C": "c2"},
+                {"amount": 1, "id": "keyset-created", "secret": "s3", "C": "c3"},
+            ],
+        }
+
+    monkeypatch.setattr(treasury_cli, "swap_token_for_amount", fake_swap)
+    monkeypatch.setattr(
+        treasury_cli,
+        "deliver_clear_token",
+        lambda *args, **kwargs: {
+            "delivery": {},
+            "publish": {"status": "OK", "verified": True},
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "--wallet",
+            str(wallet_path),
+            "send",
+            "13",
+            "alice@example.com",
+        ],
+    )
+
+    assert treasury_cli.main() == 0
+    summary = treasury_cli.wallet_summary(load_wallet(wallet_path), wallet_path)
+    assert summary["balances"] == [
+        {"mint": "https://clear.example", "unit": "cmu-created", "amount": 3}
+    ]
 
 
 def test_treasury_cli_requires_nsec(monkeypatch, capsys) -> None:

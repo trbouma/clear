@@ -315,7 +315,15 @@ def swap_token_for_amount(
 
     info = request_json(mint_url, "GET", "/v1/info")
     token_mint_url = advertised_mint_url(info, mint_url)
-    keyset = request_json(mint_url, "GET", "/v1/keys")["keysets"][0]
+    proof_keyset_ids = {str(proof.get("id")) for proof in inputs if proof.get("id")}
+    if len(proof_keyset_ids) != 1:
+        raise TreasuryError("wallet proofs must be for exactly one keyset")
+    keyset_id = proof_keyset_ids.pop()
+    keyset_response = request_json(mint_url, "GET", f"/v1/keys/{keyset_id}")
+    keysets = keyset_response.get("keysets") or []
+    if len(keysets) != 1:
+        raise TreasuryError("mint returned an unexpected keyset response")
+    keyset = keysets[0]
     keyset_id = keyset["id"]
     keys = keyset["keys"]
     if any(proof.get("id") != keyset_id for proof in inputs):

@@ -264,9 +264,27 @@ clear-treasury --mint https://clear.safebox.dev \
   --to-token
 ```
 
-Remote treasurer send and retirement commands are separate follow-on work. Until
-those commands exist, `clear-root` remains the privileged local operator path
-for existing send, retire, summary, and inspection operations.
+The treasurer can send an exact amount from the local treasury wallet to a
+compatible NIP-05 address or `npub`:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  send 10 alice@example.com \
+  --memo "Guest pass"
+```
+
+If the wallet cannot export the exact amount but can cover it with a larger
+proof, `send` refreshes the selected proof through `/v1/swap`, delivers the
+requested amount, and keeps the change in the same treasurer wallet.
+
+Delivery uses an ephemeral Nostr sender key by default. The treasurer `nsec`
+authorizes treasury actions and selects the local wallet; it is not reused as
+the delivery sender key.
+
+Remote treasurer retirement is separate follow-on work. Until that command
+exists, `clear-root` remains the privileged local operator path for retire,
+summary, and inspection operations.
 
 Treasurer key rotation for an existing CMU belongs under:
 

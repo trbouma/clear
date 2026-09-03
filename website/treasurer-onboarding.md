@@ -200,4 +200,22 @@ clear-treasury --mint https://clear.safebox.dev \
   --to-token
 ```
 
-Remote treasurer send and retirement commands are follow-on work.
+The treasurer can send an exact amount from the local wallet to a compatible
+NIP-05 address or `npub`:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  send 10 alice@example.com \
+  --memo "Guest pass"
+```
+
+If exact proofs are not available, `send` refreshes a larger proof through
+`/v1/swap`, delivers the requested amount, and stores the change back in the
+same treasurer wallet.
+
+Delivery uses an ephemeral Nostr sender key by default. The treasurer `nsec`
+authorizes treasury actions and selects the local wallet; it is not reused as
+the delivery sender key.
+
+Remote treasurer retirement is follow-on work.
