@@ -686,6 +686,53 @@ class Store:
         self.keyset_order.append(keyset.id)
         return cmu
 
+    def cmu_info_from_treasury_envelope(
+        self,
+        envelope: dict,
+        *,
+        mint_url: str,
+    ) -> dict:
+        try:
+            payload, event = verify_envelope(
+                envelope,
+                expected_action="cmu:info",
+                expected_mint=mint_url,
+            )
+        except TreasuryAuthError as exc:
+            raise ClearError(str(exc)) from exc
+        now = self._now()
+        with self._transaction() as connection:
+            if connection.execute(
+                "SELECT 1 FROM treasury_nonces WHERE nonce = ?",
+                (payload["nonce"],),
+            ).fetchone():
+                raise ClearError("treasury request nonce has already been used")
+            rows = connection.execute(
+                """
+                SELECT c.* FROM cmus c
+                JOIN treasurers t ON t.npub = c.treasurer_npub
+                WHERE t.status = 'active' AND c.status = 'active'
+                ORDER BY c.created_at, c.keyset_id
+                """
+            ).fetchall()
+            matches = [
+                row
+                for row in rows
+                if self._grant_matches_pubkey(row["treasurer_npub"], event["pubkey"])
+            ]
+            if not matches:
+                raise ClearError("treasurer does not control an active CMU")
+            if len(matches) > 1:
+                raise ClearError("treasurer controls multiple active CMUs")
+            connection.execute(
+                "INSERT INTO treasury_nonces VALUES (?, ?, ?, ?)",
+                (payload["nonce"], event["pubkey"], payload["action"], now),
+            )
+        return {
+            **self._cmu_response(matches[0]),
+            "treasurer_pubkey": event["pubkey"],
+        }
+
     def _pending_cmu_grant(self, connection, grant_id: str):
         grant = connection.execute(
             "SELECT * FROM treasurer_grants WHERE id = ?", (grant_id,)

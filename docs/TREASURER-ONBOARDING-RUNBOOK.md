@@ -151,7 +151,28 @@ that:
 If those checks pass, the mint generates a random keyset secret internally,
 encrypts it at rest, consumes the grant, and creates the CMU.
 
-## Step 7: Verify the Result
+## Step 7: Treasurer Confirms Their CMU
+
+The treasurer can ask the mint which active CMU is bound to their `nsec`:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  cmu info
+```
+
+Or, with `CLEAR_TREASURER_NSEC` already exported:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev cmu info
+```
+
+This command signs a read-only `cmu:info` request. The mint returns the single
+active CMU controlled by that treasurer key and fails closed if the key is
+unknown, rotated out, inactive, or ambiguously associated with more than one
+active CMU.
+
+## Step 8: Operator Verifies the Result
 
 The operator verifies that the grant was consumed and the new CMU exists:
 

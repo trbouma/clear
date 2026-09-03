@@ -9,7 +9,7 @@ from clear.config import Settings
 from clear.crypto import CURVE_ORDER, Keyset, hash_to_curve
 from clear.main import create_app
 from clear.store import ClearError
-from clear.treasury_auth import build_cmu_create_envelope
+from clear.treasury_auth import build_cmu_create_envelope, build_cmu_info_envelope
 
 MASTER_SECRET = "11" * 32
 OPERATOR_TOKEN = "operator-token-that-is-long-enough"
@@ -624,6 +624,63 @@ def test_treasurer_can_consume_grant_over_public_treasury_route(tmp_path) -> Non
     assert created.json()["treasurer_npub"] == npub
     assert replay.status_code == 400
     assert "not pending" in replay.json()["detail"]
+
+
+def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Treasurer Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        envelope = build_cmu_info_envelope(
+            mint="https://clear.example",
+            nsec=treasurer.private_key_bech32(),
+        )
+        response = client.post("/v1/treasury/cmus/info", json=envelope)
+        replay = client.post("/v1/treasury/cmus/info", json=envelope)
+
+    assert response.status_code == 200
+    assert response.json()["unit"] == created["unit"]
+    assert response.json()["keyset_id"] == created["keyset_id"]
+    assert response.json()["friendly_name"] == "Treasurer Credits"
+    assert response.json()["treasurer_npub"] == npub
+    assert response.json()["treasurer_pubkey"] == treasurer.public_key_hex()
+    assert replay.status_code == 400
+    assert "nonce has already been used" in replay.json()["detail"]
+
+
+def test_treasury_cmu_info_rejects_unbound_treasurer(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    with TestClient(create_app(configured)) as client:
+        response = client.post(
+            "/v1/treasury/cmus/info",
+            json=build_cmu_info_envelope(
+                mint="https://clear.example",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        )
+
+    assert response.status_code == 400
+    assert "does not control an active CMU" in response.json()["detail"]
 
 
 def test_treasury_route_rejects_signature_from_wrong_treasurer(tmp_path) -> None:

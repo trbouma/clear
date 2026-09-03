@@ -98,7 +98,26 @@ clear-treasury --mint https://clear.safebox.dev \
 The CLI signs the request. The mint verifies the treasurer key, mint URL,
 grant, and replay nonce before generating and encrypting the new keyset secret.
 
-## 7. Verify the CMU
+## 7. Treasurer Confirms the CMU
+
+The treasurer can ask the mint which active CMU is bound to their key:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  cmu info
+```
+
+Or, with `CLEAR_TREASURER_NSEC` already exported:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev cmu info
+```
+
+This is a signed read-only request. The mint returns one active CMU or fails
+closed.
+
+## 8. Operator Verifies the CMU
 
 The operator checks the consumed grant and the created CMU:
 

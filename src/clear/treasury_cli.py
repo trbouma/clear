@@ -14,6 +14,7 @@ from clear.treasury import TreasuryError, request_json
 from clear.treasury_auth import (
     TreasuryAuthError,
     build_cmu_create_envelope,
+    build_cmu_info_envelope,
     npub_from_nsec,
 )
 
@@ -40,6 +41,24 @@ def cmu_create(args) -> int:
         lifetime_seconds=args.lifetime,
     )
     result = request_json(mint, "POST", "/v1/treasury/cmus", envelope)
+    _print_json(
+        {
+            **result,
+            "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
+def cmu_info(args) -> int:
+    nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    envelope = build_cmu_info_envelope(
+        mint=mint,
+        nsec=nsec,
+        lifetime_seconds=args.lifetime,
+    )
+    result = request_json(mint, "POST", "/v1/treasury/cmus/info", envelope)
     _print_json(
         {
             **result,
@@ -84,6 +103,17 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     cmu_create_parser.set_defaults(handler=cmu_create)
+    cmu_info_parser = cmu_subcommands.add_parser(
+        "info",
+        help="Show the active CMU controlled by the treasurer nsec.",
+    )
+    cmu_info_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    cmu_info_parser.set_defaults(handler=cmu_info)
     return result
 
 
@@ -100,4 +130,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

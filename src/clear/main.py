@@ -366,4 +366,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ClearError as exc:
             return _protocol_error(str(exc), 15001)
 
+    @app.post("/v1/treasury/cmus/info")
+    async def cmu_info_from_treasury(body: TreasuryEnvelopeRequest):
+        try:
+            return store.cmu_info_from_treasury_envelope(
+                body.model_dump(),
+                mint_url=configured.mint_url,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15002)
+
     return app
