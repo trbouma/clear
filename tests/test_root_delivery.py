@@ -4,17 +4,24 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from stroma import Keys
 
 from clear import root_delivery
 from clear.tokens import encode_token_v3
+
+RECIPIENT = Keys(priv_k="1".zfill(64))
+RECIPIENT_PUBKEY = RECIPIENT.public_key_hex()
+RECIPIENT_NPUB = RECIPIENT.public_key_bech32()
+SECOND_RECIPIENT = Keys(priv_k="2".zfill(64))
+SECOND_RECIPIENT_PUBKEY = SECOND_RECIPIENT.public_key_hex()
 
 
 def test_discover_clear_support_from_lightning_address(monkeypatch) -> None:
     def fake_get_json(url):
         assert url == "https://example.com/.well-known/nostr.json?name=alice"
         return {
-            "names": {"alice": "11" * 32},
-            "relays": {"11" * 32: ["wss://relay.example"]},
+            "names": {"alice": RECIPIENT_PUBKEY},
+            "relays": {RECIPIENT_PUBKEY: ["wss://relay.example"]},
             "clear": {
                 "mints": ["http://clear.example"],
                 "units": ["cmu-0011223344556677"],
@@ -35,7 +42,7 @@ def test_discover_clear_support_from_lightning_address(monkeypatch) -> None:
 
     assert discovery["supported"] is True
     assert discovery["source"] == "nip05"
-    assert discovery["recipient_pubkey"] == "11" * 32
+    assert discovery["recipient_pubkey"] == RECIPIENT_PUBKEY
     assert discovery["relays"] == ["wss://relay.example"]
 
 
@@ -44,8 +51,8 @@ def test_discover_clear_support_returns_unsupported_when_unit_differs(
 ) -> None:
     def fake_get_json(url):
         return {
-            "names": {"alice": "11" * 32},
-            "relays": {"11" * 32: ["wss://relay.example"]},
+            "names": {"alice": RECIPIENT_PUBKEY},
+            "relays": {RECIPIENT_PUBKEY: ["wss://relay.example"]},
             "clear": {
                 "mints": ["http://clear.example"],
                 "units": ["cmu-other"],
@@ -76,7 +83,7 @@ def test_discover_clear_support_from_lightning_address_descriptor(
         return {
             "callback": "https://example.com/lnurl",
             "clear": {
-                "pubkey": "22" * 32,
+                "pubkey": SECOND_RECIPIENT_PUBKEY,
                 "relays": ["wss://relay.example"],
                 "mints": ["http://clear.example"],
                 "units": ["cmu-0011223344556677"],
@@ -96,7 +103,7 @@ def test_discover_clear_support_from_lightning_address_descriptor(
 
     assert discovery["supported"] is True
     assert discovery["source"] == "lightning-address"
-    assert discovery["recipient_pubkey"] == "22" * 32
+    assert discovery["recipient_pubkey"] == SECOND_RECIPIENT_PUBKEY
     assert discovery["relays"] == ["wss://relay.example"]
 
 

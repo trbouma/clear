@@ -21,7 +21,6 @@ coincurve = ">=20.0.0,<22.0.0"
 fastapi = ">=0.115.0,<1.0.0"
 uvicorn = { version = ">=0.34.0,<1.0.0", extras = ["standard"] }
 python-dotenv = ">=1.2.0,<2.0.0"
-monstr = "^0.1.9"
 cryptography = ">=50.0.0,<51.0.0"
 stroma-nostr = { git = "https://github.com/trbouma/stroma.git" }
 
