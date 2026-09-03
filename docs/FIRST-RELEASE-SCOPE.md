@@ -46,6 +46,8 @@ active treasurer `npub`. The detailed model is defined in
 
 The complete model is defined in
 [Root Commissioning and Treasury Readiness](ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
+The step-by-step first-release treasurer procedure is defined in
+[Treasurer Onboarding Runbook](TREASURER-ONBOARDING-RUNBOOK.md).
 
 ### Canonical keyset and CMU identity
 
@@ -77,6 +79,9 @@ The complete model is defined in
 - Preserve the current master-derived keyset as a compatible legacy keyset.
 - Rotate treasurer authority for an existing CMU by replacing the authorized
   `npub`, not by rotating the keyset or changing the CMU.
+- Require `clear-root cmu rotate-treasurer` to include both `--old-npub` and
+  `--new-npub`, and fail if `--old-npub` does not match the current CMU
+  authority record.
 
 For the first release, `clear-root` and the operator token manage the bootstrap
 treasurer registry. Root-signed policy and remote HSM enforcement remain
@@ -87,10 +92,9 @@ The safe sequence is:
 
 ```text
 operator grants one keyset creation to treasurer
-  -> treasurer signs a keyset request
+  -> treasurer consumes the grant with a signed CMU creation request
   -> mint generates and encrypts a random keyset secret
   -> grant is consumed and cannot create another keyset
-  -> operator activates it locally
   -> Clear creates or verifies its bound ledger
   -> issuance begins through Clear's recorded workflow
 ```

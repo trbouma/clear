@@ -20,6 +20,7 @@ class Settings:
     root_authority_npub: str | None = None
     currency_alias: str | None = None
     currency_unit_alias: str | None = None
+    key_encryption_key: str | None = None
     root_api_loopback_only: bool = True
 
     def __post_init__(self) -> None:
@@ -54,4 +55,5 @@ class Settings:
             root_authority_npub=os.getenv("CLEAR_ROOT_AUTHORITY_NPUB") or None,
             currency_alias=os.getenv("CLEAR_CURRENCY_ALIAS") or None,
             currency_unit_alias=os.getenv("CLEAR_CURRENCY_UNIT_ALIAS") or None,
+            key_encryption_key=os.getenv("CLEAR_KEY_ENCRYPTION_KEY") or None,
         )

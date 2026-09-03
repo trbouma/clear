@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
+from stroma import Keys
 
 from clear.root_delivery import (
     DeliveryError,
@@ -255,6 +256,95 @@ def summary(args) -> int:
         _api_url(args),
         "GET",
         "/v1/operator/summary",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasurer_add(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/treasurers",
+        {"npub": args.npub},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasurer_list(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/treasurers",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasurer_grant(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/treasurer-grants",
+        {"npub": args.npub},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasurer_grant_list(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/treasurer-grants",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasurer_keygen(args) -> int:
+    keys = Keys()
+    _print_json(
+        {
+            "npub": keys.public_key_bech32(),
+            "nsec": keys.private_key_bech32(),
+            "public_key": keys.public_key_hex(),
+            "private_key": keys.private_key_hex(),
+            "warning": (
+                "Give the npub to the mint operator. Keep the nsec with the "
+                "treasurer; the mint must never store it."
+            ),
+        }
+    )
+    return 0
+
+
+def cmu_create(args) -> int:
+    payload = {"grant_id": args.grant_id}
+    if args.name:
+        payload["name"] = args.name
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/cmus",
+        payload,
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def cmu_list(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/cmus",
         token=_operator_token(),
     )
     _print_json(result)
@@ -544,6 +634,63 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
 
     summary_parser = subcommands.add_parser("summary", help="Show mint supply totals.")
     summary_parser.set_defaults(handler=summary)
+
+    treasurer_parser = subcommands.add_parser(
+        "treasurer",
+        help="Manage first-release treasurer authority records.",
+    )
+    treasurer_subcommands = treasurer_parser.add_subparsers(
+        dest="treasurer_command",
+        required=True,
+    )
+    treasurer_add_parser = treasurer_subcommands.add_parser(
+        "add",
+        help="Record a treasurer npub without receiving its nsec.",
+    )
+    treasurer_add_parser.add_argument("npub")
+    treasurer_add_parser.set_defaults(handler=treasurer_add)
+    treasurer_list_parser = treasurer_subcommands.add_parser(
+        "list",
+        help="List treasurer authority records.",
+    )
+    treasurer_list_parser.set_defaults(handler=treasurer_list)
+    treasurer_grant_parser = treasurer_subcommands.add_parser(
+        "grant",
+        help="Set up one keyset/CMU creation path for a treasurer.",
+    )
+    treasurer_grant_parser.add_argument("npub")
+    treasurer_grant_parser.set_defaults(handler=treasurer_grant)
+    treasurer_grants_parser = treasurer_subcommands.add_parser(
+        "grants",
+        help="List treasurer keyset/CMU creation grants.",
+    )
+    treasurer_grants_parser.set_defaults(handler=treasurer_grant_list)
+    treasurer_keygen_parser = treasurer_subcommands.add_parser(
+        "keygen",
+        help="Generate a local treasurer npub/nsec pair without storing it.",
+    )
+    treasurer_keygen_parser.set_defaults(handler=treasurer_keygen)
+
+    cmu_parser = subcommands.add_parser(
+        "cmu",
+        help="Manage CMU creation and lifecycle records.",
+    )
+    cmu_subcommands = cmu_parser.add_subparsers(
+        dest="cmu_command",
+        required=True,
+    )
+    cmu_create_parser = cmu_subcommands.add_parser(
+        "create",
+        help="Create one CMU from a pending treasurer grant.",
+    )
+    cmu_create_parser.add_argument("grant_id")
+    cmu_create_parser.add_argument("--name", default=None, help="Friendly CMU name.")
+    cmu_create_parser.set_defaults(handler=cmu_create)
+    cmu_list_parser = cmu_subcommands.add_parser(
+        "list",
+        help="List CMU records.",
+    )
+    cmu_list_parser.set_defaults(handler=cmu_list)
 
     wallet_parser = subcommands.add_parser("wallet", help="Manage local root wallet.")
     wallet_subcommands = wallet_parser.add_subparsers(

@@ -16,10 +16,14 @@ from clear.crypto import Keyset
 from clear.homepage import render_homepage
 from clear.models import (
     CheckStateRequest,
+    CMUCreateRequest,
     MintQuoteRequest,
     MintRequest,
     RetireRequest,
     SwapRequest,
+    TreasurerGrantRequest,
+    TreasurerRequest,
+    TreasuryEnvelopeRequest,
 )
 from clear.store import ClearError, Store
 
@@ -35,7 +39,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         max_order=configured.max_order,
         root_authority_npub=configured.root_authority_npub,
     )
-    store = Store(configured.database_path, keyset)
+    store = Store(
+        configured.database_path,
+        keyset,
+        key_encryption_key=configured.key_encryption_key or configured.master_secret,
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -190,31 +198,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
         }
 
-    def keyset_response():
-        return {
-            "id": keyset.id,
-            "unit": keyset.unit,
-            "active": True,
-            "input_fee_ppk": 0,
-            "final_expiry": None,
-            "keys": {str(amount): key for amount, key in keyset.public_keys.items()},
-        }
-
     @app.get("/v1/keys")
     async def keys():
-        return {"keysets": [keyset_response()]}
+        return {"keysets": store.keyset_responses(include_keys=True)}
 
     @app.get("/v1/keys/{keyset_id}")
     async def keys_by_id(keyset_id: str):
-        if keyset_id != keyset.id:
+        try:
+            response = store.keyset_response(keyset_id, include_keys=True)
+        except ClearError:
             return _protocol_error("keyset not found", 10001)
-        return {"keysets": [keyset_response()]}
+        return {"keysets": [response]}
 
     @app.get("/v1/keysets")
     async def keysets():
-        response = keyset_response()
-        response.pop("keys")
-        return {"keysets": [response]}
+        return {"keysets": store.keyset_responses(include_keys=False)}
 
     @app.post("/v1/mint/quote/clear")
     async def create_mint_quote(request: MintQuoteRequest):
@@ -278,10 +276,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if error := operator_access_error(http_request, authorization):
             return error
         try:
-            amount = store.retire(request.inputs, request.memo)
+            retired = store.retire(request.inputs, request.memo)
         except ClearError as exc:
             return _protocol_error(str(exc), 13000)
-        return {"status": "RETIRED", "amount": amount, "unit": keyset.unit}
+        return {"status": "RETIRED", **retired}
 
     @app.get("/v1/operator/summary")
     async def operator_summary(
@@ -291,5 +289,81 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if error := operator_access_error(request, authorization):
             return error
         return store.summary()
+
+    @app.get("/v1/operator/treasurers")
+    async def list_treasurers(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        return store.list_treasurers()
+
+    @app.post("/v1/operator/treasurers")
+    async def add_treasurer(
+        body: TreasurerRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.add_treasurer(body.npub)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 14000)
+
+    @app.get("/v1/operator/treasurer-grants")
+    async def list_treasurer_grants(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        return store.list_treasurer_grants()
+
+    @app.post("/v1/operator/treasurer-grants")
+    async def grant_treasurer(
+        body: TreasurerGrantRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.grant_treasurer(body.npub)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 14001)
+
+    @app.get("/v1/operator/cmus")
+    async def list_cmus(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        return store.list_cmus()
+
+    @app.post("/v1/operator/cmus")
+    async def create_cmu(
+        body: CMUCreateRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.create_cmu(body.grant_id, friendly_name=body.name)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15000)
+
+    @app.post("/v1/treasury/cmus")
+    async def create_cmu_from_treasury(body: TreasuryEnvelopeRequest):
+        try:
+            return store.create_cmu_from_treasury_envelope(
+                body.model_dump(),
+                mint_url=configured.mint_url,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15001)
 
     return app

@@ -3,10 +3,13 @@ from __future__ import annotations
 import pytest
 from coincurve import PrivateKey, PublicKey
 from fastapi.testclient import TestClient
+from stroma import Keys
 
 from clear.config import Settings
 from clear.crypto import CURVE_ORDER, Keyset, hash_to_curve
 from clear.main import create_app
+from clear.store import ClearError
+from clear.treasury_auth import build_cmu_create_envelope
 
 MASTER_SECRET = "11" * 32
 OPERATOR_TOKEN = "operator-token-that-is-long-enough"
@@ -66,7 +69,12 @@ def unblind(
     }
 
 
-def issue_proof(client: TestClient, keyset: Keyset, amount: int = 8) -> dict:
+def issue_proof(
+    client: TestClient,
+    keyset: Keyset,
+    amount: int = 8,
+    secret: str = "first-secret",
+) -> dict:
     quote = client.post(
         "/v1/mint/quote/clear",
         json={"amount": amount, "unit": keyset.unit},
@@ -78,13 +86,13 @@ def issue_proof(client: TestClient, keyset: Keyset, amount: int = 8) -> dict:
         headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
     )
     assert authorized.status_code == 200
-    output, r = blinded_output(keyset, amount, "first-secret", 17)
+    output, r = blinded_output(keyset, amount, secret, 17)
     minted = client.post(
         "/v1/mint/clear",
         json={"quote": quote["quote"], "outputs": [output]},
     )
     assert minted.status_code == 200
-    return unblind(keyset, amount, "first-secret", r, minted.json()["signatures"][0])
+    return unblind(keyset, amount, secret, r, minted.json()["signatures"][0])
 
 
 def test_information_health_and_unique_currency(tmp_path) -> None:
@@ -318,6 +326,337 @@ def test_issue_swap_check_state_and_retire(tmp_path) -> None:
     assert summary.json()["circulating"] == 4
     assert summary.json()["outstanding"] == 4
     assert still_unspent.json()["states"][0]["state"] == "UNSPENT"
+
+
+def test_operator_can_add_and_list_treasurers(tmp_path) -> None:
+    configured = settings(tmp_path)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        unauthorized = client.post("/v1/operator/treasurers", json={"npub": npub})
+        added = client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        repeated = client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        listed = client.get(
+            "/v1/operator/treasurers",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+
+    assert unauthorized.status_code == 401
+    assert added.status_code == 200
+    assert added.json()["npub"] == npub
+    assert added.json()["status"] == "active"
+    assert added.json()["created"] is True
+    assert repeated.json()["created"] is False
+    assert listed.json()["treasurers"] == [
+        {
+            "npub": npub,
+            "status": "active",
+            "added_at": added.json()["added_at"],
+            "updated_at": added.json()["updated_at"],
+            "removed_at": None,
+        }
+    ]
+
+
+def test_operator_rejects_treasurer_nsec(tmp_path) -> None:
+    configured = settings(tmp_path)
+    with TestClient(create_app(configured)) as client:
+        response = client.post(
+            "/v1/operator/treasurers",
+            json={"npub": "nsec1secretmustnotenterclear"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+
+    assert response.status_code == 400
+    assert "nsec must never be submitted" in response.json()["detail"]
+
+
+def test_operator_grant_requires_active_treasurer_and_is_single_use(tmp_path) -> None:
+    configured = settings(tmp_path)
+    app = create_app(configured)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(app) as client:
+        missing = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        granted = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        duplicate_pending = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        listed = client.get(
+            "/v1/operator/treasurer-grants",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+
+    assert missing.status_code == 400
+    assert "must be active" in missing.json()["detail"]
+    assert granted.status_code == 200
+    assert granted.json()["npub"] == npub
+    assert granted.json()["scope"] == "keyset:create"
+    assert granted.json()["max_uses"] == 1
+    assert granted.json()["uses"] == 0
+    assert granted.json()["status"] == "pending"
+    assert granted.json()["keyset_id"] is None
+    assert duplicate_pending.status_code == 400
+    assert "unused grant" in duplicate_pending.json()["detail"]
+    assert listed.json()["grants"] == [granted.json()]
+
+
+def test_store_rejects_grant_after_treasurer_created_cmu(tmp_path) -> None:
+    configured = settings(tmp_path)
+    app = create_app(configured)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(app):
+        app.state.store.add_treasurer(npub)
+        grant = app.state.store.grant_treasurer(npub)
+        consumed = app.state.store.consume_treasurer_grant(
+            grant["id"], "keyset-created-by-grant"
+        )
+        with pytest.raises(ClearError, match="already created a CMU"):
+            app.state.store.grant_treasurer(npub)
+
+    assert consumed["status"] == "consumed"
+    assert consumed["uses"] == 1
+    assert consumed["keyset_id"] == "keyset-created-by-grant"
+
+
+def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> None:
+    configured = settings(tmp_path)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        legacy_keysets = client.get("/v1/keysets").json()["keysets"]
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Gym Guest Passes"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        duplicate_create = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Again"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        duplicate_grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        keysets = client.get("/v1/keysets").json()["keysets"]
+        keys = client.get(f"/v1/keys/{created.json()['keyset_id']}")
+        grants = client.get(
+            "/v1/operator/treasurer-grants",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()["grants"]
+
+    assert created.status_code == 200
+    cmu = created.json()
+    assert cmu["unit"].startswith("cmu-")
+    assert cmu["keyset_id"].startswith("01")
+    assert cmu["friendly_name"] == "Gym Guest Passes"
+    assert cmu["treasurer_npub"] == npub
+    assert cmu["material_kind"] == "random-encrypted-v1"
+    assert cmu["status"] == "active"
+    assert duplicate_create.status_code == 400
+    assert "not pending" in duplicate_create.json()["detail"]
+    assert duplicate_grant.status_code == 400
+    assert "already created a CMU" in duplicate_grant.json()["detail"]
+    assert len(legacy_keysets) == 1
+    assert len(keysets) == 2
+    assert {item["id"] for item in keysets} == {
+        legacy_keysets[0]["id"],
+        cmu["keyset_id"],
+    }
+    assert keys.status_code == 200
+    assert keys.json()["keysets"][0]["unit"] == cmu["unit"]
+    assert keys.json()["keysets"][0]["keys"]
+    assert grants == [
+        {
+            **grant,
+            "uses": 1,
+            "status": "consumed",
+            "updated_at": grants[0]["updated_at"],
+            "consumed_at": grants[0]["consumed_at"],
+            "keyset_id": cmu["keyset_id"],
+        }
+    ]
+
+
+def test_created_cmu_keyset_survives_restart(tmp_path) -> None:
+    configured = settings(tmp_path)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Restart Credits"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+
+    with TestClient(create_app(configured)) as restarted:
+        keysets = restarted.get("/v1/keysets").json()["keysets"]
+        cmus = restarted.get(
+            "/v1/operator/cmus",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()["cmus"]
+
+    assert created["keyset_id"] in {keyset["id"] for keyset in keysets}
+    assert created in cmus
+
+
+def test_created_cmu_can_issue_and_retire_independently(tmp_path) -> None:
+    configured = settings(tmp_path)
+    app = create_app(configured)
+    legacy_keyset = app.state.keyset
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(app) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Independent Credits"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created_keyset = app.state.store.keysets[created["keyset_id"]]
+
+        legacy_proof = issue_proof(client, legacy_keyset, amount=8)
+        created_proof = issue_proof(
+            client,
+            created_keyset,
+            amount=8,
+            secret="created-cmu-secret",
+        )
+        retired = client.post(
+            "/v1/operator/retire",
+            json={"inputs": [created_proof], "memo": "program completed"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        cross_cmu_swap = client.post(
+            "/v1/swap",
+            json={
+                "inputs": [legacy_proof],
+                "outputs": [
+                    blinded_output(created_keyset, 8, "cross-cmu-output", 43)[0]
+                ],
+            },
+        )
+
+    assert created_keyset.id != legacy_keyset.id
+    assert created_keyset.unit == created["unit"]
+    assert retired.status_code == 200
+    assert retired.json()["unit"] == created["unit"]
+    assert retired.json()["amount"] == 8
+    assert cross_cmu_swap.status_code == 400
+    assert "active keyset" in cross_cmu_swap.json()["detail"]
+
+
+def test_treasurer_can_consume_grant_over_public_treasury_route(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        envelope = build_cmu_create_envelope(
+            mint="https://clear.example",
+            grant_id=grant["id"],
+            name="Treasurer Credits",
+            nsec=treasurer.private_key_bech32(),
+        )
+        created = client.post("/v1/treasury/cmus", json=envelope)
+        replay = client.post("/v1/treasury/cmus", json=envelope)
+
+    assert created.status_code == 200
+    assert created.json()["friendly_name"] == "Treasurer Credits"
+    assert created.json()["treasurer_npub"] == npub
+    assert replay.status_code == 400
+    assert "not pending" in replay.json()["detail"]
+
+
+def test_treasury_route_rejects_signature_from_wrong_treasurer(tmp_path) -> None:
+    configured = settings(tmp_path)
+    authorized = Keys(priv_k="1".zfill(64))
+    wrong = Keys(priv_k="2".zfill(64))
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": authorized.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": authorized.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        envelope = build_cmu_create_envelope(
+            mint="https://clear.example",
+            grant_id=grant["id"],
+            name="Wrong Signer",
+            nsec=wrong.private_key_bech32(),
+        )
+        response = client.post("/v1/treasury/cmus", json=envelope)
+        grants = client.get(
+            "/v1/operator/treasurer-grants",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()["grants"]
+
+    assert response.status_code == 400
+    assert "does not match grant treasurer" in response.json()["detail"]
+    assert grants[0]["status"] == "pending"
+    assert grants[0]["uses"] == 0
 
 
 def test_proofs_from_different_clear_currency_are_rejected(tmp_path) -> None:

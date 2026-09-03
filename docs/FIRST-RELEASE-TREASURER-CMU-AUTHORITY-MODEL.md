@@ -62,12 +62,23 @@ The mint stores the authorized treasurer `npub`, the consumed grant, the signed
 request, and the resulting keyset/CMU binding. It never receives or derives the
 treasurer `nsec`.
 
+The operator runbook for this ceremony is
+[Treasurer Onboarding Runbook](TREASURER-ONBOARDING-RUNBOOK.md).
+
 In the `clear-root` command model, `add` and `grant` have distinct meanings:
 
+- `clear-root treasurer keygen` generates a local `npub`/`nsec` pair and
+  stores nothing. It is a convenience for development or assisted onboarding;
+  in normal separated custody, the treasurer should generate and keep their own
+  `nsec`.
 - `clear-root treasurer add <npub>` records a treasurer public key that may be
   considered for authority.
 - `clear-root treasurer grant <npub>` sets up that treasurer's one permitted
   keyset/CMU creation path.
+- `clear-root cmu create <grant-id> --name <name>` consumes the pending grant,
+  generates the mint-held random keyset, and creates the corresponding CMU.
+- `clear-root cmu list` shows the legacy/default CMU and any treasurer-created
+  CMUs.
 
 For the first release, `grant` is single-use and CMU-creating in intent. If a
 grant for that treasurer has already produced a keyset, a second grant for the
@@ -127,6 +138,20 @@ The ceremony that proves or agrees to the replacement is out of band between
 the mint operator and treasurer. The mint records only the resulting authority
 change, including the old `npub`, new `npub`, CMU, operator/root action,
 timestamp, and reason or audit reference.
+
+The operator must supply both the current and replacement public keys:
+
+```text
+clear-root cmu rotate-treasurer cmu-<keyset-id> \
+  --old-npub npub1old... \
+  --new-npub npub1new... \
+  --reason <text>
+```
+
+The command must fail unless `--old-npub` exactly matches the CMU's current
+authority record. This makes rotation a deliberate compare-and-swap operation
+and reduces the chance of rotating the wrong CMU or replacing an authority that
+has already changed.
 
 After rotation:
 

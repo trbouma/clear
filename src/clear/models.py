@@ -51,3 +51,21 @@ class CheckStateRequest(BaseModel):
 class RetireRequest(BaseModel):
     inputs: list[Proof] = Field(min_length=1, max_length=128)
     memo: str | None = Field(default=None, max_length=280)
+
+
+class TreasurerRequest(BaseModel):
+    npub: str = Field(min_length=1, max_length=256)
+
+
+class TreasurerGrantRequest(BaseModel):
+    npub: str = Field(min_length=1, max_length=256)
+
+
+class CMUCreateRequest(BaseModel):
+    grant_id: str = Field(min_length=1, max_length=128)
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+
+
+class TreasuryEnvelopeRequest(BaseModel):
+    payload: dict = Field()
+    event: dict = Field()

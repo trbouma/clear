@@ -13,6 +13,7 @@ keywords = ["cashu", "ecash", "mint-units", "local-first", "safebox"]
 [tool.poetry.scripts]
 clear = "clear.cli:main"
 clear-root = "clear.root_cli:main"
+clear-treasury = "clear.treasury_cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
@@ -21,6 +22,8 @@ fastapi = ">=0.115.0,<1.0.0"
 uvicorn = { version = ">=0.34.0,<1.0.0", extras = ["standard"] }
 python-dotenv = ">=1.2.0,<2.0.0"
 monstr = "^0.1.9"
+cryptography = ">=50.0.0,<51.0.0"
+stroma-nostr = { git = "https://github.com/trbouma/stroma.git" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3.0,<10.0.0"

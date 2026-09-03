@@ -49,6 +49,7 @@ nav:
   - Operate Clear:
       - Getting Started: getting-started.md
       - Commissioning a Mint: root-commissioning.md
+      - Onboarding a Treasurer: treasurer-onboarding.md
       - API: api.md
       - Security: security.md
       - Release Roadmap: release-roadmap.md

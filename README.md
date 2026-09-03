@@ -9,6 +9,16 @@ issuance, redemption, and retirement.
 organization defines what each transferable unit represents and the policy
 under which it is issued, accepted, redeemed, or retired.
 
+Clear can support multiple treasurers on one mint deployment by giving each
+authorized treasurer their own CMU. This lets a mint operator serve many
+communities, programs, venues, or working groups from shared mint
+infrastructure while keeping each community's unit, policy, ledger, and
+treasurer authority separate. In the first release, that separation is
+deliberately simple: one active treasurer `npub` maps to one CMU, and the
+treasurer's `nsec` never enters the mint. This creates a practical new pattern
+for community-issued value: one operator can provide reliable mint operations,
+while many communities retain their own issuance authority.
+
 Clear is designed to work alongside Bitcoin- and Lightning-backed Cashu mints,
 not replace them. A wallet can present sat-denominated funds from those mints as
 one **Cash Balance**: general-purpose value that can be transferred broadly and
@@ -125,6 +135,8 @@ active treasurer `npub` maps to one CMU, is described in
 [First-Release Treasurer and CMU Authority Model](docs/FIRST-RELEASE-TREASURER-CMU-AUTHORITY-MODEL.md).
 The accepted custody and creation model for new keysets is described in
 [Treasurer-Authorized Random Keysets](docs/TREASURER-AUTHORIZED-RANDOM-KEYSETS-DESIGN.md).
+The step-by-step operator and treasurer procedure is described in
+[Treasurer Onboarding Runbook](docs/TREASURER-ONBOARDING-RUNBOOK.md).
 The required acceptance gate before treasurer access is described in
 [Root Commissioning and Treasury Readiness](docs/ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
 The accepted implementation boundary for the first release is described in

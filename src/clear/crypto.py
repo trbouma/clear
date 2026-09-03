@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import secrets
 
 from coincurve import PrivateKey, PublicKey
 
@@ -82,6 +83,11 @@ class Keyset:
         )
         preimage += f"|unit:{self.unit}"
         self.id = "01" + hashlib.sha256(preimage.encode()).hexdigest()
+
+    @classmethod
+    def random(cls, *, max_order: int = 20) -> tuple[Keyset, str]:
+        secret = secrets.token_hex(32)
+        return cls(secret, max_order=max_order), secret
 
     def sign_blinded(self, amount: int, blinded_secret: str) -> str:
         private = self.private_keys.get(amount)

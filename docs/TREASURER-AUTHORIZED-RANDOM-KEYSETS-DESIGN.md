@@ -81,6 +81,19 @@ authority rotation, not keyset rotation. It changes who may authorize future
 actions for that CMU, but it does not change the keyset, CMU, ledger, wallet
 balance identity, or existing Mint Notes.
 
+The first-release operator command must require both the old and new public
+keys:
+
+```text
+clear-root cmu rotate-treasurer cmu-<keyset-id> \
+  --old-npub npub1old... \
+  --new-npub npub1new... \
+  --reason <text>
+```
+
+The mint must reject the rotation if `--old-npub` does not match the CMU's
+current authority record.
+
 ## Keyset generation
 
 The mint generates at least 256 bits of randomness for each keyset. That
@@ -203,12 +216,14 @@ the process restarted or a database field was absent.
 The prototype remains consolidated under `clear-root`:
 
 ```text
+clear-root treasurer keygen
 clear-root treasurer add <npub>
 clear-root treasurer remove <npub>
 clear-root treasurer list
 clear-root treasurer grant <npub>
-clear-root keyset create --authorization <signed-request>
-clear-root keyset list
+clear-root treasurer grants
+clear-root cmu create <grant-id> --name <name>
+clear-root cmu list
 ```
 
 `clear-root` is a local mint-administration command. It uses
@@ -220,6 +235,11 @@ non-loopback clients, even when they present the correct bearer token.
 The treasurer private key never enters mint configuration. A future extracted
 treasury CLI can create and sign the authorization while preserving the same
 request and audit formats.
+
+`clear-root treasurer keygen` is a local convenience command only. It may be
+used for development or assisted onboarding, but it does not store the keypair
+or submit the `nsec` to the mint. In separated custody, the treasurer should
+generate and retain their own `nsec`.
 
 In the first-release treasury CLI flow, the treasurer's `nsec` derives an
 `npub`, and the mint resolves that `npub` to exactly one CMU. If the `npub` is

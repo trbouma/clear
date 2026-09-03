@@ -705,6 +705,264 @@ def test_root_cli_summary_calls_operator_endpoint(monkeypatch, capsys) -> None:
     ]
 
 
+def test_root_cli_treasurer_add_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "npub": payload["npub"],
+            "status": "active",
+            "created": True,
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "treasurer",
+            "add",
+            "npub1treasurer",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"created": true' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/treasurers",
+            {"npub": "npub1treasurer"},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_treasurer_list_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {"treasurers": [{"npub": "npub1treasurer", "status": "active"}]}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "treasurer",
+            "list",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"npub": "npub1treasurer"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "GET",
+            "/v1/operator/treasurers",
+            None,
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_treasurer_grant_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "id": "grant-id",
+            "npub": payload["npub"],
+            "scope": "keyset:create",
+            "status": "pending",
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "treasurer",
+            "grant",
+            "npub1treasurer",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"scope": "keyset:create"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/treasurer-grants",
+            {"npub": "npub1treasurer"},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_treasurer_grants_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {"grants": [{"id": "grant-id", "status": "pending"}]}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "treasurer",
+            "grants",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"grant-id"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "GET",
+            "/v1/operator/treasurer-grants",
+            None,
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_treasurer_keygen_prints_pair_without_api_call(
+    monkeypatch, capsys
+) -> None:
+    class FakeKeys:
+        def public_key_bech32(self):
+            return "npub1generated"
+
+        def private_key_bech32(self):
+            return "nsec1generated"
+
+        def public_key_hex(self):
+            return "11" * 32
+
+        def private_key_hex(self):
+            return "22" * 32
+
+    monkeypatch.setattr(root_cli, "Keys", FakeKeys)
+
+    def fail_request_json(*args, **kwargs):
+        raise AssertionError("keygen should not contact the mint")
+
+    monkeypatch.setattr(root_cli, "request_json", fail_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "treasurer",
+            "keygen",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    result = json.loads(capsys.readouterr().out)
+
+    assert result["npub"].startswith("npub1")
+    assert result["nsec"].startswith("nsec1")
+    assert result["public_key"] == "11" * 32
+    assert result["private_key"] == "22" * 32
+    assert "mint must never store it" in result["warning"]
+
+
+def test_root_cli_cmu_create_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "friendly_name": payload["name"],
+            "status": "active",
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "cmu",
+            "create",
+            "grant-id",
+            "--name",
+            "Gym Guest Passes",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"unit": "cmu-created"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/cmus",
+            {"grant_id": "grant-id", "name": "Gym Guest Passes"},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_cmu_list_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {"cmus": [{"unit": "cmu-created", "status": "active"}]}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "cmu",
+            "list",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"unit": "cmu-created"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "GET",
+            "/v1/operator/cmus",
+            None,
+            "operator-token",
+        )
+    ]
+
+
 def test_root_cli_info_combines_cmu_metadata_and_circulation(
     monkeypatch,
     capsys,
