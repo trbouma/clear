@@ -130,9 +130,9 @@ administration from quietly becoming institutional authority.
 ## Community treasury and vouchers
 
 The same model applies beyond corporations and public institutions. Churches,
-food banks, mutual-aid groups, service clubs, community foundations, and
-emergency-response organizations all need ways to coordinate limited resources
-under a shared mandate.
+food banks, mutual-aid groups, service clubs, community foundations, co-working
+facilities, resorts, and Indigenous community programs all need ways to
+coordinate limited resources under a shared mandate.
 
 A Clear currency could operate as a community voucher system. Consider a group
 of participating food banks and local service providers:
@@ -232,10 +232,10 @@ Providers return vouchers and receive ordinary settlement
 A church can fund a meal program in ordinary money while issuing private meal
 vouchers to participants. A coalition of food banks can recognize one voucher
 currency while retaining separate operations. A community foundation can
-allocate transportation or emergency-service credits that circulate only
-among participating providers. In each case, ordinary money can fund the
-program and reimburse providers, while Clear supplies the portable instrument
-that coordinates access between those two moments.
+allocate transportation or service credits that circulate only among
+participating providers. In each case, ordinary money can fund the program and
+reimburse providers, while Clear supplies the portable instrument that
+coordinates access between those two moments.
 
 The result is not a rival to cash. It is a way to reproduce selected cash-like
 properties inside a specific community of recognition: flexible possession,

@@ -50,20 +50,20 @@ service providers. Wallets can keep broadly transferable sat-denominated funds
 in a singular Cash Balance while displaying each issuer-defined credit under
 plural Clear Balances.
 
-That creates a different continuity path from externally issued Cashu ecash.
+That creates a different local-continuity path from externally issued Cashu ecash.
 If an external mint is unavailable, Acorn may preserve received Mint Notes as
 pending until it can confirm their proofs. If a Clear mint is running locally
 on the organization's network, it can continue validating, swapping, issuing,
 redeeming, and retiring its own Mint Notes without contacting Lightning or the
-wider internet.
+wider network.
 
-A resort or cruise ship, for example, could issue guest credits, staff
-allowances, activity vouchers, meal credits, or emergency value through a
-locally operated Clear mint. Shops and services on the local network recognize
-that specific currency, while the operator's treasury governs issuance and
-provider settlement. Mainstay supplies a coherent user experience, Acorn holds
-the Mint Notes, Spurline carries local signed events, and Lockbox can host the
-complete local runtime.
+A resort, cruise ship, or co-working facility, for example, could issue guest
+credits, staff allowances, activity vouchers, meal credits, or local service
+credits through a locally operated Clear mint. Shops and services on the local
+network recognize that specific currency, while the operator's treasury
+governs issuance and provider settlement. Mainstay supplies a coherent user
+experience, Acorn holds the Mint Notes, Spurline carries local signed events,
+and Lockbox can host the complete local runtime.
 
 Clear units remain voluntary, limited-recognition instruments rather than legal
 tender. They extend the family from payment continuity into local economic

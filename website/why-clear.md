@@ -7,8 +7,8 @@ description: Why organizations may need private, transferable Mint Notes.
 
 Organizations often need to allocate value before they need a payment rail.
 A community may distribute food credits, a program may allocate service units,
-an event may issue participant credits, or an emergency team may need a local
-clearing mechanism.
+an event may issue participant credits, a co-working facility may allocate desk
+or room credits, or a resort may issue guest and staff allowances.
 
 Conventional account systems can do this, but they place every transfer inside
 one application and its central account database. Clear explores a different
@@ -137,12 +137,12 @@ printing, meeting rooms, or other onboard services. The operator's reservation
 and point-of-sale systems still determine prices and deliver services; Clear
 provides the bounded bearer credit and its clearing state.
 
-This is especially useful where connectivity to distant infrastructure is
-intermittent or intentionally limited. A locally operated Clear mint can keep
-its own issuance, swap, redemption, and double-spend checks close to the
-community it serves. The CMU remains an operator-defined credit—not legal
-tender and not automatically interchangeable with another resort's, vessel's,
-or keyset's notes.
+This is especially useful where a community or facility wants local service
+coordination with clear accounting. A locally operated Clear mint can keep its
+own issuance, swap, redemption, and double-spend checks close to the community
+it serves, including during limited-connectivity periods. The CMU remains an
+operator-defined credit—not legal tender and not automatically interchangeable
+with another resort's, vessel's, or keyset's notes.
 
 ## Local-first continuity
 

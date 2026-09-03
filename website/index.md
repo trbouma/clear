@@ -38,9 +38,9 @@ presumed to be cash or universally interchangeable with another Clear balance.
 ## Mint Notes that can circulate
 
 Many organizations already keep internal balances: program credits, community
-funds, service allowances, emergency allocations, event credits, or other
-limited-purpose value. Clear explores what happens when those balances become
-portable Mint Notes instead of rows tied to one application account.
+funds, service allowances, guest credits, member credits, event credits, or
+other limited-purpose value. Clear explores what happens when those balances
+become portable Mint Notes instead of rows tied to one application account.
 
 Once issued, Clear Mint Notes can be held and transferred like other Cashu
 ecash. Their technical representation remains a Cashu proof.
