@@ -146,6 +146,8 @@ and NIP-59 delivery path are described in
 [Root CMU Issuance and Delivery](docs/ROOT-CMU-ISSUANCE-AND-DELIVERY.md).
 The complete cross-product milestone is recorded in
 [Transferable Clear Mint Unit Milestone](docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md).
+The working multi-community treasurer flow is recorded in
+[Treasurer-Authorized CMU Milestone](docs/TREASURER-AUTHORIZED-CMU-MILESTONE-2026-09-03.md).
 
 ## Relationship to Cashu
 

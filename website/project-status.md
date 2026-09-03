@@ -47,6 +47,20 @@ are not complete.
 
 [Read the complete milestone](https://github.com/trbouma/clear/blob/main/docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md){ .md-button .md-button--primary }
 
+## September 2026 treasurer-authorized CMU milestone
+
+Clear now demonstrates the first working multi-community treasury flow: a mint
+operator authorizes a treasurer `npub`, the treasurer consumes a single-use
+grant with their own `nsec`, the mint creates a separate random encrypted
+keyset/CMU, and the treasurer can issue and send Mint Notes from a
+treasurer-scoped wallet.
+
+Safebox Web now displays friendly CMU labels from mint keyset metadata while
+preserving the canonical identity of mint URL, CMU unit, and keyset ID. The
+tested flow used **Food Share Credits** displayed in **shares**.
+
+[Read the complete milestone](https://github.com/trbouma/clear/blob/main/docs/TREASURER-AUTHORIZED-CMU-MILESTONE-2026-09-03.md){ .md-button .md-button--primary }
+
 ## Next
 
 The first release is intentionally limited to one operator running one
