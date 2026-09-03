@@ -141,6 +141,9 @@ The required acceptance gate before treasurer access is described in
 [Root Commissioning and Treasury Readiness](docs/ROOT-COMMISSIONING-AND-TREASURY-READINESS-DESIGN.md).
 The accepted implementation boundary for the first release is described in
 [First Release Scope](docs/FIRST-RELEASE-SCOPE.md).
+The current SQLite schema, CMU separation rules, and keyset storage model are
+described in
+[Clear Mint Data Schema](docs/CLEAR-MINT-DATA-SCHEMA.md).
 The current privileged root issuance, local JSON root wallet, token retirement,
 and NIP-59 delivery path are described in
 [Root CMU Issuance and Delivery](docs/ROOT-CMU-ISSUANCE-AND-DELIVERY.md).

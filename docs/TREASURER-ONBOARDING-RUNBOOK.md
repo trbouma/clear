@@ -171,6 +171,12 @@ that:
 If those checks pass, the mint generates a random keyset secret internally,
 encrypts it at rest, consumes the grant, and creates the CMU.
 
+The treasurer does not receive that keyset secret. The treasurer's `nsec`
+authorizes bounded treasury actions; it is not the CMU signing secret. The mint
+operator is responsible for safeguarding the encrypted secret, the
+key-encryption material, database backups, and any host or container runtime
+that can decrypt and use the signing material.
+
 ## Step 7: Treasurer Confirms Their CMU
 
 The treasurer can ask the mint which active CMU is bound to their `nsec`:

@@ -29,6 +29,13 @@ rest. Compromise or migration of one keyset must not expose another keyset or
 the mint's key-encryption key. Enforceable separation from a compromised mint
 process eventually requires a policy-enforcing HSM or remote signer.
 
+Treasurer authority and keyset custody are separate responsibilities. The
+treasurer `nsec` authorizes bounded actions for a CMU. The mint operator is
+responsible for the keyset secret, the key-encryption material, backups, and
+any runtime environment that can decrypt or use the signing material. Rotating a
+treasurer `npub` changes who may authorize future actions; changing a keyset
+secret creates a different keyset and therefore a different CMU.
+
 The current service derives keys locally and never accepts the master secret
 over HTTP. Routine issuance and retirement use a separate operator token so
 that keyset material does not become an API credential. The target service

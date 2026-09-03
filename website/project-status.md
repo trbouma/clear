@@ -33,6 +33,10 @@ protocol experiment, not a production mint.
   kind `7381` append-only Clear history; and
 - FastAPI, Poetry CLI, tests, and documentation.
 
+The current SQLite schema, CMU separation rules, and keyset storage model are
+documented in the
+[Clear Mint Data Schema](https://github.com/trbouma/clear/blob/main/docs/CLEAR-MINT-DATA-SCHEMA.md).
+
 ## August 2026 transferable CMU milestone
 
 Clear now demonstrates organization-issued CMUs moving from a mint-operated

@@ -36,6 +36,16 @@ A treasurer does not receive the raw keyset secret merely by authorizing its
 creation. A mint operator does not gain governance authority merely because the
 running service can access encrypted key material.
 
+The mint operator remains the custodian of the operational keyset secret. That
+includes safeguarding the key-encryption material, encrypted keyset-secret rows,
+database backups, host/container access, and any runtime environment capable of
+decrypting the secret and signing blinded outputs.
+
+The keyset secret is not rotated for an existing CMU. A different keyset secret
+derives a different public keyset ID and therefore a different CMU. Treasurer
+`npub` rotation changes authority only; it does not change the mint-held signing
+material.
+
 The treasurer private key (`nsec`) remains outside Clear. The mint records and
 verifies only the treasurer public key (`npub`) or its normalized public-key
 form. No Clear configuration file, database row, API request, log entry, backup,

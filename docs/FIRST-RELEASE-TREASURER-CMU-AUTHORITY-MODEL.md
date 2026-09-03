@@ -65,6 +65,33 @@ treasurer `nsec`.
 The operator runbook for this ceremony is
 [Treasurer Onboarding Runbook](TREASURER-ONBOARDING-RUNBOOK.md).
 
+## Authority Versus Keyset Custody
+
+Treasurer authority and keyset custody are separate. The treasurer `nsec` signs
+bounded treasury requests. It does not derive, decrypt, export, or store the CMU
+keyset secret.
+
+For treasurer-created CMUs:
+
+```text
+treasurer nsec -> authorization authority
+mint-held keyset secret -> Cashu signing custody
+```
+
+The mint operator is responsible for safeguarding the keyset secret and
+everything that can decrypt or use it: `CLEAR_KEY_ENCRYPTION_KEY`, encrypted
+keyset-secret rows, database backups, host/container access, and runtime
+signing paths. The treasurer never sees the keyset secret.
+
+If a treasurer `nsec` is compromised, an attacker may authorize actions for
+that CMU while the key remains active. If the keyset secret is compromised, an
+attacker may create valid Mint Notes outside the mint ledger. That is a deeper
+supply-integrity failure because software authorization checks can be bypassed.
+
+The keyset secret is not rotated for an existing CMU. A new keyset secret
+creates a new keyset and therefore a new CMU. Treasurer `npub` rotation changes
+authority for future actions without changing keyset custody or CMU identity.
+
 ## Friendly Display Metadata
 
 Friendly display metadata is not CMU identity. Wallets and applications may
