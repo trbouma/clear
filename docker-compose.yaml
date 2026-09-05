@@ -22,6 +22,8 @@ services:
     environment:
       CLEAR_MASTER_SECRET: "${CLEAR_MASTER_SECRET:?Generate CLEAR_MASTER_SECRET before starting}"
       CLEAR_OPERATOR_TOKEN: "${CLEAR_OPERATOR_TOKEN:?Generate CLEAR_OPERATOR_TOKEN before starting}"
+      CLEAR_MINT_SERVICE_NSEC: "${CLEAR_MINT_SERVICE_NSEC:-}"
+      CLEAR_MINT_SERVICE_MANAGEMENT: "${CLEAR_MINT_SERVICE_MANAGEMENT:-independent}"
       CLEAR_DATABASE: /app/data/clear.sqlite3
       CLEAR_MINT_URL: "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
       CLEAR_CURRENCY_NAME: "${CLEAR_CURRENCY_NAME:-Clear Lab Credit Program}"

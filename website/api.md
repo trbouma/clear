@@ -55,8 +55,11 @@ The interactive OpenAPI description is available at `/docs` while the service
 is running.
 
 The current `/v1/info` response includes the canonical public `mint_url` and
-Clear's `currency` metadata: friendly name, display unit, keyset-bound protocol
-unit, public-key fingerprint, and NUT-02 keyset ID. Applications should resolve
+Clear's public `service_identity` and `currency` metadata. `service_identity`
+contains the mint-service `npub`, service type, management mode, and current
+commissioning state; it never contains private key material. Currency metadata
+contains the friendly name, display unit, keyset-bound protocol unit,
+public-key fingerprint, and NUT-02 keyset ID. Applications should resolve
 the friendly name from this metadata while retaining the logical mint,
 complete protocol unit, and authenticated service endpoints as the balance
 identity and routes. The privileged root CLI contacts the service through its

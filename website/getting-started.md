@@ -20,6 +20,7 @@ Generate independent development secrets:
 ```bash
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
+export CLEAR_MINT_SERVICE_NSEC="$(openssl rand -hex 32)"
 export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
 export CLEAR_MINT_URL="http://127.0.0.1:3339"
 export CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
@@ -33,6 +34,11 @@ local to the mint. When `CLEAR_ROOT_AUTHORITY_NPUB` is configured, it is also
 included in keyset derivation so a root authority change creates a new CMU.
 The operator token protects routine lab issuance and retirement actions and
 should be managed separately.
+`CLEAR_MINT_SERVICE_NSEC` is the mint's Nostr communication identity. Clear
+stores only its derived `npub` in the database as an identity sentinel and
+refuses a missing or different key after that first binding. It remains
+separate from the root authority, treasurer identities, and Cashu signing
+keys. The service begins in the `uncommissioned` state.
 The optional currency alias and unit alias are wallet-facing display hints for
 this CMU.
 

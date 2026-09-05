@@ -57,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             software_version=__version__,
         ),
         software_version=__version__,
+        mint_service_npub=configured.mint_service_npub,
     )
 
     @asynccontextmanager
@@ -119,6 +120,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "enforced": False,
         }
 
+    def service_identity_response():
+        return {
+            "npub": configured.mint_service_npub,
+            "type": "clear-mint",
+            "management": configured.mint_service_management,
+            "state": (
+                "uncommissioned"
+                if configured.mint_service_npub is not None
+                else "not-configured"
+            ),
+        }
+
     def currency_alias_response():
         alias_base = configured.currency_alias or configured.currency_name
         alias = (
@@ -143,6 +156,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "name": "Clear",
             "version": __version__,
             "description": "Organization-defined Clear Mint Units",
+            "service_identity": service_identity_response(),
             "currency": {
                 "name": configured.currency_name,
                 "display_unit": "CMU",
@@ -186,6 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "version": __version__,
             "mint_url": configured.mint_url,
             "description": f"{configured.currency_name} issued as Clear ecash",
+            "service_identity": service_identity_response(),
             "currency": {
                 "name": configured.currency_name,
                 "display_unit": "CMU",

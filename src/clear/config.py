@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
+from stroma import KeyError as StromaKeyError
+from stroma import Keys
+
+SERVICE_MANAGEMENT_MODES = {"independent", "mainstay-managed"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +26,8 @@ class Settings:
     currency_unit_alias: str | None = None
     key_encryption_key: str | None = None
     root_api_loopback_only: bool = True
+    mint_service_nsec: str | None = None
+    mint_service_management: str = "independent"
 
     def __post_init__(self) -> None:
         if len(self.master_secret) < 32:
@@ -30,6 +36,25 @@ class Settings:
             raise ValueError("operator_token must contain at least 24 characters")
         if not 1 <= self.max_order <= 30:
             raise ValueError("max_order must be between 1 and 30")
+        if self.mint_service_management not in SERVICE_MANAGEMENT_MODES:
+            raise ValueError("unsupported mint service management mode")
+        if self.mint_service_management == "mainstay-managed" and not (
+            self.mint_service_nsec
+        ):
+            raise ValueError(
+                "mainstay-managed Clear requires CLEAR_MINT_SERVICE_NSEC"
+            )
+        if self.mint_service_nsec:
+            try:
+                Keys(priv_k=self.mint_service_nsec)
+            except StromaKeyError as exc:
+                raise ValueError("CLEAR_MINT_SERVICE_NSEC is invalid") from exc
+
+    @property
+    def mint_service_npub(self) -> str | None:
+        if not self.mint_service_nsec:
+            return None
+        return Keys(priv_k=self.mint_service_nsec).public_key_bech32()
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -56,4 +81,8 @@ class Settings:
             currency_alias=os.getenv("CLEAR_CURRENCY_ALIAS") or None,
             currency_unit_alias=os.getenv("CLEAR_CURRENCY_UNIT_ALIAS") or None,
             key_encryption_key=os.getenv("CLEAR_KEY_ENCRYPTION_KEY") or None,
+            mint_service_nsec=os.getenv("CLEAR_MINT_SERVICE_NSEC") or None,
+            mint_service_management=os.getenv(
+                "CLEAR_MINT_SERVICE_MANAGEMENT", "independent"
+            ),
         )

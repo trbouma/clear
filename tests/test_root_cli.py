@@ -1082,6 +1082,12 @@ def test_root_cli_info_combines_cmu_metadata_and_circulation(
                 "version": "0.1.0",
                 "mint_url": "https://clear.example",
                 "description": "Example Credits issued as Clear ecash",
+                "service_identity": {
+                    "npub": "npub1service",
+                    "type": "clear-mint",
+                    "management": "mainstay-managed",
+                    "state": "uncommissioned",
+                },
                 "currency": {
                     "name": "Example Credits",
                     "display_unit": "CMU",
@@ -1123,6 +1129,8 @@ def test_root_cli_info_combines_cmu_metadata_and_circulation(
     assert '"friendly_alias": "Example Credits (cmu-0011223344556677)"' in output
     assert '"friendly_unit_alias": "smiles"' in output
     assert '"root_authority_npub": "npub1root"' in output
+    assert '"npub": "npub1service"' in output
+    assert '"state": "uncommissioned"' in output
     assert '"issued": 34' in output
     assert '"retired": 13' in output
     assert '"circulating": 21' in output

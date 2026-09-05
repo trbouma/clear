@@ -68,6 +68,7 @@ not be used for financial value or critical organizational accounting.
 poetry install --with dev,docs
 export CLEAR_MASTER_SECRET="$(openssl rand -hex 32)"
 export CLEAR_OPERATOR_TOKEN="$(openssl rand -hex 32)"
+export CLEAR_MINT_SERVICE_NSEC="$(openssl rand -hex 32)"
 export CLEAR_ROOT_AUTHORITY_NPUB="npub..."
 poetry run clear --host 127.0.0.1 --port 3339 \
   --database ./data/clear.sqlite3 \
@@ -85,10 +86,13 @@ poetry run mkdocs serve
 
 ## Run with Docker
 
-Create `.env` from `.env.example`, then set `CLEAR_MASTER_SECRET` and
-`CLEAR_OPERATOR_TOKEN` to independently generated secrets. `CLEAR_MINT_URL`
-must be the URL that wallets will use to reach the mint; the loopback default
-is suitable only for local testing.
+Create `.env` from `.env.example`, then set `CLEAR_MASTER_SECRET`,
+`CLEAR_OPERATOR_TOKEN`, and `CLEAR_MINT_SERVICE_NSEC` to independently
+generated secrets. `CLEAR_MINT_SERVICE_NSEC` may contain an `nsec` or a
+32-byte hex private key. It supplies the mint's stable Nostr communication
+identity and does not change the currency root, Cashu keysets, or treasurer
+authority. `CLEAR_MINT_URL` must be the URL that wallets will use to reach the
+mint; the loopback default is suitable only for local testing.
 
 Compose publishes port `3339` on all host interfaces by default through
 `CLEAR_BIND_ADDRESS=0.0.0.0`, allowing access over LAN or Tailscale. Use host
@@ -103,7 +107,7 @@ leaking an internal address into a circulating token.
 
 ```bash
 cp .env.example .env
-# Set both required secrets in .env using independent `openssl rand -hex 32` values.
+# Set all three secrets in .env using independent `openssl rand -hex 32` values.
 docker compose up --build --detach
 docker compose ps
 curl http://127.0.0.1:3339/health
@@ -125,6 +129,14 @@ docker compose exec clear clear-root issue 25 --memo "Docker lab issue"
 docker compose exec clear clear-root wallet balance
 docker compose exec clear clear-root summary
 ```
+
+Clear reports the derived service `npub` at `/` and `/v1/info`, but never
+reports its private key. On first configured startup, the service `npub` is
+recorded beside the database. Later startup fails if the service key is absent
+or derives a different `npub`. A database created before service identities
+existed may adopt its first configured identity once. The reported state is
+`uncommissioned` until the currency root explicitly authorizes this mint
+service in a later milestone.
 
 Signed treasurer mutations start disabled. Commission the standalone mint and
 then make the separate operator decision to enable them:

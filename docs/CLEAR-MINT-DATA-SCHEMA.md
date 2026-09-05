@@ -71,12 +71,18 @@ It currently stores:
 - `schema_version`;
 - root/legacy `keyset_id`;
 - root/legacy `keyset_fingerprint`; and
-- root/legacy `protocol_unit`.
+- root/legacy `protocol_unit`; and
+- `mint_service_npub` after a service identity has been configured.
 
 On startup, Clear checks that the configured root keyset still matches the
 database identity. If the configured root keyset differs from the persisted
 identity, startup fails instead of silently serving an existing ledger under a
 new keyset.
+
+The mint-service entry stores only the public `npub`. The corresponding
+`CLEAR_MINT_SERVICE_NSEC` remains outside SQLite. An older database without
+this entry may adopt its first configured service identity. Once recorded,
+startup fails if the configured key is missing or derives a different `npub`.
 
 ## `cmus`
 
@@ -468,6 +474,7 @@ Some state is shared at the deployment level:
 
 - one SQLite database file;
 - one `mint_metadata` identity binding for the root/legacy keyset;
+- one optional mint-service `npub` sentinel;
 - one treasurer registry;
 - one nonce replay table;
 - one commissioning history and treasury-state singleton;
@@ -485,15 +492,16 @@ On startup, Clear:
 1. creates tables if needed;
 2. records or verifies the schema version;
 3. verifies the root/legacy keyset identity against `mint_metadata`;
-4. adds any missing display metadata columns;
-5. inserts the legacy CMU row if absent;
-6. populates legacy display metadata from configuration if unset;
-7. decrypts persisted random and commissioning keyset secrets;
-8. re-derives their public keys, fingerprints, units, and keyset IDs;
-9. creates the fail-closed treasury-state singleton when absent;
-10. invalidates enabled readiness when the critical configuration fingerprint
+4. records or verifies the configured mint-service `npub` sentinel;
+5. adds any missing display metadata columns;
+6. inserts the legacy CMU row if absent;
+7. populates legacy display metadata from configuration if unset;
+8. decrypts persisted random and commissioning keyset secrets;
+9. re-derives their public keys, fingerprints, units, and keyset IDs;
+10. creates the fail-closed treasury-state singleton when absent;
+11. invalidates enabled readiness when the critical configuration fingerprint
    changes; and
-11. refuses startup if persisted keyset identity does not match the decrypted
+12. refuses startup if persisted keyset identity does not match the decrypted
    secret.
 
 This prevents the mint from silently advertising or signing for a keyset whose
@@ -503,6 +511,7 @@ stored descriptor does not match its key material.
 
 The mint must not store:
 
+- the mint-service `nsec`;
 - treasurer `nsec` values;
 - unencrypted random keyset secrets for treasurer-created CMUs;
 - recipient wallet private keys;

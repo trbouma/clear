@@ -431,6 +431,7 @@ def info(args) -> int:
         "name": mint_info["name"],
         "version": mint_info["version"],
         "description": mint_info["description"],
+        "service_identity": mint_info.get("service_identity"),
         "currency": mint_info["currency"],
         "policy": mint_info.get("policy"),
         "circulation": {

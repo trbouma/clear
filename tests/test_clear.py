@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import replace
 
 import pytest
@@ -20,6 +21,8 @@ from clear.treasury_auth import (
 
 MASTER_SECRET = "11" * 32
 OPERATOR_TOKEN = "operator-token-that-is-long-enough"
+MINT_SERVICE_NSEC = "22" * 32
+MINT_SERVICE_NPUB = Keys(priv_k=MINT_SERVICE_NSEC).public_key_bech32()
 
 
 def settings(
@@ -31,6 +34,8 @@ def settings(
     currency_alias: str | None = None,
     currency_unit_alias: str | None = None,
     root_api_loopback_only: bool = False,
+    mint_service_nsec: str | None = MINT_SERVICE_NSEC,
+    mint_service_management: str = "independent",
 ) -> Settings:
     return Settings(
         database_path=tmp_path / "clear.sqlite3",
@@ -43,6 +48,8 @@ def settings(
         currency_alias=currency_alias,
         currency_unit_alias=currency_unit_alias,
         root_api_loopback_only=root_api_loopback_only,
+        mint_service_nsec=mint_service_nsec,
+        mint_service_management=mint_service_management,
     )
 
 
@@ -154,6 +161,15 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         "enforced": False,
     }
     assert mint_info.json()["policy"] == info.json()["policy"]
+    assert info.json()["service_identity"] == {
+        "npub": MINT_SERVICE_NPUB,
+        "type": "clear-mint",
+        "management": "independent",
+        "state": "uncommissioned",
+    }
+    assert mint_info.json()["service_identity"] == info.json()["service_identity"]
+    assert MINT_SERVICE_NSEC not in info.text
+    assert MINT_SERVICE_NSEC not in mint_info.text
 
 
 def test_treasury_starts_disabled_and_enable_requires_verification(tmp_path) -> None:
@@ -1175,6 +1191,67 @@ def test_database_is_bound_to_one_keyset_currency(tmp_path) -> None:
             pass
 
 
+def test_database_is_bound_to_one_mint_service_identity(tmp_path) -> None:
+    with TestClient(create_app(settings(tmp_path))):
+        pass
+
+    with sqlite3.connect(tmp_path / "clear.sqlite3") as connection:
+        metadata = dict(connection.execute("SELECT key, value FROM mint_metadata"))
+    assert metadata["mint_service_npub"] == MINT_SERVICE_NPUB
+    assert MINT_SERVICE_NSEC not in metadata.values()
+
+    changed_identity = settings(tmp_path, mint_service_nsec="33" * 32)
+    with pytest.raises(RuntimeError, match="service identity does not match"):
+        with TestClient(create_app(changed_identity)):
+            pass
+
+
+def test_recorded_mint_service_identity_requires_its_private_key(tmp_path) -> None:
+    with TestClient(create_app(settings(tmp_path))):
+        pass
+
+    missing_identity = settings(tmp_path, mint_service_nsec=None)
+    with pytest.raises(RuntimeError, match="CLEAR_MINT_SERVICE_NSEC is required"):
+        with TestClient(create_app(missing_identity)):
+            pass
+
+
+def test_existing_pre_identity_database_can_adopt_its_first_service_key(
+    tmp_path,
+) -> None:
+    with TestClient(create_app(settings(tmp_path, mint_service_nsec=None))):
+        pass
+
+    with TestClient(create_app(settings(tmp_path))) as client:
+        identity = client.get("/v1/info").json()["service_identity"]
+
+    assert identity["npub"] == MINT_SERVICE_NPUB
+    assert identity["state"] == "uncommissioned"
+
+
+def test_unconfigured_standalone_mint_reports_no_service_identity(tmp_path) -> None:
+    with TestClient(
+        create_app(settings(tmp_path, mint_service_nsec=None))
+    ) as client:
+        info = client.get("/v1/info").json()
+
+    assert info["service_identity"] == {
+        "npub": None,
+        "type": "clear-mint",
+        "management": "independent",
+        "state": "not-configured",
+    }
+
+
+def test_mainstay_managed_service_requires_a_private_key(tmp_path) -> None:
+    with pytest.raises(ValueError, match="requires CLEAR_MINT_SERVICE_NSEC"):
+        settings(
+            tmp_path,
+            mint_service_nsec=None,
+            mint_service_management="mainstay-managed",
+        )
+
+
 def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) -> None:
     dotenv_path = tmp_path / ".env"
     database_path = tmp_path / "dotenv.sqlite3"
@@ -1186,6 +1263,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
                 f"CLEAR_DATABASE={database_path}",
                 "CLEAR_CURRENCY_NAME=Dotenv Credits",
                 "CLEAR_ROOT_AUTHORITY_NPUB=npub1dotenvrootauthority",
+                f"CLEAR_MINT_SERVICE_NSEC={MINT_SERVICE_NSEC}",
+                "CLEAR_MINT_SERVICE_MANAGEMENT=mainstay-managed",
                 "CLEAR_CURRENCY_ALIAS=Dotenv Alias",
                 "CLEAR_CURRENCY_UNIT_ALIAS=beans",
             ]
@@ -1197,6 +1276,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     monkeypatch.delenv("CLEAR_DATABASE", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_NAME", raising=False)
     monkeypatch.delenv("CLEAR_ROOT_AUTHORITY_NPUB", raising=False)
+    monkeypatch.delenv("CLEAR_MINT_SERVICE_NSEC", raising=False)
+    monkeypatch.delenv("CLEAR_MINT_SERVICE_MANAGEMENT", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_ALIAS", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_UNIT_ALIAS", raising=False)
 
@@ -1207,6 +1288,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     assert settings.database_path == database_path
     assert settings.currency_name == "Dotenv Credits"
     assert settings.root_authority_npub == "npub1dotenvrootauthority"
+    assert settings.mint_service_npub == MINT_SERVICE_NPUB
+    assert settings.mint_service_management == "mainstay-managed"
     assert settings.currency_alias == "Dotenv Alias"
     assert settings.currency_unit_alias == "beans"
 

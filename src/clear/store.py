@@ -37,6 +37,7 @@ class Store:
         legacy_friendly_unit_alias: str | None = None,
         configuration_fingerprint: str = "",
         software_version: str = "unknown",
+        mint_service_npub: str | None = None,
     ):
         self.database_path = database_path
         self.keyset = keyset
@@ -45,6 +46,7 @@ class Store:
         self.legacy_friendly_unit_alias = legacy_friendly_unit_alias
         self.configuration_fingerprint = configuration_fingerprint
         self.software_version = software_version
+        self.mint_service_npub = mint_service_npub
         self.keysets: dict[str, Keyset] = {keyset.id: keyset}
         self.keyset_order: list[str] = [keyset.id]
 
@@ -169,6 +171,7 @@ class Store:
                 ("schema_version", str(SCHEMA_VERSION)),
             )
             self._bind_mint_identity(connection)
+            self._bind_mint_service_identity(connection)
             self._ensure_cmu_display_columns(connection)
             self._ensure_legacy_cmu(connection)
             self._ensure_legacy_cmu_display_metadata(connection)
@@ -214,6 +217,29 @@ class Store:
         if existing != expected:
             raise RuntimeError(
                 "configured keyset does not match the currency bound to this database"
+            )
+
+    def _bind_mint_service_identity(self, connection) -> None:
+        row = connection.execute(
+            "SELECT value FROM mint_metadata WHERE key = 'mint_service_npub'"
+        ).fetchone()
+        recorded_npub = row["value"] if row is not None else None
+        if recorded_npub is None:
+            if self.mint_service_npub is not None:
+                connection.execute(
+                    "INSERT INTO mint_metadata(key, value) VALUES (?, ?)",
+                    ("mint_service_npub", self.mint_service_npub),
+                )
+            return
+        if self.mint_service_npub is None:
+            raise RuntimeError(
+                "CLEAR_MINT_SERVICE_NSEC is required for the service identity "
+                f"bound to this database ({recorded_npub})"
+            )
+        if recorded_npub != self.mint_service_npub:
+            raise RuntimeError(
+                "configured mint service identity does not match the identity "
+                f"bound to this database ({recorded_npub})"
             )
 
     @staticmethod
