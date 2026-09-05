@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from coincurve import PrivateKey, PublicKey
 from fastapi.testclient import TestClient
@@ -100,6 +102,18 @@ def issue_proof(
     return unblind(keyset, amount, secret, r, minted.json()["signatures"][0])
 
 
+def commission_and_enable(client: TestClient) -> dict:
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    verified = client.post(
+        "/v1/operator/commissioning/verify",
+        headers=headers,
+    )
+    assert verified.status_code == 200, verified.json()
+    enabled = client.post("/v1/operator/treasury/enable", headers=headers)
+    assert enabled.status_code == 200, enabled.json()
+    return enabled.json()
+
+
 def test_information_health_and_unique_currency(tmp_path) -> None:
     configured = settings(tmp_path)
     with TestClient(create_app(configured)) as client:
@@ -140,6 +154,191 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         "enforced": False,
     }
     assert mint_info.json()["policy"] == info.json()["policy"]
+
+
+def test_treasury_starts_disabled_and_enable_requires_verification(tmp_path) -> None:
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    with TestClient(create_app(settings(tmp_path))) as client:
+        status = client.get("/v1/operator/treasury", headers=headers)
+        enable = client.post("/v1/operator/treasury/enable", headers=headers)
+
+    assert status.status_code == 200
+    assert status.json()["lifecycle"] == "bootstrapped"
+    assert status.json()["verification_current"] is False
+    assert status.json()["treasury_enabled"] is False
+    assert status.json()["verification"] is None
+    assert enable.status_code == 400
+    assert "successful root verification" in enable.json()["detail"]
+
+
+def test_store_transaction_rolls_back_when_operation_fails(tmp_path) -> None:
+    app = create_app(settings(tmp_path))
+    with TestClient(app):
+        with pytest.raises(RuntimeError, match="simulated failure"):
+            with app.state.store._transaction() as connection:
+                connection.execute(
+                    "INSERT INTO mint_metadata(key, value) VALUES ('test', 'partial')"
+                )
+                raise RuntimeError("simulated failure")
+        with app.state.store._connection() as connection:
+            row = connection.execute(
+                "SELECT value FROM mint_metadata WHERE key = 'test'"
+            ).fetchone()
+
+    assert row is None
+
+
+def test_root_verification_uses_isolated_keyset_and_records_evidence(tmp_path) -> None:
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    app = create_app(settings(tmp_path))
+    root_keyset_id = app.state.keyset.id
+    with TestClient(app) as client:
+        verified = client.post(
+            "/v1/operator/commissioning/verify",
+            headers=headers,
+        )
+        root_summary = client.get("/v1/operator/summary", headers=headers)
+        keysets = client.get("/v1/keysets").json()["keysets"]
+        verification = verified.json()["verification"]
+        commissioning = next(
+            keyset
+            for keyset in keysets
+            if keyset["id"] == verification["keyset_id"]
+        )
+        rejected_quote = client.post(
+            "/v1/mint/quote/clear",
+            json={"amount": 1, "unit": commissioning["unit"]},
+        )
+
+    assert verified.status_code == 200, verified.json()
+    assert verified.json()["lifecycle"] == "root-verified"
+    assert verified.json()["verification_current"] is True
+    assert verified.json()["treasury_enabled"] is False
+    assert verification["status"] == "successful"
+    assert verification["issued"] == 3
+    assert verification["retired"] == 3
+    assert verification["evidence"]["digest"]
+    assert all(
+        check["passed"] for check in verification["evidence"]["checks"]
+    )
+    assert root_summary.json()["keyset_id"] == root_keyset_id
+    assert root_summary.json()["issued"] == 0
+    assert root_summary.json()["outstanding"] == 0
+    assert commissioning["active"] is False
+    assert rejected_quote.status_code == 400
+    assert "not active" in rejected_quote.json()["detail"]
+
+
+def test_treasury_enablement_survives_restart_and_can_be_disabled(tmp_path) -> None:
+    configured = settings(tmp_path)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    with TestClient(create_app(configured)) as client:
+        enabled = commission_and_enable(client)
+
+    with TestClient(create_app(configured)) as restarted:
+        retained = restarted.get("/v1/operator/treasury", headers=headers)
+        disabled = restarted.post(
+            "/v1/operator/treasury/disable",
+            json={"reason": "operator maintenance"},
+            headers=headers,
+        )
+
+    assert enabled["lifecycle"] == "treasury-enabled"
+    assert retained.json()["treasury_enabled"] is True
+    assert disabled.json()["lifecycle"] == "root-verified"
+    assert disabled.json()["treasury_enabled"] is False
+    assert disabled.json()["treasury_reason"] == "operator maintenance"
+
+
+def test_disable_blocks_signed_mutations_but_not_existing_note_swaps(tmp_path) -> None:
+    configured = settings(tmp_path)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    treasurer = Keys(priv_k="1".zfill(64))
+    app = create_app(configured)
+    with TestClient(app) as client:
+        commission_and_enable(client)
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": treasurer.public_key_bech32()},
+            headers=headers,
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": treasurer.public_key_bech32()},
+            headers=headers,
+        ).json()
+        proof = issue_proof(client, app.state.keyset, amount=1)
+        client.post(
+            "/v1/operator/treasury/disable",
+            json={"reason": "operator maintenance"},
+            headers=headers,
+        )
+        blocked = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint=configured.mint_url,
+                grant_id=grant["id"],
+                name="Blocked Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        )
+        output, _ = blinded_output(
+            app.state.keyset,
+            1,
+            "replacement-after-disable",
+            29,
+        )
+        swapped = client.post(
+            "/v1/swap",
+            json={"inputs": [proof], "outputs": [output]},
+        )
+
+    assert blocked.status_code == 400
+    assert "treasury operations are disabled" in blocked.json()["detail"]
+    assert swapped.status_code == 200
+    assert len(swapped.json()["signatures"]) == 1
+
+
+def test_critical_configuration_change_invalidates_enablement(tmp_path) -> None:
+    configured = settings(tmp_path)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
+
+    changed = replace(configured, mint_url="https://moved-clear.example")
+    with TestClient(create_app(changed)) as restarted:
+        status = restarted.get("/v1/operator/treasury", headers=headers)
+
+    assert status.json()["lifecycle"] == "verification-required"
+    assert status.json()["verification_current"] is False
+    assert status.json()["treasury_enabled"] is False
+    assert "configuration change" in status.json()["treasury_reason"]
+
+
+def test_failed_verification_is_durable_and_keeps_gate_closed(
+    tmp_path, monkeypatch
+) -> None:
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    app = create_app(settings(tmp_path))
+
+    def fail_swap(*args, **kwargs):
+        raise ClearError("simulated swap failure")
+
+    monkeypatch.setattr(app.state.store, "swap", fail_swap)
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/operator/commissioning/verify",
+            headers=headers,
+        )
+        status = client.get("/v1/operator/treasury", headers=headers)
+
+    assert response.status_code == 400
+    assert "simulated swap failure" in response.json()["detail"]
+    assert status.json()["lifecycle"] == "verification-failed"
+    assert status.json()["treasury_enabled"] is False
+    assert status.json()["verification"]["failure_reason"] == (
+        "simulated swap failure"
+    )
 
 
 def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
@@ -669,6 +868,7 @@ def test_treasurer_can_consume_grant_over_public_treasury_route(tmp_path) -> Non
     treasurer = Keys(priv_k="1".zfill(64))
     npub = treasurer.public_key_bech32()
     with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": npub},
@@ -702,6 +902,7 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
     treasurer = Keys(priv_k="1".zfill(64))
     npub = treasurer.public_key_bech32()
     with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": npub},
@@ -746,6 +947,7 @@ def test_treasurer_can_inspect_bound_cmu_supply_summary(tmp_path) -> None:
     npub = treasurer.public_key_bech32()
     app = create_app(configured)
     with TestClient(app) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": npub},
@@ -820,6 +1022,7 @@ def test_treasurer_can_authorize_quote_for_bound_cmu(tmp_path) -> None:
     treasurer = Keys(priv_k="1".zfill(64))
     npub = treasurer.public_key_bech32()
     with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": npub},
@@ -861,6 +1064,7 @@ def test_treasury_quote_authorization_rejects_wrong_treasurer(tmp_path) -> None:
     treasurer = Keys(priv_k="1".zfill(64))
     wrong = Keys(priv_k="2".zfill(64))
     with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": treasurer.public_key_bech32()},
@@ -902,6 +1106,7 @@ def test_treasury_route_rejects_signature_from_wrong_treasurer(tmp_path) -> None
     authorized = Keys(priv_k="1".zfill(64))
     wrong = Keys(priv_k="2".zfill(64))
     with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
         client.post(
             "/v1/operator/treasurers",
             json={"npub": authorized.public_key_bech32()},

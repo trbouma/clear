@@ -23,7 +23,9 @@ Before onboarding a treasurer:
 - the operator can run `clear-root` inside the mint container;
 - `CLEAR_MASTER_SECRET` and `CLEAR_OPERATOR_TOKEN` are set and backed up
   according to the deployment policy;
-- `CLEAR_MINT_URL` is the public URL the treasurer and wallets will use; and
+- `CLEAR_MINT_URL` is the public URL the treasurer and wallets will use;
+- root verification is current and treasury operations are explicitly enabled;
+  and
 - the treasurer has generated or selected a Nostr keypair out of band.
 
 For Docker deployments, the operator-side commands are expected to run inside
@@ -31,10 +33,19 @@ the Clear container:
 
 ```bash
 docker compose exec clear clear-root info
+docker compose exec clear clear-root treasury status
 ```
 
 `clear-root` is privileged. It uses the loopback operator API and should not be
 treated as a remote treasurer tool.
+
+For a new or invalidated mint, commission it before onboarding:
+
+```bash
+docker compose exec clear clear-root verify
+docker compose exec clear clear-root treasury enable
+docker compose exec clear clear-root treasury status
+```
 
 ## Step 1: Confirm the Current Mint State
 

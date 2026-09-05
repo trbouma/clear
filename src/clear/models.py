@@ -75,3 +75,7 @@ class CMULabelRequest(BaseModel):
 class TreasuryEnvelopeRequest(BaseModel):
     payload: dict = Field()
     event: dict = Field()
+
+
+class TreasuryDisableRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=280)

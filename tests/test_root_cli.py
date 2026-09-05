@@ -33,6 +33,54 @@ def test_root_cli_prefers_root_api_url(monkeypatch) -> None:
     assert root_cli._api_url(SimpleNamespace(api_url=None)) == "http://localhost:3340"
 
 
+@pytest.mark.parametrize(
+    ("arguments", "method", "path", "payload"),
+    [
+        (["verify"], "POST", "/v1/operator/commissioning/verify", None),
+        (["treasury", "status"], "GET", "/v1/operator/treasury", None),
+        (["treasury", "enable"], "POST", "/v1/operator/treasury/enable", None),
+        (
+            ["treasury", "disable", "--reason", "maintenance"],
+            "POST",
+            "/v1/operator/treasury/disable",
+            {"reason": "maintenance"},
+        ),
+    ],
+)
+def test_root_cli_commissioning_commands_use_operator_api(
+    arguments,
+    method,
+    path,
+    payload,
+    monkeypatch,
+    capsys,
+) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+    monkeypatch.setenv("CLEAR_ROOT_API_URL", "http://127.0.0.1:3339")
+
+    def fake_request_json(
+        mint_url, request_method, request_path, body=None, *, token=None
+    ):
+        calls.append((mint_url, request_method, request_path, body, token))
+        return {"lifecycle": "root-verified", "treasury_enabled": False}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr("sys.argv", ["clear-root", *arguments])
+
+    assert root_cli.main() == 0
+    assert '"lifecycle": "root-verified"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            method,
+            path,
+            payload,
+            "operator-token",
+        )
+    ]
+
+
 def test_root_cli_does_not_fall_back_to_public_mint_url(monkeypatch) -> None:
     monkeypatch.delenv("CLEAR_ROOT_API_URL", raising=False)
     monkeypatch.setenv("CLEAR_MINT_URL", "https://clear.example/")

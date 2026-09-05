@@ -193,11 +193,27 @@ treasurer will actually use.
 
 ## Current implementation boundary
 
-The current `clear-root` command can inspect, issue, swap, export, send, and
-retire test CMUs through the loopback operator API. It does not yet implement
-the commissioning state machine, dedicated commissioning keyset, durable
-readiness record, or treasury enable gate described here.
+Clear now implements commissioning profile version 1. `clear-root verify`
+creates a dedicated inactive commissioning CMU and exercises encrypted keyset
+recovery, key discovery, quote authorization, blinded issuance, token
+serialization, swapping, proof-state transitions, retirement, supply
+reconciliation, and audit coverage. Success requires every issued
+commissioning unit to be retired.
 
-Those capabilities must be implemented before Clear enables remote signed
-treasurer operations.
+Verification results and the treasury gate are durable in SQLite. Signed CMU
+creation and signed quote authorization fail closed until a current successful
+verification is followed by `clear-root treasury enable`. Root-local operator
+actions continue to use the loopback operator boundary. Disabling treasury
+mutations does not invalidate existing Mint Notes or block holder swaps.
 
+The current configuration fingerprint covers the schema version, software
+version, advertised mint URL, root keyset identity, maximum denomination order,
+root authority relationship, and key-encryption material identifier. A change
+to those values makes readiness stale and disables treasury mutations at the
+next startup.
+
+Profile version 1 does not test external relay delivery, recipient-wallet
+interoperability, root-wallet file persistence, process restart during the
+verification run, mint clusters, or organizational redemption policy.
+Commissioning is operational evidence, not a security audit or a guarantee
+that an issuer will honour its obligations.

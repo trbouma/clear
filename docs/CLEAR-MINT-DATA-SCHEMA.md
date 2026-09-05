@@ -49,6 +49,8 @@ underlying keyset.
 | `treasurers` | Authorized treasurer public keys | One treasurer may be bound to one CMU in the first release |
 | `treasurer_grants` | Single-use keyset/CMU creation grants | Consumed grant records resulting `keyset_id` |
 | `treasury_nonces` | Replay protection for signed treasury requests | Shared replay set across treasury actions |
+| `commissioning_verifications` | Durable root-verification results and non-secret evidence | One row per verification run |
+| `treasury_state` | Fail-closed treasury enablement state | Deployment-level singleton |
 | `mint_quotes` | Issuance authorization quotes | Each quote records `keyset_id` and `unit` |
 | `issue_batches` | Idempotency records for mint requests | Indirectly scoped by quote |
 | `signed_outputs` | Blinded outputs already signed by the mint | Each signed output records `keyset_id` |
@@ -103,7 +105,8 @@ Stored values:
 - `keyset_id`: full keyset identifier.
 - `unit`: wallet-facing protocol unit, currently `cmu-<fingerprint>`.
 - `fingerprint`: short keyset fingerprint used in the unit string.
-- `status`: currently `active`; future lifecycle states include suspended,
+- `status`: `active` for ordinary CMUs and `commissioning` for inactive,
+  test-only verification keysets; future lifecycle states include suspended,
   redemption-only, migrating, and retired.
 - `friendly_name`: wallet-facing display name, such as `Food Share Credits`.
 - `friendly_unit_alias`: wallet-facing unit label, such as `shares`.
@@ -122,7 +125,7 @@ registry and include the public keys and display metadata needed by wallets.
 
 ## Keyset Material Kinds
 
-Clear currently recognizes two key material kinds.
+Clear currently recognizes three key material kinds.
 
 ### `legacy-derived-v1`
 
@@ -217,6 +220,13 @@ Notes outside the ledger and bypass software authorization checks. Those are
 different failure modes, and keyset-secret compromise is the deeper
 supply-integrity failure.
 
+### `commissioning-random-encrypted-v1`
+
+Commissioning CMUs use the same encrypted random-key mechanism and custody
+boundary as `random-encrypted-v1`. Their `material_kind` is
+`commissioning-random-encrypted-v1`. They remain inactive for public quote
+creation and are retained as verification evidence.
+
 ## Treasurer Tables
 
 ### `treasurers`
@@ -271,6 +281,40 @@ treasury actions such as:
 - `cmu:create`;
 - `cmu:info`; and
 - `quote:authorize`.
+
+## Commissioning Tables
+
+### `commissioning_verifications`
+
+Each root verification run records its identifier, profile version, status,
+configuration fingerprint, Clear version, schema version, commissioning
+keyset, timestamps, issued and retired totals, non-secret check evidence, and
+an optional failure reason. Evidence is stored as canonical JSON with a digest.
+
+Successful verification requires equal issued and retired totals and zero
+outstanding commissioning supply. Failed and superseded runs remain available
+for audit. Each run uses a new test-only commissioning CMU.
+
+### `treasury_state`
+
+`treasury_state` is a singleton row containing:
+
+```sql
+id INTEGER PRIMARY KEY
+enabled INTEGER NOT NULL
+verification_id TEXT
+reason TEXT NOT NULL
+updated_at INTEGER NOT NULL
+```
+
+Clear creates this row disabled. Enabling it requires a successful verification
+whose configuration fingerprint still matches the running mint. A new
+verification, failed verification, explicit disable action, or critical
+configuration change closes the gate.
+
+The gate applies to signed CMU creation and signed quote authorization. It does
+not block root-local operator recovery, proof-state queries, retirement, or
+holder swaps involving existing Mint Notes.
 
 ## Issuance Tables
 
@@ -387,8 +431,13 @@ Current action values include:
 - `treasurer:grant`;
 - `treasurer:grant-consume`;
 - `cmu:create`;
-- `cmu:create:treasury`; and
-- `cmu:label`.
+- `cmu:create:treasury`;
+- `cmu:label`;
+- `commissioning:start`;
+- `commissioning:verified`;
+- `commissioning:failed`;
+- `treasury:enable`; and
+- `treasury:disable`.
 
 The current `clear-root summary` command reports the legacy/root keyset totals.
 Per-CMU summary views are a natural follow-on improvement.
@@ -406,7 +455,8 @@ Clear separates CMU state in these ways:
 - Retire inputs must all belong to one keyset.
 - Spent-proof rows record the keyset whose proofs were spent.
 - Audit rows record the keyset affected by the action.
-- Public key discovery exposes all active keysets separately.
+- Public key discovery exposes active and inactive keysets separately and marks
+  their active state explicitly.
 
 Clear does not currently support cross-CMU swaps or implicit equivalence
 between CMUs. If a holder has Mint Notes from two CMUs, those are two separate
@@ -420,6 +470,7 @@ Some state is shared at the deployment level:
 - one `mint_metadata` identity binding for the root/legacy keyset;
 - one treasurer registry;
 - one nonce replay table;
+- one commissioning history and treasury-state singleton;
 - one audit table with keyset-scoped rows;
 - one public mint URL; and
 - one operator API boundary.
@@ -437,9 +488,12 @@ On startup, Clear:
 4. adds any missing display metadata columns;
 5. inserts the legacy CMU row if absent;
 6. populates legacy display metadata from configuration if unset;
-7. decrypts persisted random keyset secrets;
-8. re-derives their public keys, fingerprints, units, and keyset IDs; and
-9. refuses startup if persisted keyset identity does not match the decrypted
+7. decrypts persisted random and commissioning keyset secrets;
+8. re-derives their public keys, fingerprints, units, and keyset IDs;
+9. creates the fail-closed treasury-state singleton when absent;
+10. invalidates enabled readiness when the critical configuration fingerprint
+   changes; and
+11. refuses startup if persisted keyset identity does not match the decrypted
    secret.
 
 This prevents the mint from silently advertising or signing for a keyset whose

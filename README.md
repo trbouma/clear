@@ -126,6 +126,31 @@ docker compose exec clear clear-root wallet balance
 docker compose exec clear clear-root summary
 ```
 
+Signed treasurer mutations start disabled. Commission the standalone mint and
+then make the separate operator decision to enable them:
+
+```bash
+docker compose exec clear clear-root treasury status
+docker compose exec clear clear-root verify
+docker compose exec clear clear-root treasury enable
+docker compose exec clear clear-root treasury status
+```
+
+`verify` creates a dedicated inactive commissioning CMU, exercises blinded
+issuance, token encoding, swapping, proof-state checks, retirement, supply
+reconciliation, encrypted key recovery, and audit records, and succeeds only
+with zero commissioning units outstanding. It never issues against the
+root/legacy CMU. Rerunning verification closes the treasury gate until the new
+successful result is explicitly enabled.
+
+Close the gate without invalidating existing Mint Notes or blocking holder
+swaps:
+
+```bash
+docker compose exec clear clear-root treasury disable \
+  --reason "operator maintenance"
+```
+
 `docker compose down` stops the deployment without removing the named volume.
 
 The proposed multi-currency and signed-treasurer architecture is described in

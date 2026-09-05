@@ -262,6 +262,51 @@ def summary(args) -> int:
     return 0
 
 
+def verify(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/commissioning/verify",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasury_status(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/treasury",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasury_enable(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/treasury/enable",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def treasury_disable(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/treasury/disable",
+        {"reason": args.reason},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
 def treasurer_add(args) -> int:
     result = request_json(
         _api_url(args),
@@ -653,6 +698,41 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
 
     summary_parser = subcommands.add_parser("summary", help="Show mint supply totals.")
     summary_parser.set_defaults(handler=summary)
+
+    verify_parser = subcommands.add_parser(
+        "verify",
+        help="Run root commissioning checks and record durable readiness.",
+    )
+    verify_parser.set_defaults(handler=verify)
+
+    treasury_parser = subcommands.add_parser(
+        "treasury",
+        help="Inspect and control the signed treasury-operation gate.",
+    )
+    treasury_subcommands = treasury_parser.add_subparsers(
+        dest="treasury_command",
+        required=True,
+    )
+    treasury_status_parser = treasury_subcommands.add_parser(
+        "status",
+        help="Show commissioning readiness and treasury gate state.",
+    )
+    treasury_status_parser.set_defaults(handler=treasury_status)
+    treasury_enable_parser = treasury_subcommands.add_parser(
+        "enable",
+        help="Enable treasury operations after successful verification.",
+    )
+    treasury_enable_parser.set_defaults(handler=treasury_enable)
+    treasury_disable_parser = treasury_subcommands.add_parser(
+        "disable",
+        help="Disable new treasury mutations without invalidating Mint Notes.",
+    )
+    treasury_disable_parser.add_argument(
+        "--reason",
+        required=True,
+        help="Operator reason recorded with the disable action.",
+    )
+    treasury_disable_parser.set_defaults(handler=treasury_disable)
 
     treasurer_parser = subcommands.add_parser(
         "treasurer",

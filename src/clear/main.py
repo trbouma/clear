@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from clear import __version__
+from clear.commissioning import configuration_fingerprint, run_verification
 from clear.config import Settings
 from clear.crypto import Keyset
 from clear.homepage import render_homepage
@@ -24,6 +25,7 @@ from clear.models import (
     SwapRequest,
     TreasurerGrantRequest,
     TreasurerRequest,
+    TreasuryDisableRequest,
     TreasuryEnvelopeRequest,
 )
 from clear.store import ClearError, Store
@@ -49,6 +51,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             or f"{configured.currency_name} ({keyset.unit})"
         ),
         legacy_friendly_unit_alias=configured.currency_unit_alias,
+        configuration_fingerprint=configuration_fingerprint(
+            configured,
+            keyset,
+            software_version=__version__,
+        ),
+        software_version=__version__,
     )
 
     @asynccontextmanager
@@ -296,6 +304,52 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return error
         return store.summary()
 
+    @app.get("/v1/operator/treasury")
+    async def treasury_status(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        return store.commissioning_status()
+
+    @app.post("/v1/operator/commissioning/verify")
+    async def verify_commissioning(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return run_verification(store, mint_url=configured.mint_url)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 16000)
+
+    @app.post("/v1/operator/treasury/enable")
+    async def enable_treasury(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.enable_treasury()
+        except ClearError as exc:
+            return _protocol_error(str(exc), 16001)
+
+    @app.post("/v1/operator/treasury/disable")
+    async def disable_treasury(
+        body: TreasuryDisableRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.disable_treasury(body.reason)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 16002)
+
     @app.get("/v1/operator/treasurers")
     async def list_treasurers(
         request: Request,
@@ -387,6 +441,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/v1/treasury/cmus")
     async def create_cmu_from_treasury(body: TreasuryEnvelopeRequest):
         try:
+            store.require_treasury_enabled()
             return store.create_cmu_from_treasury_envelope(
                 body.model_dump(),
                 mint_url=configured.mint_url,
@@ -422,6 +477,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         envelope = body.model_dump()
         envelope["payload"]["quote_id"] = quote_id
         try:
+            store.require_treasury_enabled()
             return store.authorize_quote_from_treasury_envelope(
                 envelope,
                 mint_url=configured.mint_url,

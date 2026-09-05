@@ -22,7 +22,8 @@ class ClearError(ValueError):
     pass
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+COMMISSIONING_PROFILE_VERSION = 1
 
 
 class Store:
@@ -34,12 +35,16 @@ class Store:
         key_encryption_key: str | None = None,
         legacy_friendly_name: str | None = None,
         legacy_friendly_unit_alias: str | None = None,
+        configuration_fingerprint: str = "",
+        software_version: str = "unknown",
     ):
         self.database_path = database_path
         self.keyset = keyset
         self.key_encryption_key = key_encryption_key
         self.legacy_friendly_name = legacy_friendly_name
         self.legacy_friendly_unit_alias = legacy_friendly_unit_alias
+        self.configuration_fingerprint = configuration_fingerprint
+        self.software_version = software_version
         self.keysets: dict[str, Keyset] = {keyset.id: keyset}
         self.keyset_order: list[str] = [keyset.id]
 
@@ -134,10 +139,33 @@ class Store:
                     action TEXT NOT NULL,
                     created_at INTEGER NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS commissioning_verifications (
+                    id TEXT PRIMARY KEY,
+                    profile_version INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    configuration_fingerprint TEXT NOT NULL,
+                    software_version TEXT NOT NULL,
+                    schema_version INTEGER NOT NULL,
+                    keyset_id TEXT NOT NULL,
+                    started_at INTEGER NOT NULL,
+                    completed_at INTEGER,
+                    issued INTEGER NOT NULL DEFAULT 0,
+                    retired INTEGER NOT NULL DEFAULT 0,
+                    evidence TEXT,
+                    failure_reason TEXT
+                );
+                CREATE TABLE IF NOT EXISTS treasury_state (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    enabled INTEGER NOT NULL DEFAULT 0,
+                    verification_id TEXT,
+                    reason TEXT NOT NULL,
+                    updated_at INTEGER NOT NULL
+                );
                 """
             )
             connection.execute(
-                "INSERT OR IGNORE INTO mint_metadata(key, value) VALUES (?, ?)",
+                "INSERT INTO mint_metadata(key, value) VALUES (?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 ("schema_version", str(SCHEMA_VERSION)),
             )
             self._bind_mint_identity(connection)
@@ -145,6 +173,14 @@ class Store:
             self._ensure_legacy_cmu(connection)
             self._ensure_legacy_cmu_display_metadata(connection)
             self._load_persisted_keysets(connection)
+            now = self._now()
+            connection.execute(
+                "INSERT OR IGNORE INTO treasury_state "
+                "(id, enabled, verification_id, reason, updated_at) "
+                "VALUES (1, 0, NULL, 'verification required', ?)",
+                (now,),
+            )
+            self._invalidate_stale_readiness(connection)
 
     def _bind_mint_identity(self, connection) -> None:
         expected = {
@@ -247,7 +283,10 @@ class Store:
             (self.keyset.id,),
         ).fetchall()
         for row in rows:
-            if row["material_kind"] != "random-encrypted-v1":
+            if row["material_kind"] not in {
+                "random-encrypted-v1",
+                "commissioning-random-encrypted-v1",
+            }:
                 raise RuntimeError(
                     f"unsupported keyset material: {row['material_kind']}"
                 )
@@ -302,9 +341,19 @@ class Store:
         )
         return plaintext.decode()
 
-    def _keyset_for_unit(self, unit: str) -> Keyset:
+    def _keyset_for_unit(
+        self,
+        unit: str,
+        *,
+        allow_commissioning: bool = False,
+    ) -> Keyset:
         for keyset in self.keysets.values():
             if keyset.unit == unit:
+                status = self._cmu_status(keyset.id)
+                if status != "active" and not (
+                    allow_commissioning and status == "commissioning"
+                ):
+                    raise ClearError("quote unit is not active")
                 return keyset
         raise ClearError("quote unit is not issued by this Clear mint")
 
@@ -381,6 +430,10 @@ class Store:
         connection.execute("PRAGMA journal_mode = WAL")
         try:
             yield connection
+        except Exception:
+            connection.rollback()
+            raise
+        else:
             connection.commit()
         finally:
             connection.close()
@@ -396,8 +449,18 @@ class Store:
         current = int(time.time())
         return max(current, (previous or 0) + 1)
 
-    def create_quote(self, amount: int, unit: str, memo: str | None) -> dict:
-        keyset = self._keyset_for_unit(unit)
+    def create_quote(
+        self,
+        amount: int,
+        unit: str,
+        memo: str | None,
+        *,
+        allow_commissioning: bool = False,
+    ) -> dict:
+        keyset = self._keyset_for_unit(
+            unit,
+            allow_commissioning=allow_commissioning,
+        )
         quote_id = str(uuid.uuid4())
         now = self._now()
         with self._connection() as connection:
@@ -420,7 +483,13 @@ class Store:
                 "WHERE id = ?",
                 (updated_at, quote_id),
             )
-            self._audit(connection, "authorize", row["amount_requested"], quote_id)
+            self._audit(
+                connection,
+                "authorize",
+                row["amount_requested"],
+                quote_id,
+                row["keyset_id"],
+            )
         return self.get_quote(quote_id)
 
     def get_quote(self, quote_id: str) -> dict:
@@ -535,9 +604,322 @@ class Store:
             for y in ys
         ]
 
+    def _invalidate_stale_readiness(self, connection) -> None:
+        state = connection.execute(
+            "SELECT * FROM treasury_state WHERE id = 1"
+        ).fetchone()
+        if state is None or not state["verification_id"]:
+            return
+        verification = connection.execute(
+            "SELECT * FROM commissioning_verifications WHERE id = ?",
+            (state["verification_id"],),
+        ).fetchone()
+        if (
+            verification is None
+            or verification["status"] != "successful"
+            or verification["configuration_fingerprint"]
+            != self.configuration_fingerprint
+        ):
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 0, "
+                "reason = 'verification invalidated by configuration change', "
+                "updated_at = ? WHERE id = 1",
+                (self._now(state["updated_at"]),),
+            )
+
+    @staticmethod
+    def _verification_response(row) -> dict | None:
+        if row is None:
+            return None
+        return {
+            "id": row["id"],
+            "profile_version": row["profile_version"],
+            "status": row["status"],
+            "configuration_fingerprint": row["configuration_fingerprint"],
+            "software_version": row["software_version"],
+            "schema_version": row["schema_version"],
+            "keyset_id": row["keyset_id"],
+            "started_at": row["started_at"],
+            "completed_at": row["completed_at"],
+            "issued": row["issued"],
+            "retired": row["retired"],
+            "evidence": json.loads(row["evidence"]) if row["evidence"] else None,
+            "failure_reason": row["failure_reason"],
+        }
+
+    def commissioning_status(self) -> dict:
+        with self._connection() as connection:
+            state = connection.execute(
+                "SELECT * FROM treasury_state WHERE id = 1"
+            ).fetchone()
+            latest = connection.execute(
+                "SELECT * FROM commissioning_verifications "
+                "ORDER BY rowid DESC LIMIT 1"
+            ).fetchone()
+        verification = self._verification_response(latest)
+        current = bool(
+            verification
+            and verification["status"] == "successful"
+            and verification["configuration_fingerprint"]
+            == self.configuration_fingerprint
+        )
+        enabled = bool(state["enabled"]) and current
+        if enabled:
+            lifecycle = "treasury-enabled"
+        elif verification is None:
+            lifecycle = "bootstrapped"
+        elif verification["status"] == "in-progress":
+            lifecycle = "verification-in-progress"
+        elif verification["status"] == "failed":
+            lifecycle = "verification-failed"
+        elif current:
+            lifecycle = "root-verified"
+        else:
+            lifecycle = "verification-required"
+        return {
+            "lifecycle": lifecycle,
+            "configuration_fingerprint": self.configuration_fingerprint,
+            "verification_current": current,
+            "treasury_enabled": enabled,
+            "treasury_reason": state["reason"],
+            "treasury_updated_at": state["updated_at"],
+            "verification": verification,
+        }
+
+    def begin_commissioning_verification(self) -> dict:
+        keyset, secret = Keyset.random(max_order=len(self.keyset.public_keys) - 1)
+        encrypted_secret = self._encrypt_keyset_secret(secret)
+        verification_id = str(uuid.uuid4())
+        now = self._now()
+        with self._transaction() as connection:
+            connection.execute(
+                "UPDATE commissioning_verifications SET status = 'failed', "
+                "completed_at = ?, failure_reason = 'superseded after interruption' "
+                "WHERE status = 'in-progress'",
+                (now,),
+            )
+            connection.execute(
+                """
+                INSERT INTO cmus(
+                    keyset_id, unit, fingerprint, status, friendly_name,
+                    friendly_unit_alias, treasurer_npub, material_kind,
+                    encrypted_secret, public_keys, max_order, created_at,
+                    activated_at
+                ) VALUES (?, ?, ?, 'commissioning', ?, ?, NULL, ?, ?, ?, ?, ?, NULL)
+                """,
+                (
+                    keyset.id,
+                    keyset.unit,
+                    keyset.fingerprint,
+                    "Clear commissioning verification",
+                    "test units",
+                    "commissioning-random-encrypted-v1",
+                    encrypted_secret,
+                    json.dumps(keyset.public_keys, sort_keys=True),
+                    len(keyset.public_keys) - 1,
+                    now,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO commissioning_verifications(
+                    id, profile_version, status, configuration_fingerprint,
+                    software_version, schema_version, keyset_id, started_at
+                ) VALUES (?, ?, 'in-progress', ?, ?, ?, ?, ?)
+                """,
+                (
+                    verification_id,
+                    COMMISSIONING_PROFILE_VERSION,
+                    self.configuration_fingerprint,
+                    self.software_version,
+                    SCHEMA_VERSION,
+                    keyset.id,
+                    now,
+                ),
+            )
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 0, verification_id = NULL, "
+                "reason = 'verification in progress', updated_at = ? WHERE id = 1",
+                (now,),
+            )
+            self._audit(
+                connection,
+                "commissioning:start",
+                0,
+                verification_id,
+                keyset.id,
+            )
+        self.keysets[keyset.id] = keyset
+        self.keyset_order.append(keyset.id)
+        return {
+            "id": verification_id,
+            "keyset_id": keyset.id,
+            "unit": keyset.unit,
+        }
+
+    def complete_commissioning_verification(
+        self,
+        verification_id: str,
+        *,
+        evidence: dict,
+        expected_amount: int,
+    ) -> dict:
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT * FROM commissioning_verifications WHERE id = ?",
+                (verification_id,),
+            ).fetchone()
+            if row is None or row["status"] != "in-progress":
+                raise ClearError("commissioning verification is not in progress")
+            summary = self._summary_for_keyset_id(connection, row["keyset_id"])
+            if (
+                summary["issued"] != expected_amount
+                or summary["retired"] != expected_amount
+                or summary["outstanding"] != 0
+            ):
+                raise ClearError("commissioning supply did not reconcile")
+            checks = evidence.get("checks", []) if evidence else []
+            if not checks or not all(
+                check.get("passed") is True for check in checks
+            ):
+                raise ClearError("commissioning evidence contains a failed check")
+            completed_at = self._now(row["started_at"])
+            connection.execute(
+                "UPDATE commissioning_verifications SET status = 'successful', "
+                "completed_at = ?, issued = ?, retired = ?, evidence = ?, "
+                "failure_reason = NULL WHERE id = ?",
+                (
+                    completed_at,
+                    summary["issued"],
+                    summary["retired"],
+                    json.dumps(evidence, sort_keys=True, separators=(",", ":")),
+                    verification_id,
+                ),
+            )
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 0, verification_id = ?, "
+                "reason = 'verified; explicit enablement required', updated_at = ? "
+                "WHERE id = 1",
+                (verification_id, completed_at),
+            )
+            self._audit(
+                connection,
+                "commissioning:verified",
+                0,
+                verification_id,
+                row["keyset_id"],
+            )
+        return self.commissioning_status()
+
+    def fail_commissioning_verification(
+        self,
+        verification_id: str,
+        reason: str,
+    ) -> None:
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT * FROM commissioning_verifications WHERE id = ?",
+                (verification_id,),
+            ).fetchone()
+            if row is None or row["status"] != "in-progress":
+                return
+            completed_at = self._now(row["started_at"])
+            connection.execute(
+                "UPDATE commissioning_verifications SET status = 'failed', "
+                "completed_at = ?, failure_reason = ? WHERE id = ?",
+                (completed_at, reason, verification_id),
+            )
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 0, verification_id = NULL, "
+                "reason = 'verification failed', updated_at = ? WHERE id = 1",
+                (completed_at,),
+            )
+            self._audit(
+                connection,
+                "commissioning:failed",
+                0,
+                verification_id,
+                row["keyset_id"],
+            )
+
+    def commissioning_keyset_persists(self, keyset_id: str) -> bool:
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ?",
+                (keyset_id,),
+            ).fetchone()
+        if row is None or not row["encrypted_secret"]:
+            return False
+        secret = self._decrypt_keyset_secret(row["encrypted_secret"])
+        restored = Keyset(secret, max_order=row["max_order"])
+        return restored.id == keyset_id and restored.unit == row["unit"]
+
+    def audit_actions(self, keyset_id: str) -> list[str]:
+        with self._connection() as connection:
+            rows = connection.execute(
+                "SELECT action FROM audit_log WHERE keyset_id = ? ORDER BY id",
+                (keyset_id,),
+            ).fetchall()
+        return [row["action"] for row in rows]
+
+    def require_treasury_enabled(self) -> None:
+        status = self.commissioning_status()
+        if not status["treasury_enabled"]:
+            raise ClearError(
+                "treasury operations are disabled; complete root verification "
+                "and explicitly enable treasury operations"
+            )
+
+    def enable_treasury(self) -> dict:
+        status = self.commissioning_status()
+        verification = status["verification"]
+        if not status["verification_current"] or verification is None:
+            raise ClearError("a current successful root verification is required")
+        now = self._now(status["treasury_updated_at"])
+        with self._transaction() as connection:
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 1, verification_id = ?, "
+                "reason = 'enabled by root operator', updated_at = ? WHERE id = 1",
+                (verification["id"], now),
+            )
+            self._audit(
+                connection,
+                "treasury:enable",
+                0,
+                verification["id"],
+                verification["keyset_id"],
+            )
+        return self.commissioning_status()
+
+    def disable_treasury(self, reason: str) -> dict:
+        normalized = reason.strip()
+        if not normalized:
+            raise ClearError("treasury disable reason must not be empty")
+        status = self.commissioning_status()
+        now = self._now(status["treasury_updated_at"])
+        verification = status["verification"]
+        with self._transaction() as connection:
+            connection.execute(
+                "UPDATE treasury_state SET enabled = 0, reason = ?, updated_at = ? "
+                "WHERE id = 1",
+                (normalized, now),
+            )
+            self._audit(
+                connection,
+                "treasury:disable",
+                0,
+                normalized,
+                verification["keyset_id"] if verification else self.keyset.id,
+            )
+        return self.commissioning_status()
+
     def summary(self) -> dict:
         with self._connection() as connection:
             return self._summary_for_keyset_id(connection, self.keyset.id)
+
+    def summary_for_keyset(self, keyset_id: str) -> dict:
+        with self._connection() as connection:
+            return self._summary_for_keyset_id(connection, keyset_id)
 
     @staticmethod
     def _summary_for_keyset_id(connection, keyset_id: str) -> dict:
