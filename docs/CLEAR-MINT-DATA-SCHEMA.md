@@ -84,6 +84,27 @@ The mint-service entry stores only the public `npub`. The corresponding
 this entry may adopt its first configured service identity. Once recorded,
 startup fails if the configured key is missing or derives a different `npub`.
 
+## `service_commissioning`
+
+`service_commissioning` is a singleton containing the public evidence for the
+current service-operator relationship:
+
+```sql
+id INTEGER PRIMARY KEY CHECK (id = 1)
+state TEXT NOT NULL
+operator_npub TEXT
+request_event TEXT
+attestation_event TEXT
+descriptor_event TEXT
+updated_at INTEGER NOT NULL
+```
+
+The three event columns contain complete signed Nostr event JSON. The service
+commissioning request and descriptor are signed by the mint-service key; the
+operator attestation is signed by the requested operator. Clear verifies the
+whole chain before changing `state` to `commissioned` and can verify it again
+without relay access. No private key is stored in this table.
+
 ## `cmus`
 
 `cmus` is the CMU and keyset registry:
@@ -475,6 +496,7 @@ Some state is shared at the deployment level:
 - one SQLite database file;
 - one `mint_metadata` identity binding for the root/legacy keyset;
 - one optional mint-service `npub` sentinel;
+- one service commissioning evidence singleton;
 - one treasurer registry;
 - one nonce replay table;
 - one commissioning history and treasury-state singleton;
@@ -493,15 +515,16 @@ On startup, Clear:
 2. records or verifies the schema version;
 3. verifies the root/legacy keyset identity against `mint_metadata`;
 4. records or verifies the configured mint-service `npub` sentinel;
-5. adds any missing display metadata columns;
-6. inserts the legacy CMU row if absent;
-7. populates legacy display metadata from configuration if unset;
-8. decrypts persisted random and commissioning keyset secrets;
-9. re-derives their public keys, fingerprints, units, and keyset IDs;
-10. creates the fail-closed treasury-state singleton when absent;
-11. invalidates enabled readiness when the critical configuration fingerprint
+5. creates the service commissioning state as `bootstrapped` when absent;
+6. adds any missing display metadata columns;
+7. inserts the legacy CMU row if absent;
+8. populates legacy display metadata from configuration if unset;
+9. decrypts persisted random and commissioning keyset secrets;
+10. re-derives their public keys, fingerprints, units, and keyset IDs;
+11. creates the fail-closed treasury-state singleton when absent;
+12. invalidates enabled readiness when the critical configuration fingerprint
    changes; and
-12. refuses startup if persisted keyset identity does not match the decrypted
+13. refuses startup if persisted keyset identity does not match the decrypted
    secret.
 
 This prevents the mint from silently advertising or signing for a keyset whose

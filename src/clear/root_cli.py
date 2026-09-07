@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import sys
@@ -11,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
-from stroma import Keys
+from stroma import Event, Keys, RelayError, RelayPool
 
 from clear.root_delivery import (
     DeliveryError,
@@ -271,6 +272,111 @@ def verify(args) -> int:
         token=_operator_token(),
     )
     _print_json(result)
+    return 0
+
+
+def service_request(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/service/request",
+        {"operator_npub": args.operator_npub},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def service_commission(args) -> int:
+    if args.attestation_file:
+        try:
+            event = json.loads(
+                Path(args.attestation_file).read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise TreasuryError(f"unable to read operator attestation: {exc}") from exc
+    else:
+        try:
+            event = json.load(sys.stdin)
+        except json.JSONDecodeError as exc:
+            raise TreasuryError(
+                "operator attestation on stdin is invalid JSON"
+            ) from exc
+    if not isinstance(event, dict):
+        raise TreasuryError("operator attestation must be a JSON object")
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/service/commission",
+        {"event": event},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def service_show(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/service",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def service_verify(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        "/v1/operator/service/verify",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
+def service_publish(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "GET",
+        "/v1/operator/service",
+        token=_operator_token(),
+    )
+    evidence = result.get("evidence") if isinstance(result, dict) else None
+    if not isinstance(evidence, dict):
+        raise TreasuryError("Clear did not return service commissioning evidence")
+    events = []
+    for name in (
+        "commissioning_request",
+        "operator_attestation",
+        "service_descriptor",
+    ):
+        event_data = evidence.get(name)
+        event = Event.load(event_data, validate=True) if event_data else None
+        if event is None:
+            raise TreasuryError(f"Clear service evidence is missing a valid {name}")
+        events.append(event)
+
+    async def publish_all() -> list[dict]:
+        pool = RelayPool(args.relay, timeout=args.timeout)
+        published = []
+        for event in events:
+            results = await pool.publish(event)
+            published.append(
+                {
+                    "event_id": event.id,
+                    "relays": [item.relay for item in results],
+                }
+            )
+        return published
+
+    try:
+        published = asyncio.run(publish_all())
+    except RelayError as exc:
+        raise TreasuryError(f"unable to publish service evidence: {exc}") from exc
+    _print_json({"state": "published", "events": published})
     return 0
 
 
@@ -724,6 +830,53 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         help="Run root commissioning checks and record durable readiness.",
     )
     verify_parser.set_defaults(handler=verify)
+
+    service_parser = subcommands.add_parser(
+        "service",
+        help="Manage the Clear service identity and commissioning evidence.",
+    )
+    service_subcommands = service_parser.add_subparsers(
+        dest="service_command",
+        required=True,
+    )
+    service_request_parser = service_subcommands.add_parser(
+        "request",
+        help="Create a service-signed commissioning request.",
+    )
+    service_request_parser.add_argument("operator_npub")
+    service_request_parser.set_defaults(handler=service_request)
+    service_commission_parser = service_subcommands.add_parser(
+        "commission",
+        help="Verify and accept an operator attestation.",
+    )
+    service_commission_parser.add_argument(
+        "--attestation-file",
+        default=None,
+        help="Read the signed event from a file instead of stdin.",
+    )
+    service_commission_parser.set_defaults(handler=service_commission)
+    service_show_parser = service_subcommands.add_parser(
+        "show",
+        help="Show the service identity and retained public evidence.",
+    )
+    service_show_parser.set_defaults(handler=service_show)
+    service_verify_parser = service_subcommands.add_parser(
+        "verify",
+        help="Verify the complete retained commissioning evidence chain.",
+    )
+    service_verify_parser.set_defaults(handler=service_verify)
+    service_publish_parser = service_subcommands.add_parser(
+        "publish",
+        help="Publish retained commissioning evidence to configured relays.",
+    )
+    service_publish_parser.add_argument(
+        "--relay",
+        action="append",
+        required=True,
+        help="Relay to publish to. Repeatable.",
+    )
+    service_publish_parser.add_argument("--timeout", type=float, default=10.0)
+    service_publish_parser.set_defaults(handler=service_publish)
 
     treasury_parser = subcommands.add_parser(
         "treasury",

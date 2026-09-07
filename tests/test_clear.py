@@ -165,7 +165,9 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         "npub": MINT_SERVICE_NPUB,
         "type": "clear-mint",
         "management": "independent",
-        "state": "uncommissioned",
+        "state": "bootstrapped",
+        "descriptor_event_id": None,
+        "operator": None,
     }
     assert mint_info.json()["service_identity"] == info.json()["service_identity"]
     assert MINT_SERVICE_NSEC not in info.text
@@ -1226,7 +1228,7 @@ def test_existing_pre_identity_database_can_adopt_its_first_service_key(
         identity = client.get("/v1/info").json()["service_identity"]
 
     assert identity["npub"] == MINT_SERVICE_NPUB
-    assert identity["state"] == "uncommissioned"
+    assert identity["state"] == "bootstrapped"
 
 
 def test_unconfigured_standalone_mint_reports_no_service_identity(tmp_path) -> None:
@@ -1240,6 +1242,8 @@ def test_unconfigured_standalone_mint_reports_no_service_identity(tmp_path) -> N
         "type": "clear-mint",
         "management": "independent",
         "state": "not-configured",
+        "descriptor_event_id": None,
+        "operator": None,
     }
 
 

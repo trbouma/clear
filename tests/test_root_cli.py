@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 from types import SimpleNamespace
 
@@ -37,6 +38,13 @@ def test_root_cli_prefers_root_api_url(monkeypatch) -> None:
     ("arguments", "method", "path", "payload"),
     [
         (["verify"], "POST", "/v1/operator/commissioning/verify", None),
+        (["service", "show"], "GET", "/v1/operator/service", None),
+        (
+            ["service", "verify"],
+            "POST",
+            "/v1/operator/service/verify",
+            None,
+        ),
         (["treasury", "status"], "GET", "/v1/operator/treasury", None),
         (["treasury", "enable"], "POST", "/v1/operator/treasury/enable", None),
         (
@@ -86,6 +94,116 @@ def test_root_cli_does_not_fall_back_to_public_mint_url(monkeypatch) -> None:
     monkeypatch.setenv("CLEAR_MINT_URL", "https://clear.example/")
 
     assert root_cli._api_url(SimpleNamespace(api_url=None)) == root_cli.DEFAULT_MINT_URL
+
+
+def test_root_cli_creates_service_commissioning_request(
+    monkeypatch,
+    capsys,
+) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(
+        mint_url, request_method, request_path, body=None, *, token=None
+    ):
+        calls.append((request_method, request_path, body, token))
+        return {"state": "commissioning-pending"}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["clear-root", "service", "request", "npub1operator"],
+    )
+
+    assert root_cli.main() == 0
+    assert '"state": "commissioning-pending"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "POST",
+            "/v1/operator/service/request",
+            {"operator_npub": "npub1operator"},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_commissions_service_from_stdin(monkeypatch, capsys) -> None:
+    event = {"id": "11" * 32, "kind": 30078}
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(event)))
+
+    def fake_request_json(
+        mint_url, request_method, request_path, body=None, *, token=None
+    ):
+        calls.append((request_method, request_path, body, token))
+        return {"state": "commissioned"}
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr("sys.argv", ["clear-root", "service", "commission"])
+
+    assert root_cli.main() == 0
+    assert '"state": "commissioned"' in capsys.readouterr().out
+    assert calls == [
+        (
+            "POST",
+            "/v1/operator/service/commission",
+            {"event": event},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_publishes_only_retained_service_evidence(
+    monkeypatch,
+    capsys,
+) -> None:
+    keys = root_cli.Keys(priv_k="33" * 32)
+    events = []
+    for kind in (78, 30078, 30078):
+        event = root_cli.Event(kind=kind, content="{}")
+        event.sign(keys)
+        events.append(event)
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+    monkeypatch.setattr(
+        root_cli,
+        "request_json",
+        lambda *args, **kwargs: {
+            "evidence": {
+                "commissioning_request": events[0].data(),
+                "operator_attestation": events[1].data(),
+                "service_descriptor": events[2].data(),
+            }
+        },
+    )
+    published = []
+
+    class FakeRelayPool:
+        def __init__(self, relays, *, timeout):
+            assert relays == ["ws://spurline:8080"]
+            assert timeout == 4
+
+        async def publish(self, event):
+            published.append(event.id)
+            return [SimpleNamespace(relay="ws://spurline:8080")]
+
+    monkeypatch.setattr(root_cli, "RelayPool", FakeRelayPool)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "service",
+            "publish",
+            "--relay",
+            "ws://spurline:8080",
+            "--timeout",
+            "4",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert published == [event.id for event in events]
+    assert '"state": "published"' in capsys.readouterr().out
 
 
 def test_root_cli_migrates_legacy_wallet_file(tmp_path) -> None:
@@ -1233,7 +1351,7 @@ def test_root_cli_info_combines_cmu_metadata_and_circulation(
                     "npub": "npub1service",
                     "type": "clear-mint",
                     "management": "mainstay-managed",
-                    "state": "uncommissioned",
+                    "state": "bootstrapped",
                 },
                 "currency": {
                     "name": "Example Credits",
@@ -1277,7 +1395,7 @@ def test_root_cli_info_combines_cmu_metadata_and_circulation(
     assert '"friendly_unit_alias": "smiles"' in output
     assert '"root_authority_npub": "npub1root"' in output
     assert '"npub": "npub1service"' in output
-    assert '"state": "uncommissioned"' in output
+    assert '"state": "bootstrapped"' in output
     assert '"issued": 34' in output
     assert '"retired": 13' in output
     assert '"circulating": 21' in output

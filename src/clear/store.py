@@ -22,7 +22,7 @@ class ClearError(ValueError):
     pass
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 COMMISSIONING_PROFILE_VERSION = 1
 
 
@@ -163,6 +163,15 @@ class Store:
                     reason TEXT NOT NULL,
                     updated_at INTEGER NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS service_commissioning (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    state TEXT NOT NULL,
+                    operator_npub TEXT,
+                    request_event TEXT,
+                    attestation_event TEXT,
+                    descriptor_event TEXT,
+                    updated_at INTEGER NOT NULL
+                );
                 """
             )
             connection.execute(
@@ -181,6 +190,13 @@ class Store:
                 "INSERT OR IGNORE INTO treasury_state "
                 "(id, enabled, verification_id, reason, updated_at) "
                 "VALUES (1, 0, NULL, 'verification required', ?)",
+                (now,),
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO service_commissioning "
+                "(id, state, operator_npub, request_event, attestation_event, "
+                "descriptor_event, updated_at) "
+                "VALUES (1, 'bootstrapped', NULL, NULL, NULL, NULL, ?)",
                 (now,),
             )
             self._invalidate_stale_readiness(connection)
@@ -241,6 +257,116 @@ class Store:
                 "configured mint service identity does not match the identity "
                 f"bound to this database ({recorded_npub})"
             )
+
+    def service_commissioning_status(self) -> dict:
+        if self.mint_service_npub is None:
+            return {
+                "state": "not-configured",
+                "operator_npub": None,
+                "request_event": None,
+                "attestation_event": None,
+                "descriptor_event": None,
+            }
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM service_commissioning WHERE id = 1"
+            ).fetchone()
+        if row is None:
+            return {
+                "state": "bootstrapped",
+                "operator_npub": None,
+                "request_event": None,
+                "attestation_event": None,
+                "descriptor_event": None,
+            }
+        return {
+            "state": row["state"],
+            "operator_npub": row["operator_npub"],
+            "request_event": (
+                json.loads(row["request_event"]) if row["request_event"] else None
+            ),
+            "attestation_event": (
+                json.loads(row["attestation_event"])
+                if row["attestation_event"]
+                else None
+            ),
+            "descriptor_event": (
+                json.loads(row["descriptor_event"])
+                if row["descriptor_event"]
+                else None
+            ),
+        }
+
+    def save_service_commissioning_request(
+        self,
+        request_event: dict,
+        *,
+        operator_npub: str,
+    ) -> dict:
+        now = self._now()
+        encoded = json.dumps(request_event, sort_keys=True, separators=(",", ":"))
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT state, operator_npub, request_event "
+                "FROM service_commissioning WHERE id = 1"
+            ).fetchone()
+            if row is not None and row["state"] == "commissioned":
+                raise ClearError("Clear service is already commissioned")
+            connection.execute(
+                """
+                INSERT INTO service_commissioning(
+                    id, state, operator_npub, request_event,
+                    attestation_event, descriptor_event, updated_at
+                ) VALUES (1, 'commissioning-pending', ?, ?, NULL, NULL, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    state = excluded.state,
+                    operator_npub = excluded.operator_npub,
+                    request_event = excluded.request_event,
+                    attestation_event = NULL,
+                    descriptor_event = NULL,
+                    updated_at = excluded.updated_at
+                """,
+                (operator_npub, encoded, now),
+            )
+        return self.service_commissioning_status()
+
+    def commission_service(
+        self,
+        *,
+        operator_npub: str,
+        attestation_event: dict,
+        descriptor_event: dict,
+    ) -> dict:
+        now = self._now()
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT state, request_event FROM service_commissioning WHERE id = 1"
+            ).fetchone()
+            if row is None or row["request_event"] is None:
+                raise ClearError("no service commissioning request is pending")
+            connection.execute(
+                """
+                UPDATE service_commissioning
+                SET state = 'commissioned', operator_npub = ?,
+                    attestation_event = ?, descriptor_event = ?, updated_at = ?
+                WHERE id = 1
+                """,
+                (
+                    operator_npub,
+                    json.dumps(
+                        attestation_event,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    json.dumps(
+                        descriptor_event,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    now,
+                ),
+            )
+        return self.service_commissioning_status()
 
     @staticmethod
     def _normalize_npub(npub: str) -> str:

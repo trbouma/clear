@@ -79,3 +79,11 @@ class TreasuryEnvelopeRequest(BaseModel):
 
 class TreasuryDisableRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=280)
+
+
+class ServiceCommissioningRequest(BaseModel):
+    operator_npub: str = Field(min_length=1, max_length=256)
+
+
+class ServiceAttestationRequest(BaseModel):
+    event: dict = Field()

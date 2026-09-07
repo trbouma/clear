@@ -56,6 +56,7 @@ tokens, database identity, and tests. See
   and retirement
 - canonical keyset-bound CMUs with wallet-facing aliases
 - NIP-05 discovery and private NIP-59 kind `7379` delivery
+- signed service commissioning requests, operator attestations, and descriptors
 - pending Clear transfer interoperability with Acorn and Safebox Web
 - FastAPI service, Poetry entry point, tests, and MkDocs documentation
 
@@ -135,8 +136,27 @@ reports its private key. On first configured startup, the service `npub` is
 recorded beside the database. Later startup fails if the service key is absent
 or derives a different `npub`. A database created before service identities
 existed may adopt its first configured identity once. The reported state is
-`uncommissioned` until the currency root explicitly authorizes this mint
-service in a later milestone.
+`bootstrapped` until a recognized operator commissions the service identity.
+This operator relationship is separate from any currency-root authorization
+of the mint's CMUs and keysets.
+
+The service-side commissioning primitives are:
+
+```bash
+docker compose exec clear clear-root service request npub1operator...
+docker compose exec -T clear clear-root service commission < attestation.json
+docker compose exec clear clear-root service show
+docker compose exec clear clear-root service verify
+docker compose exec clear clear-root service publish \
+  --relay ws://spurline:8080
+```
+
+The request is signed by the Clear service key. The attestation must be signed
+by the exact requested operator and identify the same service and role. Clear
+stores the complete public request, attestation, and service-signed descriptor
+in its database and exposes them at `/v1/service-identity`. A Mainstay-managed
+deployment wraps this exchange with `mainstay-local service commission clear`;
+the Mainstay installation key never enters the Clear container.
 
 Signed treasurer mutations start disabled. Commission the standalone mint and
 then make the separate operator decision to enable them:

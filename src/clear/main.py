@@ -22,11 +22,20 @@ from clear.models import (
     MintQuoteRequest,
     MintRequest,
     RetireRequest,
+    ServiceAttestationRequest,
+    ServiceCommissioningRequest,
     SwapRequest,
     TreasurerGrantRequest,
     TreasurerRequest,
     TreasuryDisableRequest,
     TreasuryEnvelopeRequest,
+)
+from clear.service_commissioning import (
+    create_commissioning_request,
+    create_service_descriptor,
+    normalize_public_key,
+    verify_operator_attestation,
+    verify_service_descriptor,
 )
 from clear.store import ClearError, Store
 
@@ -121,14 +130,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         }
 
     def service_identity_response():
+        commissioning = store.service_commissioning_status()
+        attestation = commissioning.get("attestation_event") or {}
         return {
             "npub": configured.mint_service_npub,
             "type": "clear-mint",
             "management": configured.mint_service_management,
-            "state": (
-                "uncommissioned"
-                if configured.mint_service_npub is not None
-                else "not-configured"
+            "state": commissioning["state"],
+            "descriptor_event_id": (
+                (commissioning.get("descriptor_event") or {}).get("id")
+            ),
+            "operator": (
+                {
+                    "npub": commissioning["operator_npub"],
+                    "attestation_event_id": attestation.get("id"),
+                    "status": "verified",
+                }
+                if commissioning["state"] == "commissioned"
+                else None
             ),
         }
 
@@ -227,6 +246,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
         }
 
+    @app.get("/v1/service-identity")
+    async def service_identity_evidence():
+        commissioning = store.service_commissioning_status()
+        return {
+            "service_identity": service_identity_response(),
+            "evidence": {
+                "commissioning_request": commissioning["request_event"],
+                "operator_attestation": commissioning["attestation_event"],
+                "service_descriptor": commissioning["descriptor_event"],
+            },
+        }
+
     @app.get("/v1/keys")
     async def keys():
         return {"keysets": store.keyset_responses(include_keys=True)}
@@ -318,6 +349,136 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if error := operator_access_error(request, authorization):
             return error
         return store.summary()
+
+    @app.get("/v1/operator/service")
+    async def operator_service_identity(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        return await service_identity_evidence()
+
+    @app.post("/v1/operator/service/request")
+    async def request_service_commissioning(
+        body: ServiceCommissioningRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        if configured.mint_service_nsec is None:
+            return _protocol_error("Clear service identity is not configured", 17000)
+        try:
+            _, operator_npub = normalize_public_key(
+                body.operator_npub,
+                label="operator",
+            )
+            event = create_commissioning_request(
+                configured.mint_service_nsec,
+                operator_npub,
+                configured.mint_service_management,
+            )
+            store.save_service_commissioning_request(
+                event,
+                operator_npub=operator_npub,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 17001)
+        return {
+            "state": "commissioning-pending",
+            "service_identity": service_identity_response(),
+            "commissioning_request": event,
+        }
+
+    @app.post("/v1/operator/service/commission")
+    async def commission_service_identity(
+        body: ServiceAttestationRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        if configured.mint_service_nsec is None:
+            return _protocol_error("Clear service identity is not configured", 17000)
+        pending = store.service_commissioning_status()
+        request_event = pending.get("request_event")
+        if not isinstance(request_event, dict):
+            return _protocol_error("no service commissioning request is pending", 17002)
+        try:
+            verified = verify_operator_attestation(
+                request_event,
+                body.event,
+                service_npub=configured.mint_service_npub or "",
+                management=configured.mint_service_management,
+            )
+            descriptor = create_service_descriptor(
+                configured.mint_service_nsec,
+                body.event,
+                management=configured.mint_service_management,
+                now=max(verified.attestation.created_at, 0),
+            )
+            verify_service_descriptor(
+                descriptor,
+                body.event,
+                service_npub=configured.mint_service_npub or "",
+                management=configured.mint_service_management,
+            )
+            store.commission_service(
+                operator_npub=verified.operator_npub,
+                attestation_event=body.event,
+                descriptor_event=descriptor,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 17003)
+        return {
+            "state": "commissioned",
+            "service_identity": service_identity_response(),
+            "operator_attestation": body.event,
+            "service_descriptor": descriptor,
+        }
+
+    @app.post("/v1/operator/service/verify")
+    async def verify_service_identity(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        evidence = store.service_commissioning_status()
+        if configured.mint_service_npub is None:
+            return _protocol_error("Clear service identity is not configured", 17000)
+        if not all(
+            isinstance(evidence.get(name), dict)
+            for name in ("request_event", "attestation_event", "descriptor_event")
+        ):
+            return _protocol_error("Clear service is not commissioned", 17004)
+        try:
+            verified = verify_operator_attestation(
+                evidence["request_event"],
+                evidence["attestation_event"],
+                service_npub=configured.mint_service_npub,
+                management=configured.mint_service_management,
+                require_current_request=False,
+            )
+            descriptor = verify_service_descriptor(
+                evidence["descriptor_event"],
+                evidence["attestation_event"],
+                service_npub=configured.mint_service_npub,
+                management=configured.mint_service_management,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 17005)
+        return {
+            "state": "commissioned",
+            "service_key_control": "verified",
+            "operator_authorship": "verified",
+            "reciprocal_relationship": "verified",
+            "operator_npub": verified.operator_npub,
+            "commissioning_request_event_id": verified.request.id,
+            "operator_attestation_event_id": verified.attestation.id,
+            "service_descriptor_event_id": descriptor.id,
+        }
 
     @app.get("/v1/operator/treasury")
     async def treasury_status(
