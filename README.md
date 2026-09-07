@@ -139,13 +139,15 @@ docker compose exec clear clear-root summary
 ```
 
 Clear reports the derived service `npub` at `/` and `/v1/info`, but never
-reports its private key. On first configured startup, the service `npub` is
-recorded beside the database. Later startup fails if the service key is absent
-or derives a different `npub`. A database created before service identities
-existed may adopt its first configured identity once. The reported state is
-`bootstrapped` until a recognized operator commissions the service identity.
-This operator relationship is separate from any currency-root authorization
-of the mint's CMUs and keysets.
+reports its private key. It also reports the deterministic FIPS `fd00::/8`
+IPv6 address derived from that `npub`; the address does not by itself indicate
+that the mint is attached to or reachable through FIPS. On first configured
+startup, the service `npub` is recorded beside the database. Later startup
+fails if the service key is absent or derives a different `npub`. A database
+created before service identities existed may adopt its first configured
+identity once. The reported state is `bootstrapped` until a recognized operator
+commissions the service identity. This operator relationship is separate from
+any currency-root authorization of the mint's CMUs and keysets.
 
 The service-side commissioning primitives are:
 

@@ -2094,7 +2094,7 @@ pycryptodome = ">=3.20,<4"
 type = "git"
 url = "https://github.com/trbouma/stroma.git"
 reference = "HEAD"
-resolved_reference = "63f31d7a20efcc7382c15c2c7a176222f42d75fe"
+resolved_reference = "f3c3f13de46595588eb69b7d8a22c71bbfe04d29"
 
 [[package]]
 name = "typing-extensions"

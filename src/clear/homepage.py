@@ -14,6 +14,8 @@ def render_homepage(
     currency_unit_alias: str | None,
     protocol_unit: str,
     keyset_id: str,
+    service_npub: str | None,
+    service_fips_ipv6_address: str | None,
     root_authority_configured: bool,
 ) -> str:
     """Render the browser-facing mint overview with escaped configuration."""
@@ -33,6 +35,10 @@ def render_homepage(
         "display_unit": escape(display_unit),
         "protocol_unit": escape(protocol_unit),
         "keyset_id": escape(keyset_id),
+        "service_npub": escape(service_npub or "Not configured"),
+        "service_fips_ipv6_address": escape(
+            service_fips_ipv6_address or "Not configured"
+        ),
         "authority_label": escape(authority_label),
     }
 
@@ -395,6 +401,13 @@ def render_homepage(
           </div>
           <div class="row">
             <dt>Keyset</dt><dd><code>{values['keyset_id']}</code></dd>
+          </div>
+          <div class="row">
+            <dt>Service identity</dt><dd><code>{values['service_npub']}</code></dd>
+          </div>
+          <div class="row">
+            <dt>FIPS IPv6 address</dt>
+            <dd><code>{values['service_fips_ipv6_address']}</code></dd>
           </div>
         </dl>
       </section>

@@ -23,6 +23,7 @@ MASTER_SECRET = "11" * 32
 OPERATOR_TOKEN = "operator-token-that-is-long-enough"
 MINT_SERVICE_NSEC = "22" * 32
 MINT_SERVICE_NPUB = Keys(priv_k=MINT_SERVICE_NSEC).public_key_bech32()
+MINT_SERVICE_FIPS_IPV6_ADDRESS = "fd12:6ef4:53c:5900:f315:6311:7f99:b6ea"
 
 
 def settings(
@@ -163,6 +164,7 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
     assert mint_info.json()["policy"] == info.json()["policy"]
     assert info.json()["service_identity"] == {
         "npub": MINT_SERVICE_NPUB,
+        "fips_ipv6_address": MINT_SERVICE_FIPS_IPV6_ADDRESS,
         "type": "clear-mint",
         "management": "independent",
         "state": "bootstrapped",
@@ -376,6 +378,10 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
     assert "Credit-Liability Ecash: Authorized and Redeemable" in homepage.text
+    assert "Service identity" in homepage.text
+    assert MINT_SERVICE_NPUB in homepage.text
+    assert "FIPS IPv6 address" in homepage.text
+    assert MINT_SERVICE_FIPS_IPV6_ADDRESS in homepage.text
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )
@@ -1239,6 +1245,7 @@ def test_unconfigured_standalone_mint_reports_no_service_identity(tmp_path) -> N
 
     assert info["service_identity"] == {
         "npub": None,
+        "fips_ipv6_address": None,
         "type": "clear-mint",
         "management": "independent",
         "state": "not-configured",

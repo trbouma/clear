@@ -135,6 +135,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         attestation = commissioning.get("attestation_event") or {}
         return {
             "npub": configured.mint_service_npub,
+            "fips_ipv6_address": configured.mint_service_fips_ipv6_address,
             "type": "clear-mint",
             "management": configured.mint_service_management,
             "state": commissioning["state"],
@@ -204,6 +205,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     currency_unit_alias=configured.currency_unit_alias,
                     protocol_unit=keyset.unit,
                     keyset_id=keyset.id,
+                    service_npub=configured.mint_service_npub,
+                    service_fips_ipv6_address=(
+                        configured.mint_service_fips_ipv6_address
+                    ),
                     root_authority_configured=(
                         configured.root_authority_npub is not None
                     ),

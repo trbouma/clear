@@ -8,7 +8,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from stroma import KeyError as StromaKeyError
-from stroma import Keys
+from stroma import Keys, fips_ipv6_address
 
 SERVICE_MANAGEMENT_MODES = {"independent", "mainstay-managed"}
 
@@ -55,6 +55,12 @@ class Settings:
         if not self.mint_service_nsec:
             return None
         return Keys(priv_k=self.mint_service_nsec).public_key_bech32()
+
+    @property
+    def mint_service_fips_ipv6_address(self) -> str | None:
+        if not self.mint_service_npub:
+            return None
+        return fips_ipv6_address(self.mint_service_npub)
 
     @classmethod
     def from_env(cls) -> Settings:
