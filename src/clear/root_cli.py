@@ -17,6 +17,7 @@ from clear.root_delivery import (
     DeliveryError,
     deliver_clear_token,
     discover_clear_support,
+    mint_has_public_route,
 )
 from clear.root_wallet import (
     DEFAULT_WALLET_PATH,
@@ -465,6 +466,16 @@ def send(args) -> int:
     mint_info = _mint_info(api_url)
     mint_url = _public_mint_url(mint_info, api_url)
     currency = mint_info["currency"]
+    if not mint_has_public_route(mint_url) and not args.allow_internal_mint_delivery:
+        raise DeliveryError(
+            "clear-root cannot deliver tokens from an internal-only mint; "
+            "use a Safebox in the same Mainstay context, configure a public "
+            "HTTPS mint URL, or explicitly allow internal delivery"
+        )
+    if not mint_has_public_route(mint_url) and not args.relay:
+        raise DeliveryError(
+            "internal mint delivery requires at least one explicit --relay"
+        )
     discovery = discover_clear_support(
         args.address,
         mint_url=mint_url,
@@ -688,6 +699,14 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         action="append",
         default=None,
         help="Relay to publish to. Repeatable. Defaults to recipient relay hints.",
+    )
+    send_parser.add_argument(
+        "--allow-internal-mint-delivery",
+        action="store_true",
+        help=(
+            "Allow delivery from an internal-only mint when the operator knows "
+            "the recipient shares that mint. Requires an explicit --relay."
+        ),
     )
     send_parser.add_argument(
         "--expiration",

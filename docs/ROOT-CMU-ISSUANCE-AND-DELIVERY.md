@@ -55,6 +55,24 @@ CLI to bypass the reverse proxy without placing that loopback address in
 tokens. Outside Docker it defaults to `http://127.0.0.1:3339` and rejects
 non-loopback addresses.
 
+By default, `clear-root send` requires the advertised `CLEAR_MINT_URL` to be a
+well-formed public HTTPS route. It refuses an internal-only value such as
+`http://clear:3339` before recipient discovery, proof export, or wallet
+mutation. When the operator knows the recipient shares the same Mainstay mint,
+internal delivery requires both an explicit acknowledgement and relay:
+
+```sh
+clear-root send 20 alice@example.com \
+  --allow-internal-mint-delivery \
+  --relay ws://spurline:8080
+```
+
+The override asserts mint reachability; `--relay` prevents the CLI from
+silently using an externally advertised recipient route. Safebox Web remains
+the preferred local transfer path because it can establish co-residency from
+Mainstay's local handle directory. `clear-root withdraw` remains available for
+deliberate manual token handling.
+
 ## Commissioning direction
 
 The commands in this guide let the root exercise the current mint manually.
@@ -200,6 +218,11 @@ that advertises Clear support:
 ```sh
 poetry run clear-root send 25 trbouma@acorn.safebox.dev --memo "test CMU"
 ```
+
+Without the explicit internal-delivery override, this command is available
+only when `/v1/info` advertises a public HTTPS `mint_url`. An internal-only mint
+cannot establish that a remote recipient can reach its proof API, so delivery
+fails before bearer proofs are prepared.
 
 Delivery is not reported as successful merely because the relay publish call
 returned. Clear republishes as needed and requires at least one configured

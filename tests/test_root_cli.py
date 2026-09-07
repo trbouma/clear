@@ -314,6 +314,7 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
     monkeypatch,
     capsys,
 ) -> None:
+    monkeypatch.setattr(root_cli, "mint_has_public_route", lambda mint: True)
     wallet_path = tmp_path / "clear-root-wallet.json"
     wallet_path.write_text(
         """
@@ -397,10 +398,155 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
 
 
+def test_root_cli_send_rejects_internal_mint_before_discovery_or_export(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    wallet_path = tmp_path / "clear-root-wallet.json"
+    wallet_path.write_text('{"version":1,"entries":[]}\n', encoding="utf-8")
+    monkeypatch.setattr(
+        root_cli,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "mint_url": "http://clear:3339",
+            "currency": {"unit": "cmu-0011223344556677"},
+        },
+    )
+
+    def unexpected_discovery(*args, **kwargs):
+        raise AssertionError("internal mint delivery must stop before discovery")
+
+    monkeypatch.setattr(root_cli, "discover_clear_support", unexpected_discovery)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "--wallet",
+            str(wallet_path),
+            "send",
+            "20",
+            "alice@example.com",
+        ],
+    )
+
+    assert root_cli.main() == 1
+    assert "internal-only mint" in capsys.readouterr().err
+    assert wallet_path.read_text(encoding="utf-8") == (
+        '{"version":1,"entries":[]}\n'
+    )
+
+
+def test_root_cli_internal_mint_override_requires_explicit_relay(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.setattr(
+        root_cli,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "mint_url": "http://clear:3339",
+            "currency": {"unit": "cmu-0011223344556677"},
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "--wallet",
+            str(tmp_path / "wallet.json"),
+            "send",
+            "20",
+            "alice@example.com",
+            "--allow-internal-mint-delivery",
+        ],
+    )
+
+    assert root_cli.main() == 1
+    assert "requires at least one explicit --relay" in capsys.readouterr().err
+
+
+def test_root_cli_internal_mint_override_uses_explicit_relay(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    wallet_path = tmp_path / "wallet.json"
+    monkeypatch.setattr(
+        root_cli,
+        "request_json",
+        lambda mint_url, method, path, payload=None, *, token=None: {
+            "mint_url": "http://clear:3339",
+            "currency": {"unit": "cmu-0011223344556677"},
+        },
+    )
+    monkeypatch.setattr(
+        root_cli,
+        "discover_clear_support",
+        lambda address, *, mint_url, unit: {
+            "address": address,
+            "supported": True,
+            "mint": mint_url,
+            "unit": unit,
+            "recipient_pubkey": "11" * 32,
+            "relays": ["wss://public-relay.example"],
+        },
+    )
+    monkeypatch.setattr(
+        root_cli,
+        "_export_or_swap",
+        lambda amount, wallet_path, *, api_url, memo=None: {
+            "token": "cashuApending"
+        },
+    )
+
+    def fake_delivery(discovery, **kwargs):
+        assert kwargs["relays"] == ["ws://spurline:8080"]
+        return {"delivery": discovery, "publish": {"status": "OK"}}
+
+    monkeypatch.setattr(root_cli, "deliver_clear_token", fake_delivery)
+    monkeypatch.setattr(
+        root_cli,
+        "export_token",
+        lambda amount, wallet_path, memo=None, remove=False: {
+            "mint": "http://clear:3339",
+            "unit": "cmu-0011223344556677",
+            "amount": amount,
+            "token": "cashuAsent",
+            "proofs": [],
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "--wallet",
+            str(wallet_path),
+            "send",
+            "20",
+            "alice@example.com",
+            "--allow-internal-mint-delivery",
+            "--relay",
+            "ws://spurline:8080",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"status": "OK"' in capsys.readouterr().out
+
+
 def test_root_cli_send_preserves_wallet_when_delivery_fails(
     tmp_path,
     monkeypatch,
 ) -> None:
+    monkeypatch.setattr(root_cli, "mint_has_public_route", lambda mint: True)
     wallet_path = tmp_path / "clear-root-wallet.json"
     original = """
 {
@@ -477,6 +623,7 @@ def test_root_cli_send_swaps_larger_proof_for_change(
     monkeypatch,
     capsys,
 ) -> None:
+    monkeypatch.setattr(root_cli, "mint_has_public_route", lambda mint: True)
     wallet_path = tmp_path / "clear-root-wallet.json"
     wallet_path.write_text(
         """

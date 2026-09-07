@@ -419,6 +419,76 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
     assert load_wallet(wallet_path)["entries"] == []
 
 
+def test_treasury_cli_send_rejects_internal_mint_before_discovery(
+    monkeypatch, capsys
+) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    monkeypatch.setattr(
+        treasury_cli,
+        "_cmu_info",
+        lambda mint, nsec, lifetime_seconds: {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+        },
+    )
+
+    def unexpected_discovery(*args, **kwargs):
+        raise AssertionError("internal mint delivery must stop before discovery")
+
+    monkeypatch.setattr(
+        treasury_cli,
+        "discover_clear_support",
+        unexpected_discovery,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "http://clear:3339",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "send",
+            "20",
+            "alice@example.com",
+        ],
+    )
+
+    assert treasury_cli.main() == 1
+    assert "internal-only mint" in capsys.readouterr().err
+
+
+def test_treasury_cli_internal_mint_override_requires_explicit_relay(
+    monkeypatch, capsys
+) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    monkeypatch.setattr(
+        treasury_cli,
+        "_cmu_info",
+        lambda mint, nsec, lifetime_seconds: {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "http://clear:3339",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "send",
+            "20",
+            "alice@example.com",
+            "--allow-internal-mint-delivery",
+        ],
+    )
+
+    assert treasury_cli.main() == 1
+    assert "requires at least one explicit --relay" in capsys.readouterr().err
+
+
 def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
     monkeypatch, tmp_path
 ) -> None:

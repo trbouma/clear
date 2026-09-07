@@ -16,6 +16,14 @@ SECOND_RECIPIENT = Keys(priv_k="2".zfill(64))
 SECOND_RECIPIENT_PUBKEY = SECOND_RECIPIENT.public_key_hex()
 
 
+def test_mint_public_route_requires_well_formed_https() -> None:
+    assert root_delivery.mint_has_public_route("https://clear.example") is True
+    assert root_delivery.mint_has_public_route("https://clear.example/path/") is True
+    assert root_delivery.mint_has_public_route("http://clear:3339") is False
+    assert root_delivery.mint_has_public_route("https://user@clear.example") is False
+    assert root_delivery.mint_has_public_route("https://clear.example?q=1") is False
+
+
 def test_discover_clear_support_from_lightning_address(monkeypatch) -> None:
     def fake_get_json(url):
         assert url == "https://example.com/.well-known/nostr.json?name=alice"

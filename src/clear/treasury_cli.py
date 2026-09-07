@@ -16,6 +16,7 @@ from clear.root_delivery import (
     DeliveryError,
     deliver_clear_token,
     discover_clear_support,
+    mint_has_public_route,
 )
 from clear.root_wallet import (
     deposit_issue,
@@ -167,6 +168,16 @@ def send(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
     cmu = _cmu_info(mint, nsec, args.lifetime)
+    if not mint_has_public_route(mint) and not args.allow_internal_mint_delivery:
+        raise DeliveryError(
+            "clear-treasury cannot deliver tokens from an internal-only mint; "
+            "use a Safebox in the same Mainstay context, configure a public "
+            "HTTPS mint URL, or explicitly allow internal delivery"
+        )
+    if not mint_has_public_route(mint) and not args.relay:
+        raise DeliveryError(
+            "internal mint delivery requires at least one explicit --relay"
+        )
     discovery = discover_clear_support(
         args.address,
         mint_url=mint,
@@ -322,6 +333,14 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Relay to publish to. Repeatable. Defaults to recipient relay hints.",
     )
     send_parser.add_argument(
+        "--allow-internal-mint-delivery",
+        action="store_true",
+        help=(
+            "Allow delivery from an internal-only mint when the operator knows "
+            "the recipient shares that mint. Requires an explicit --relay."
+        ),
+    )
+    send_parser.add_argument(
         "--expiration",
         type=int,
         default=None,
@@ -400,7 +419,7 @@ def main() -> int:
     args = parser(prog=program).parse_args()
     try:
         return args.handler(args)
-    except (TreasuryAuthError, TreasuryError, ValueError) as exc:
+    except (DeliveryError, TreasuryAuthError, TreasuryError, ValueError) as exc:
         print(f"{program} {args.command} failed: {exc}", file=sys.stderr)
         return 1
 

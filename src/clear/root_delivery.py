@@ -25,6 +25,26 @@ class DeliveryError(RuntimeError):
     pass
 
 
+def mint_has_public_route(mint_url: str) -> bool:
+    """Return whether the current canonical mint route is public HTTPS."""
+
+    normalized = str(mint_url or "").strip().rstrip("/")
+    try:
+        parsed = urllib.parse.urlsplit(normalized)
+        parsed_port = parsed.port
+    except ValueError:
+        return False
+    return bool(
+        parsed.scheme.lower() == "https"
+        and parsed.hostname
+        and parsed.username is None
+        and parsed.password is None
+        and (parsed_port is None or 1 <= parsed_port <= 65535)
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
 class _RelaySession:
     def __init__(
         self,

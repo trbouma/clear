@@ -324,6 +324,14 @@ clear-treasury --mint https://clear.safebox.dev \
   --memo "Guest pass"
 ```
 
+By default, the mint supplied to `clear-treasury send` must be a public HTTPS
+route. The command rejects an internal-only mint URL before recipient discovery
+or proof export. An operator who knows the recipient shares that mint may use
+`--allow-internal-mint-delivery` together with an explicit `--relay`; omitting
+either leaves the guard in place. Transfer through a Safebox operating inside
+the Mainstay context remains preferable because Safebox can verify local
+recipient registration.
+
 If the wallet cannot export the exact amount but can cover it with a larger
 proof, `send` refreshes the selected proof through `/v1/swap`, delivers the
 requested amount, and keeps the change in the same treasurer wallet.
