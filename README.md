@@ -201,6 +201,9 @@ The accepted implementation boundary for the first release is described in
 The current SQLite schema, CMU separation rules, and keyset storage model are
 described in
 [Clear Mint Data Schema](docs/CLEAR-MINT-DATA-SCHEMA.md).
+The recommended production operations, backup, supply-limit, monitoring, and
+public-edge hardening work is described in
+[Clear DevOps Recommendations](docs/CLEAR-DEVOPS-RECOMMENDATIONS.md).
 The current privileged root issuance, local JSON root wallet, token retirement,
 and NIP-59 delivery path are described in
 [Root CMU Issuance and Delivery](docs/ROOT-CMU-ISSUANCE-AND-DELIVERY.md).

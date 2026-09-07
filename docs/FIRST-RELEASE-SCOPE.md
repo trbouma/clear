@@ -165,6 +165,9 @@ The release test suite should demonstrate:
 
 ## Operational release work
 
+The prioritized operating model and production-hardening backlog are defined
+in [Clear DevOps Recommendations](CLEAR-DEVOPS-RECOMMENDATIONS.md).
+
 - Document installation, configuration, keyset enrollment, backup, restore,
   rotation, suspension, and incident recovery.
 - Add explicit database schema versioning and migrations.
