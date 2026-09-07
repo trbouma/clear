@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "clear-mint"
 version = "0.1.0"
-description = "A Cashu mint for organization-defined Clear Mint Units without Lightning settlement"
+description = "Credit-Liability Ecash: Authorized and Redeemable"
 authors = ["Tim Bouma"]
 license = "MIT"
 readme = "README.md"

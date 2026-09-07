@@ -16,7 +16,9 @@ from clear.main import create_app
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
         prog="clear",
-        description="Run an organization-defined Clear Mint Unit mint.",
+        description=(
+            "Run Clear - Credit-Liability Ecash: Authorized and Redeemable."
+        ),
     )
     result.add_argument("--host", default="127.0.0.1")
     result.add_argument("--port", type=int, default=3339)

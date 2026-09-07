@@ -5,6 +5,26 @@ description: Why organizations may need private, transferable Mint Notes.
 
 # Why Clear?
 
+## Credit-Liability Ecash
+
+**Clear means Credit-Liability Ecash: Authorized and Redeemable.** Each word
+names part of the operating model:
+
+- **Credit** is what the holder can present or transfer.
+- **Liability** is the issuer's corresponding obligation under its policy.
+- **Ecash** is the private bearer mechanism used to issue and circulate Mint
+  Notes without maintaining a named mint balance for every holder.
+- **Authorized** means supply enters circulation only through a recognized
+  operator or treasurer action.
+- **Redeemable** means the issuer accepts its Mint Notes according to published
+  terms and records their redemption or retirement.
+
+Redeemable does not automatically mean convertible to money, bitcoin, or
+another Clear Mint Unit. A meal credit may be redeemable for a meal, a service
+unit for an hour of work, and a member credit for a benefit recognized by its
+issuing organization. The liability is only as broad as the policy and
+participating network that define it.
+
 Organizations often need to allocate value before they need a payment rail.
 A community may distribute food credits, a program may allocate service units,
 an event may issue participant credits, a co-working facility may allocate desk

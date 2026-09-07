@@ -1,6 +1,6 @@
 ---
 title: Clear
-description: Issuance, circulation and redemption machinery for organization-defined transferable units.
+description: "Credit-Liability Ecash: Authorized and Redeemable. Private, organization-defined Mint Notes."
 ---
 
 <section class="clear-hero" markdown>
@@ -9,9 +9,9 @@ description: Issuance, circulation and redemption machinery for organization-def
 
 # Clear
 
-<p class="clear-tagline">Private, transferable Mint Notes for organizations and communities.</p>
+<p class="clear-tagline">Credit-Liability Ecash: Authorized and Redeemable.</p>
 
-<p class="clear-intro">Organizations have always needed ways to allocate and circulate value. Clear provides the issuance, circulation and redemption machinery for organization-defined transferable units, using the Cashu protocol for private bearer notes and double-spend protection. Clear marries this age-old treasury function and responsibility with new protocols to unlock new ways for organizations and communities to coordinate value.</p>
+<p class="clear-intro">The name describes the relationship: a holder receives a credit, the issuer recognizes a corresponding liability, ecash makes that value privately transferable, issuance is authorized, and each Mint Note is redeemable under the issuer's published policy. Clear provides this issuance, circulation and redemption machinery for organization-defined transferable units using the Cashu protocol for private bearer notes and double-spend protection.</p>
 
 [Why Clear?](why-clear.md){ .md-button .md-button--primary }
 [Organization-issued value](organization-issued-value.md){ .md-button .md-button--primary }

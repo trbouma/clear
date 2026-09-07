@@ -8,6 +8,20 @@ the protocol contract. The current implementation exposes canonical
 
 ## Overview
 
+**Clear** expands to **Credit-Liability Ecash: Authorized and Redeemable**.
+This is the canonical product definition:
+
+- **credit** describes the holder-facing claim or entitlement;
+- **liability** describes the issuer-facing obligation defined by policy;
+- **ecash** describes the private bearer-note mechanism;
+- **authorized** requires recognized authority before supply is issued; and
+- **redeemable** requires the issuer to accept its notes under the terms it
+  published.
+
+Redemption may deliver goods, services, benefits, recognition, retirement, or
+another policy-defined outcome. It does not imply universal acceptance, legal
+tender status, or conversion to money, bitcoin, or another CMU.
+
 The protocol distinguishes the mint, the bearer instrument it issues, and the
 unit in which that instrument is denominated.
 

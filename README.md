@@ -1,9 +1,16 @@
 # Clear
 
-Clear is an experimental Cashu mint for organization-defined Mint Notes. It
-keeps Cashu's blinded issuance, transfer, swap, and double-spend protection
-while replacing Lightning settlement with explicit treasurer-authorized
-issuance, redemption, and retirement.
+**Clear means Credit-Liability Ecash: Authorized and Redeemable.** It is an
+experimental Cashu mint for organization-defined Mint Notes. Clear keeps
+Cashu's blinded issuance, transfer, swap, and double-spend protection while
+replacing Lightning settlement with explicit treasurer-authorized issuance,
+redemption, and retirement.
+
+The name describes the complete relationship: a holder receives a credit, the
+issuer recognizes a corresponding liability, ecash makes that value privately
+transferable, issuance is authorized, and the resulting Mint Notes are
+redeemable according to the issuer's published policy. Redeemable does not
+necessarily mean convertible to money, bitcoin, or another CMU.
 
 **Clear provides the issuance, circulation and redemption machinery.** The
 organization defines what each transferable unit represents and the policy

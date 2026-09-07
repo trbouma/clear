@@ -375,7 +375,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert "smiles" in homepage.text
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
-    assert "Organization-issued transferable units" in homepage.text
+    assert "Credit-Liability Ecash: Authorized and Redeemable" in homepage.text
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )

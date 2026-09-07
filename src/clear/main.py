@@ -77,8 +77,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="Clear",
         description=(
-            "An experimental Cashu mint for organization-defined Clear Mint Units "
-            "without Lightning settlement."
+            "Credit-Liability Ecash: Authorized and Redeemable. An experimental "
+            "Cashu mint for organization-defined Clear Mint Units without "
+            "Lightning settlement."
         ),
         version=__version__,
         lifespan=lifespan,
@@ -174,7 +175,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             "name": "Clear",
             "version": __version__,
-            "description": "Organization-defined Clear Mint Units",
+            "description": (
+                "Credit-Liability Ecash: Authorized and Redeemable"
+            ),
             "service_identity": service_identity_response(),
             "currency": {
                 "name": configured.currency_name,
@@ -218,7 +221,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "name": "Clear",
             "version": __version__,
             "mint_url": configured.mint_url,
-            "description": f"{configured.currency_name} issued as Clear ecash",
+            "description": (
+                f"{configured.currency_name} issued as Credit-Liability Ecash: "
+                "Authorized and Redeemable"
+            ),
             "service_identity": service_identity_response(),
             "currency": {
                 "name": configured.currency_name,

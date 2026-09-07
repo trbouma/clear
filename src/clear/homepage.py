@@ -354,11 +354,11 @@ def render_homepage(
 
     <section class="hero">
       <div>
-        <p class="eyebrow">Organization-issued transferable units</p>
+        <p class="eyebrow">Credit-Liability Ecash: Authorized and Redeemable</p>
         <h1>{values['display_name']}</h1>
         <p class="lede">
-          Clear provides the issuance, circulation and redemption machinery for
-          organization-defined transferable units using private Cashu notes.
+          Authorized and redeemable organization-defined value, issued as
+          private Cashu Mint Notes.
         </p>
         <div class="mint-address">
           <code id="mint-url">{values['mint_url']}</code>
