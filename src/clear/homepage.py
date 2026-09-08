@@ -16,6 +16,9 @@ def render_homepage(
     keyset_id: str,
     service_npub: str | None,
     service_fips_ipv6_address: str | None,
+    service_management: str,
+    service_state: str,
+    operator_npub: str | None,
     root_authority_configured: bool,
 ) -> str:
     """Render the browser-facing mint overview with escaped configuration."""
@@ -39,6 +42,9 @@ def render_homepage(
         "service_fips_ipv6_address": escape(
             service_fips_ipv6_address or "Not configured"
         ),
+        "service_management": escape(service_management),
+        "service_state": escape(service_state),
+        "operator_npub": escape(operator_npub or "Not commissioned"),
         "authority_label": escape(authority_label),
     }
 
@@ -409,6 +415,15 @@ def render_homepage(
             <dt>FIPS IPv6 address</dt>
             <dd><code>{values['service_fips_ipv6_address']}</code></dd>
           </div>
+          <div class="row">
+            <dt>Management</dt><dd>{values['service_management']}</dd>
+          </div>
+          <div class="row">
+            <dt>Identity state</dt><dd>{values['service_state']}</dd>
+          </div>
+          <div class="row">
+            <dt>Operator</dt><dd><code>{values['operator_npub']}</code></dd>
+          </div>
         </dl>
       </section>
 
@@ -432,9 +447,9 @@ def render_homepage(
     </aside>
 
     <nav class="links" aria-label="Mint resources">
-      <a href="/v1/info">Mint information</a>
-      <a href="/v1/keys">Public keys</a>
-      <a href="/docs">API documentation</a>
+      <a href="v1/info">Mint information</a>
+      <a href="v1/keys">Public keys</a>
+      <a href="docs">API documentation</a>
       <a href="https://trbouma.github.io/clear/">About Clear</a>
       <span class="version">
         Clear {values['version']} &middot; Developer-stage software

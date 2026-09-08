@@ -130,7 +130,11 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         keys = client.get("/v1/keys")
         mint_info = client.get("/v1/info")
 
-    assert health.json() == {"status": "ok"}
+    assert health.json() == {
+        "status": "ok",
+        "service": "clear",
+        "version": "0.1.0",
+    }
     assert mint_info.json()["mint_url"] == "https://clear.example"
     assert info.json()["currency"]["display_unit"] == "CMU"
     currency = info.json()["currency"]
@@ -382,6 +386,13 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert MINT_SERVICE_NPUB in homepage.text
     assert "FIPS IPv6 address" in homepage.text
     assert MINT_SERVICE_FIPS_IPV6_ADDRESS in homepage.text
+    assert "Management" in homepage.text
+    assert "independent" in homepage.text
+    assert "Identity state" in homepage.text
+    assert "bootstrapped" in homepage.text
+    assert "Not commissioned" in homepage.text
+    assert 'href="v1/info"' in homepage.text
+    assert 'href="/v1/info"' not in homepage.text
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )

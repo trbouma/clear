@@ -196,6 +196,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def information(request: Request):
         accept = request.headers.get("accept", "").lower()
         if "text/html" in accept:
+            identity = service_identity_response()
+            operator = identity.get("operator") or {}
             return HTMLResponse(
                 render_homepage(
                     version=__version__,
@@ -209,6 +211,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     service_fips_ipv6_address=(
                         configured.mint_service_fips_ipv6_address
                     ),
+                    service_management=identity["management"],
+                    service_state=identity["state"],
+                    operator_npub=operator.get("npub"),
                     root_authority_configured=(
                         configured.root_authority_npub is not None
                     ),
@@ -218,7 +223,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health")
     async def health():
-        return {"status": "ok"}
+        return {
+            "status": "ok",
+            "service": "clear",
+            "version": __version__,
+        }
 
     @app.get("/v1/info")
     async def mint_info():
