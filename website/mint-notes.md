@@ -61,6 +61,11 @@ endpoint is a service route, and one logical mint may expose a **mint cluster**
 of authorized instances. Notes from different logical mints or keysets are not
 interchangeable merely because both display `CMU`.
 
+Being transferable by protocol does not make a Mint Note universally reachable
+or accepted. Wallets can distinguish `Local only` from `Across networks` while
+showing recognition and treasury authority separately. See
+[Transferability and Acceptance](transferability.md).
+
 ## Portable keysets and several instances
 
 A treasurer may be separately appointed as the custodian or delegated signer

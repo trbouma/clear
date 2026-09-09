@@ -216,6 +216,9 @@ public-edge hardening work is described in
 The current privileged root issuance, local JSON root wallet, token retirement,
 and NIP-59 delivery path are described in
 [Root CMU Issuance and Delivery](docs/ROOT-CMU-ISSUANCE-AND-DELIVERY.md).
+The distinction among protocol transferability, operational transfer scope,
+recipient acceptance, and treasury authority is defined in
+[CMU Transferability, Acceptance, and Authority](docs/CMU-TRANSFERABILITY-ACCEPTANCE-AND-AUTHORITY.md).
 The complete cross-product milestone is recorded in
 [Transferable Clear Mint Unit Milestone](docs/TRANSFERABLE-CMU-MILESTONE-2026-08-17.md).
 The working multi-community treasurer flow is recorded in

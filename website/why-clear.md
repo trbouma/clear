@@ -51,6 +51,13 @@ or member credits by a club. The Mint Notes remain transferable bearer
 instruments, but acceptance and redemption depend on the issuer's published
 policy and participating network.
 
+Transferability also depends on reachability. A wallet may describe a CMU as
+`Local only` when the recipient must share its local services, or `Across
+networks` when suitable recipient and mint routes extend beyond that context.
+Neither label says whether the recipient accepts or trusts the CMU. Read
+[Transferability and Acceptance](transferability.md) for the complete
+distinction.
+
 This distinction is intentional. Cash is presented as one broadly useful
 sat-denominated balance; Clear balances stay plural because credits from
 different issuers or programs must not be added together or presented as
