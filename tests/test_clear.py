@@ -393,6 +393,10 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert "Not commissioned" in homepage.text
     assert 'href="v1/info"' in homepage.text
     assert 'href="/v1/info"' not in homepage.text
+    assert '<a href="https://trbouma.github.io/clear/">Docs</a>' in homepage.text
+    assert 'href="docs"' not in homepage.text
+    assert "API documentation" not in homepage.text
+    assert "About Clear" not in homepage.text
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )

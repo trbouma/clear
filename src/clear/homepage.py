@@ -449,8 +449,7 @@ def render_homepage(
     <nav class="links" aria-label="Mint resources">
       <a href="v1/info">Mint information</a>
       <a href="v1/keys">Public keys</a>
-      <a href="docs">API documentation</a>
-      <a href="https://trbouma.github.io/clear/">About Clear</a>
+      <a href="https://trbouma.github.io/clear/">Docs</a>
       <span class="version">
         Clear {values['version']} &middot; Developer-stage software
       </span>
