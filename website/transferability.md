@@ -11,22 +11,32 @@ agreed to accept it.
 
 Clear keeps three questions separate:
 
-1. **Where can it be transferred?**
+1. **Where is it available for transfer?**
 2. **Will the recipient accept it?**
 3. **Who stands behind it?**
 
-## Transfer scope
+## Availability
 
-A wallet can describe the current practical transfer scope in two simple ways.
+A wallet can describe the current practical availability boundary in three
+simple ways.
 
 <div class="clear-grid" markdown>
 
 <article class="clear-card" markdown>
 
-### Local only
+### Private
 
-Transferable between wallets using the same local services. Those wallets can
-reach the same Clear mint and use a suitable local delivery path.
+Usable by members within one Mainstay instance. The mint and delivery
+services remain private to that instance.
+
+</article>
+
+<article class="clear-card" markdown>
+
+### Local
+
+Usable between participating instances over shared local infrastructure.
+Internet access is not required.
 
 </article>
 
@@ -42,13 +52,17 @@ CMU.
 
 </div>
 
-This scope is not permanently attached to the Mint Notes. A mint can add,
+All Clear bearer transfers remain cryptographically private. The **Private**
+availability label adds a different fact: the usable service boundary is one
+instance and its members.
+
+This availability is not permanently attached to the Mint Notes. A mint can add,
 replace, or withdraw a route without changing its keyset, CMU, or outstanding
 notes. Wallets derive the label from the routes available for a particular
 transfer.
 
-"Across networks" does not mean universally available or accepted. It means
-only that usable transfer is not confined to one shared local service context.
+"Across networks" does not mean public, global, universally available, or
+accepted. A private inter-community network may cross network boundaries too.
 
 ## Acceptance is a separate decision
 
@@ -77,7 +91,7 @@ identity establishes which mint is being reached. These are distinct roles.
 A useful wallet presentation keeps them distinct too:
 
 ```text
-Transfer scope: Across networks
+Availability: Across networks
 Treasurer: Community Treasury
 Recognition: Recognized locally
 ```
@@ -86,7 +100,7 @@ When recognition evidence is unavailable, the wallet should say so rather
 than treating reachability as trust:
 
 ```text
-Transfer scope: Across networks
+Availability: Across networks
 Treasurer: Not verified
 Recognition: Not established
 ```

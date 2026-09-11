@@ -53,9 +53,10 @@ policy and participating network.
 
 Transferability also depends on service availability. At the network layer,
 that includes whether suitable recipient and mint routes are reachable. A
-wallet may describe a CMU as `Local only` when the recipient must share its
-local services, or `Across networks` when eligible routes extend beyond that
-context. Neither label says whether the recipient accepts or trusts the CMU.
+wallet may describe a CMU as `Private` within one instance, `Local` between
+instances sharing local infrastructure, or `Across networks` when eligible
+routes cross that boundary. None of these labels says whether the recipient
+accepts or trusts the CMU.
 Read [Transferability and Acceptance](transferability.md) for the complete
 distinction.
 

@@ -3,10 +3,10 @@
 ## Status
 
 This note defines the Clear-level meaning of transferability, acceptance,
-authority, and reachability. Applications may use the user-facing transfer
-scopes `Local only` and `Across networks`, but those labels are derived from
-the current sender, recipient, and available routes. They are not permanent
-properties of a CMU or new fields embedded in a Cashu token.
+authority, and reachability. Applications may use the user-facing availability
+states `Private`, `Local`, and `Across networks`, but those labels are derived
+from the current sender, recipient, and available routes. They are not
+permanent properties of a CMU or new fields embedded in a Cashu token.
 
 ## Governing Rule
 
@@ -41,23 +41,26 @@ Protocol transferability answers:
 It does not promise that an arbitrary recipient can reach the mint, wants the
 CMU, or can redeem it under the issuer's policy.
 
-### Operational transfer scope
+### Operational availability
 
-Operational transfer scope combines recipient delivery and mint reachability
+Operational availability combines recipient delivery and mint reachability
 for a particular transfer context. Wallets should present it as:
 
-- **Local only**: usable transfer is confined to wallets sharing the required
-  local service context; or
+- **Private**: usable transfer is confined to members sharing one Mainstay
+  instance and its internal services;
+- **Local**: usable transfer can cross between participating instances over
+  deliberately shared local infrastructure without requiring internet access;
+  or
 - **Across networks**: the mint and recipient advertise eligible routes beyond
-  the sender's local service context.
+  the sender's local network boundary.
 
-The scope is resolved at use time. The same CMU may be `Local only` today and
-`Across networks` later if its mint gains a verified external, federated, or
-FIPS route. It may return to `Local only` if that route is withdrawn. None of
-those changes alter the CMU or its outstanding Mint Notes.
+The state is resolved at use time. The same CMU may be `Private`, `Local`, or
+`Across networks` as verified routes are added or withdrawn. None of those
+changes alter the CMU or its outstanding Mint Notes.
 
 An advertised route is not proof of current health. Wallets should report
-temporary unavailability separately from the broader scope classification.
+temporary unavailability separately from the broader availability
+classification.
 
 ### Acceptance and recognition
 
@@ -71,8 +74,8 @@ Acceptance answers:
 
 Clear does not infer acceptance from valid proofs, successful delivery, shared
 infrastructure, a public endpoint, service commissioning, or another party's
-recognition. A wallet may accept a `Local only` CMU and decline an `Across
-networks` CMU.
+recognition. A wallet may accept a `Private` CMU and decline an `Across
+networks` CMU, or make the opposite choice.
 
 ### Treasury authority
 
@@ -118,18 +121,20 @@ recipient -> correct Clear mint and keyset
 
 Receipt is not final confirmation. The receiving wallet must verify or refresh
 proofs with the responsible mint and keep pending, confirmed, and rejected
-states distinct. Transfer scope does not replace proof-state checks.
+states distinct. Availability does not replace proof-state checks.
 
 ## Classification Matrix
 
-| Transfer scope | Acceptance | Treasurer recognition | Meaning |
+| Availability | Acceptance | Treasurer recognition | Meaning |
 | --- | --- | --- | --- |
-| Local only | Accepted | Recognized | Locally usable under a known policy |
-| Local only | Not established | Unknown | Reachable locally, but no endorsement is implied |
+| Private | Accepted | Recognized | Usable by members within one instance under a known policy |
+| Private | Not established | Unknown | Instance services are usable, but no endorsement is implied |
+| Local | Accepted | Recognized | Usable between participating instances on local infrastructure |
+| Local | Not established | Unknown | A local route exists, but no endorsement is implied |
 | Across networks | Accepted | Recognized | Recipient accepts the CMU and has eligible remote paths |
 | Across networks | Not established | Unknown | Technically portable, but not necessarily wanted or trusted |
 
-All four combinations are valid. Implementations must not collapse the columns
+All combinations are valid. Implementations must not collapse the columns
 into a single status such as `trusted`, `public`, or `global`.
 
 ## Responsibility Boundaries
@@ -160,16 +165,21 @@ for informed user confirmation.
 The preferred wallet labels are:
 
 ```text
-Transfer scope: Local only
+Availability: Private
 ```
 
 ```text
-Transfer scope: Across networks
+Availability: Local
+```
+
+```text
+Availability: Across networks
 ```
 
 Supporting language should remain narrow:
 
-- `Local only`: "Transferable between wallets using the same local services."
+- `Private`: "Usable by members of this Mainstay instance."
+- `Local`: "Usable between participating instances on local infrastructure."
 - `Across networks`: "The mint can be reached outside this local system. The
   receiving wallet still decides whether to accept the CMU."
 
@@ -194,9 +204,10 @@ introduction in the 1200s. See the
 
 ## Implementation Direction
 
-1. Keep transfer scope out of canonical CMU identity and Cashu tokens.
+1. Keep availability state out of canonical CMU identity and Cashu tokens.
 2. Advertise service identity, capabilities, and eligible endpoints separately.
-3. Let the wallet derive scope from recipient delivery and mint reachability.
+3. Let the wallet derive availability from recipient delivery and mint
+   reachability.
 4. Stop a send before proof export when usable transfer cannot be established.
 5. Keep acceptance and treasury recognition in separate wallet-facing fields.
 6. Replace URL-shape heuristics with identity-based multi-route resolution.
@@ -208,4 +219,4 @@ introduction in the 1200s. See the
 - [First-Release Treasurer and CMU Authority Model](FIRST-RELEASE-TREASURER-CMU-AUTHORITY-MODEL.md)
 - [Root CMU Issuance and Delivery](ROOT-CMU-ISSUANCE-AND-DELIVERY.md)
 - [CMU Payment Request Design](CMU-PAYMENT-REQUEST-DESIGN.md)
-- [Mainstay Clear Transfer Scope, Acceptance, and Authority](https://github.com/trbouma/mainstay/blob/main/docs/CLEAR-TRANSFER-SCOPE-ACCEPTANCE-AND-AUTHORITY.md)
+- [Mainstay Clear Availability, Acceptance, and Authority](https://github.com/trbouma/mainstay/blob/main/docs/CLEAR-TRANSFER-SCOPE-ACCEPTANCE-AND-AUTHORITY.md)
