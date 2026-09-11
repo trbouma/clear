@@ -24,16 +24,16 @@ simple ways.
 
 <article class="clear-card" markdown>
 
-### Private
+### Within this instance
 
 Usable by members within one Mainstay instance. The mint and delivery
-services remain private to that instance.
+services are available to that instance.
 
 </article>
 
 <article class="clear-card" markdown>
 
-### Local
+### On the local network
 
 Usable between participating instances over shared local infrastructure.
 Internet access is not required.
@@ -52,9 +52,9 @@ CMU.
 
 </div>
 
-All Clear bearer transfers remain cryptographically private. The **Private**
-availability label adds a different fact: the usable service boundary is one
-instance and its members.
+All Clear bearer transfers remain cryptographically private. Privacy is
+separate from the availability boundary and is therefore not used as an
+availability label.
 
 This availability is not permanently attached to the Mint Notes. A mint can add,
 replace, or withdraw a route without changing its keyset, CMU, or outstanding

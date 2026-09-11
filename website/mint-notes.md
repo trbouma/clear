@@ -62,8 +62,9 @@ of authorized instances. Notes from different logical mints or keysets are not
 interchangeable merely because both display `CMU`.
 
 Being transferable by protocol does not make a Mint Note universally available
-or accepted. Wallets can distinguish `Private`, `Local`, and `Across networks`
-availability while showing recognition and treasury authority separately. See
+or accepted. Wallets can distinguish `Within this instance`, `On the local
+network`, and `Across networks` availability while showing recognition and
+treasury authority separately. See
 [Transferability and Acceptance](transferability.md).
 
 ## Portable keysets and several instances

@@ -4,7 +4,7 @@
 
 This note defines the Clear-level meaning of transferability, acceptance,
 authority, and reachability. Applications may use the user-facing availability
-states `Private`, `Local`, and `Across networks`, but those labels are derived
+states `Instance`, `Local`, and `Across networks`, but those states are derived
 from the current sender, recipient, and available routes. They are not
 permanent properties of a CMU or new fields embedded in a Cashu token.
 
@@ -46,16 +46,18 @@ CMU, or can redeem it under the issuer's policy.
 Operational availability combines recipient delivery and mint reachability
 for a particular transfer context. Wallets should present it as:
 
-- **Private**: usable transfer is confined to members sharing one Mainstay
-  instance and its internal services;
+- **Instance**: usable transfer is confined to members sharing one Mainstay
+  instance and its internal services, shown as **Within this instance**;
 - **Local**: usable transfer can cross between participating instances over
-  deliberately shared local infrastructure without requiring internet access;
+  deliberately shared local infrastructure without requiring internet access,
+  shown as **On the local network**; or
   or
 - **Across networks**: the mint and recipient advertise eligible routes beyond
   the sender's local network boundary.
 
-The state is resolved at use time. The same CMU may be `Private`, `Local`, or
-`Across networks` as verified routes are added or withdrawn. None of those
+The state is resolved at use time. The same CMU may be available within one
+instance, on a local network, or across networks as verified routes are added
+or withdrawn. None of those
 changes alter the CMU or its outstanding Mint Notes.
 
 An advertised route is not proof of current health. Wallets should report
@@ -74,7 +76,7 @@ Acceptance answers:
 
 Clear does not infer acceptance from valid proofs, successful delivery, shared
 infrastructure, a public endpoint, service commissioning, or another party's
-recognition. A wallet may accept a `Private` CMU and decline an `Across
+recognition. A wallet may accept an instance-available CMU and decline an `Across
 networks` CMU, or make the opposite choice.
 
 ### Treasury authority
@@ -127,8 +129,8 @@ states distinct. Availability does not replace proof-state checks.
 
 | Availability | Acceptance | Treasurer recognition | Meaning |
 | --- | --- | --- | --- |
-| Private | Accepted | Recognized | Usable by members within one instance under a known policy |
-| Private | Not established | Unknown | Instance services are usable, but no endorsement is implied |
+| Instance | Accepted | Recognized | Usable by members within one instance under a known policy |
+| Instance | Not established | Unknown | Instance services are usable, but no endorsement is implied |
 | Local | Accepted | Recognized | Usable between participating instances on local infrastructure |
 | Local | Not established | Unknown | A local route exists, but no endorsement is implied |
 | Across networks | Accepted | Recognized | Recipient accepts the CMU and has eligible remote paths |
@@ -165,11 +167,11 @@ for informed user confirmation.
 The preferred wallet labels are:
 
 ```text
-Availability: Private
+Availability: Within this instance
 ```
 
 ```text
-Availability: Local
+Availability: On the local network
 ```
 
 ```text
@@ -178,7 +180,7 @@ Availability: Across networks
 
 Supporting language should remain narrow:
 
-- `Private`: "Usable by members of this Mainstay instance."
+- `Instance`: "Usable by members of this Mainstay instance."
 - `Local`: "Usable between participating instances on local infrastructure."
 - `Across networks`: "The mint can be reached outside this local system. The
   receiving wallet still decides whether to accept the CMU."
@@ -211,7 +213,8 @@ introduction in the 1200s. See the
 4. Stop a send before proof export when usable transfer cannot be established.
 5. Keep acceptance and treasury recognition in separate wallet-facing fields.
 6. Replace URL-shape heuristics with identity-based multi-route resolution.
-7. Preserve the same labels when federation or FIPS provides the route.
+7. Preserve the same states and user-facing labels when federation or FIPS
+   provides the route.
 
 ## Related Notes
 
