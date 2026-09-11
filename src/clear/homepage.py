@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from html import escape
+
+from clear.localization import (
+    HOMEPAGE_ABOUT,
+    HOMEPAGE_LEDE,
+    HOMEPAGE_TAGLINE,
+    SUPPORTED_LANGUAGES,
+    translator,
+)
 
 
 def render_homepage(
@@ -20,17 +29,33 @@ def render_homepage(
     service_state: str,
     operator_npub: str | None,
     root_authority_configured: bool,
+    language: str = "en",
 ) -> str:
     """Render the browser-facing mint overview with escaped configuration."""
+
+    _ = translator(language)
+
+    def text(message: str) -> str:
+        return escape(_(message))
 
     display_name = currency_alias or currency_name
     display_unit = currency_unit_alias or "CMU"
     authority_label = (
-        "Root authority configured"
+        _("Root authority configured")
         if root_authority_configured
-        else "Root bootstrap mode"
+        else _("Root bootstrap mode")
+    )
+    language_options = "".join(
+        (
+            f'<option value="{escape(tag)}"'
+            f'{" selected" if tag == language else ""}>'
+            f"{escape(label)}</option>"
+        )
+        for tag, label in SUPPORTED_LANGUAGES.items()
     )
     values = {
+        "language": escape(language),
+        "language_options": language_options,
         "version": escape(version),
         "mint_url": escape(mint_url),
         "currency_name": escape(currency_name),
@@ -38,24 +63,30 @@ def render_homepage(
         "display_unit": escape(display_unit),
         "protocol_unit": escape(protocol_unit),
         "keyset_id": escape(keyset_id),
-        "service_npub": escape(service_npub or "Not configured"),
+        "service_npub": escape(service_npub or _("Not configured")),
         "service_fips_ipv6_address": escape(
-            service_fips_ipv6_address or "Not configured"
+            service_fips_ipv6_address or _("Not configured")
         ),
-        "service_management": escape(service_management),
-        "service_state": escape(service_state),
-        "operator_npub": escape(operator_npub or "Not commissioned"),
+        "service_management": escape(_(service_management)),
+        "service_state": escape(_(service_state)),
+        "operator_npub": escape(operator_npub or _("Not commissioned")),
         "authority_label": escape(authority_label),
     }
 
+    copy_labels = {
+        "copied": _("Copied"),
+        "failed": _("Select URL to copy"),
+        "ready": _("Copy mint URL"),
+    }
+
     return f"""<!doctype html>
-<html lang="en">
+<html lang="{values['language']}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="{values['display_name']} Clear mint">
+  <meta name="description" content="{values['display_name']} {text('Clear Mint')}">
   <meta name="color-scheme" content="light dark">
-  <title>{values['display_name']} | Clear Mint</title>
+  <title>{values['display_name']} | {text('Clear Mint')}</title>
   <style>
     :root {{
       color-scheme: light;
@@ -112,6 +143,31 @@ def render_homepage(
     }}
 
     .brand svg {{ width: 2rem; height: 2rem; flex: 0 0 auto; }}
+
+    .topbar-actions {{
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }}
+
+    .language-form {{
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 650;
+    }}
+
+    .language-form select {{
+      min-height: 2.35rem;
+      padding: 0.4rem 1.8rem 0.4rem 0.6rem;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }}
 
     .online {{
       display: inline-flex;
@@ -201,7 +257,7 @@ def render_homepage(
       font-weight: 720;
     }}
 
-    button:focus-visible, a:focus-visible {{
+    button:focus-visible, select:focus-visible, a:focus-visible {{
       outline: 3px solid rgba(217, 103, 75, 0.45);
       outline-offset: 3px;
     }}
@@ -315,6 +371,12 @@ def render_homepage(
 
     @media (max-width: 47rem) {{
       .shell {{ width: min(100% - 1.2rem, 68rem); }}
+      .topbar {{ align-items: flex-start; }}
+      .topbar-actions {{
+        align-items: flex-end;
+        flex-direction: column-reverse;
+        gap: 0.45rem;
+      }}
       .hero {{ grid-template-columns: 1fr; padding: 1.4rem; }}
       .token {{
         min-height: auto;
@@ -359,28 +421,35 @@ def render_homepage(
             d="M256 48a208 208 0 0 0 0 416v-86a122 122 0 1 1 0-244z"/>
           <path fill="#e16f51" d="M222 224h168v64H222z"/>
         </svg>
-        <span>Clear Mint</span>
+        <span>{text('Clear Mint')}</span>
       </div>
-      <div class="online">Online</div>
+      <div class="topbar-actions">
+        <form class="language-form" method="get">
+          <label for="language">{text('Language')}</label>
+          <select id="language" name="lang" onchange="this.form.submit()">
+            {values['language_options']}
+          </select>
+        </form>
+        <div class="online">{text('Online')}</div>
+      </div>
     </header>
 
     <section class="hero">
       <div>
-        <p class="eyebrow">Credit-Liability Ecash: Authorized and Redeemable</p>
+        <p class="eyebrow">{text(HOMEPAGE_TAGLINE)}</p>
         <h1>{values['display_name']}</h1>
         <p class="lede">
-          Authorized and redeemable organization-defined value, issued as
-          private Cashu Mint Notes.
+          {text(HOMEPAGE_LEDE)}
         </p>
         <div class="mint-address">
           <code id="mint-url">{values['mint_url']}</code>
-          <button id="copy-mint" type="button" aria-label="Copy mint URL">
-            Copy mint URL
+          <button id="copy-mint" type="button" aria-label="{text('Copy mint URL')}">
+            {text('Copy mint URL')}
           </button>
         </div>
       </div>
-      <div class="token" aria-label="Currency identity">
-        <svg viewBox="0 0 512 512" role="img" aria-label="Clear token">
+      <div class="token" aria-label="{text('Currency identity')}">
+        <svg viewBox="0 0 512 512" role="img" aria-label="{text('Clear token')}">
           <circle cx="256" cy="256" r="208" fill="#247c93"/>
           <circle cx="256" cy="256" r="122" fill="#f4fbfc"/>
           <path fill="#143d52"
@@ -389,69 +458,74 @@ def render_homepage(
         </svg>
         <div>
           <strong>{values['display_unit']}</strong>
-          <span>Clear Mint Unit</span>
+          <span>{text('Clear Mint Unit')}</span>
         </div>
       </div>
     </section>
 
     <div class="grid">
       <section class="panel">
-        <h2>Mint details</h2>
+        <h2>{text('Mint details')}</h2>
         <dl>
-          <div class="row"><dt>Currency</dt><dd>{values['currency_name']}</dd></div>
-          <div class="row"><dt>Friendly name</dt><dd>{values['display_name']}</dd></div>
-          <div class="row"><dt>Unit label</dt><dd>{values['display_unit']}</dd></div>
           <div class="row">
-            <dt>Protocol unit</dt>
+            <dt>{text('Currency')}</dt><dd>{values['currency_name']}</dd>
+          </div>
+          <div class="row">
+            <dt>{text('Friendly name')}</dt><dd>{values['display_name']}</dd>
+          </div>
+          <div class="row">
+            <dt>{text('Unit label')}</dt><dd>{values['display_unit']}</dd>
+          </div>
+          <div class="row">
+            <dt>{text('Protocol unit')}</dt>
             <dd><code>{values['protocol_unit']}</code></dd>
           </div>
           <div class="row">
-            <dt>Keyset</dt><dd><code>{values['keyset_id']}</code></dd>
+            <dt>{text('Keyset')}</dt><dd><code>{values['keyset_id']}</code></dd>
           </div>
           <div class="row">
-            <dt>Service identity</dt><dd><code>{values['service_npub']}</code></dd>
+            <dt>{text('Service identity')}</dt>
+            <dd><code>{values['service_npub']}</code></dd>
           </div>
           <div class="row">
-            <dt>FIPS IPv6 address</dt>
+            <dt>{text('FIPS IPv6 address')}</dt>
             <dd><code>{values['service_fips_ipv6_address']}</code></dd>
           </div>
           <div class="row">
-            <dt>Management</dt><dd>{values['service_management']}</dd>
+            <dt>{text('Management')}</dt><dd>{values['service_management']}</dd>
           </div>
           <div class="row">
-            <dt>Identity state</dt><dd>{values['service_state']}</dd>
+            <dt>{text('Identity state')}</dt><dd>{values['service_state']}</dd>
           </div>
           <div class="row">
-            <dt>Operator</dt><dd><code>{values['operator_npub']}</code></dd>
+            <dt>{text('Operator')}</dt><dd><code>{values['operator_npub']}</code></dd>
           </div>
         </dl>
       </section>
 
       <section class="panel">
-        <h2>How this mint works</h2>
+        <h2>{text('How this mint works')}</h2>
         <ul class="features">
-          <li>Treasurer-authorized issuance</li>
-          <li>Private bearer transfers</li>
-          <li>Mint-enforced double-spend protection</li>
-          <li>Proof swapping and verification</li>
-          <li>Explicit unit retirement</li>
+          <li>{text('Treasurer-authorized issuance')}</li>
+          <li>{text('Private bearer transfers')}</li>
+          <li>{text('Mint-enforced double-spend protection')}</li>
+          <li>{text('Proof swapping and verification')}</li>
+          <li>{text('Explicit unit retirement')}</li>
           <li>{values['authority_label']}</li>
         </ul>
       </section>
     </div>
 
     <aside class="about">
-      Clear units are organization-defined credits, vouchers, passes, or other
-      transferable value. They are distinct from Bitcoin-backed cash and remain
-      governed and redeemable according to the issuing organization's terms.
+      {text(HOMEPAGE_ABOUT)}
     </aside>
 
-    <nav class="links" aria-label="Mint resources">
-      <a href="v1/info">Mint information</a>
-      <a href="v1/keys">Public keys</a>
-      <a href="https://trbouma.github.io/clear/">Docs</a>
+    <nav class="links" aria-label="{text('Mint resources')}">
+      <a href="v1/info">{text('Mint information')}</a>
+      <a href="v1/keys">{text('Public keys')}</a>
+      <a href="https://trbouma.github.io/clear/">{text('Docs')}</a>
       <span class="version">
-        Clear {values['version']} &middot; Developer-stage software
+        Clear {values['version']} &middot; {text('Developer-stage software')}
       </span>
     </nav>
   </main>
@@ -461,11 +535,13 @@ def render_homepage(
       try {{
         const mintUrl = document.getElementById("mint-url").textContent;
         await navigator.clipboard.writeText(mintUrl);
-        button.textContent = "Copied";
+        button.textContent = {json.dumps(copy_labels['copied'], ensure_ascii=False)};
       }} catch (_error) {{
-        button.textContent = "Select URL to copy";
+        button.textContent = {json.dumps(copy_labels['failed'], ensure_ascii=False)};
       }}
-      window.setTimeout(() => {{ button.textContent = "Copy mint URL"; }}, 1800);
+      window.setTimeout(() => {{
+        button.textContent = {json.dumps(copy_labels['ready'], ensure_ascii=False)};
+      }}, 1800);
     }});
   </script>
 </body>

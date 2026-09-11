@@ -15,6 +15,7 @@ from clear.commissioning import configuration_fingerprint, run_verification
 from clear.config import Settings
 from clear.crypto import Keyset
 from clear.homepage import render_homepage
+from clear.localization import resolve_language
 from clear.models import (
     CheckStateRequest,
     CMUCreateRequest,
@@ -196,6 +197,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def information(request: Request):
         accept = request.headers.get("accept", "").lower()
         if "text/html" in accept:
+            language = resolve_language(
+                request.query_params.get("lang"),
+                request.headers.get("accept-language"),
+            )
             identity = service_identity_response()
             operator = identity.get("operator") or {}
             return HTMLResponse(
@@ -217,7 +222,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     root_authority_configured=(
                         configured.root_authority_npub is not None
                     ),
-                )
+                    language=language,
+                ),
+                headers={
+                    "Content-Language": language,
+                    "Vary": "Accept-Language",
+                },
             )
         return information_response()
 

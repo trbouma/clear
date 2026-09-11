@@ -50,6 +50,7 @@ nav:
       - Product Family: product-family.md
   - Operate Clear:
       - Getting Started: getting-started.md
+      - Standalone Deployment: deployment.md
       - Commissioning a Mint: root-commissioning.md
       - Onboarding a Treasurer: treasurer-onboarding.md
       - API: api.md

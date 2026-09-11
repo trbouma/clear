@@ -102,9 +102,10 @@ identity and does not change the currency root, Cashu keysets, or treasurer
 authority. `CLEAR_MINT_URL` must be the URL that wallets will use to reach the
 mint; the loopback default is suitable only for local testing.
 
-Compose publishes port `3339` on all host interfaces by default through
-`CLEAR_BIND_ADDRESS=0.0.0.0`, allowing access over LAN or Tailscale. Use host
-firewall rules or a more specific bind address when access must be restricted.
+Compose publishes port `3339` on loopback by default through
+`CLEAR_BIND_ADDRESS=127.0.0.1`. Select an explicit LAN, VPN, or reverse-proxy
+interface only when another machine must reach the service, and constrain that
+path with the corresponding firewall or network policy.
 
 Inside Docker, `clear-root` connects directly to
 `CLEAR_ROOT_API_URL=http://127.0.0.1:3339`. The command rejects non-loopback
@@ -121,11 +122,18 @@ docker compose ps
 curl http://127.0.0.1:3339/health
 ```
 
-On a deployment host, pull, rebuild, recreate, and health-check Clear with:
+On a standalone deployment host, update, rebuild, recreate, and health-check
+Clear from its dedicated checkout with:
 
 ```bash
 ./refresh-containers.sh
 ```
+
+The script requires a clean tracked tree, accepts only a fast-forward update,
+validates Compose, and waits for the health check. A Clear instance managed by
+Mainstay must instead be updated from its Mainstay deployment directory. See
+the [standalone deployment guide](https://trbouma.github.io/clear/deployment/)
+for the complete operating lifecycle.
 
 The mint database and privileged root wallet are stored in the named
 `clear-data` volume. The same image includes `clear-root`, which can be run in

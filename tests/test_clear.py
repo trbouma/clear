@@ -377,6 +377,11 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
 
     assert homepage.status_code == 200
     assert homepage.headers["content-type"].startswith("text/html")
+    assert homepage.headers["content-language"] == "en"
+    assert homepage.headers["vary"] == "Accept-Language"
+    assert '<html lang="en">' in homepage.text
+    assert '<select id="language" name="lang"' in homepage.text
+    assert '<option value="en" selected>English</option>' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
     assert "https://clear.example" in homepage.text
@@ -400,6 +405,53 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )
+
+
+def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    with TestClient(create_app(configured)) as client:
+        homepage = client.get(
+            "/?lang=fr",
+            headers={"Accept": "text/html", "Accept-Language": "en"},
+        )
+        information = client.get(
+            "/?lang=fr",
+            headers={"Accept": "application/json"},
+        )
+
+    assert homepage.status_code == 200
+    assert homepage.headers["content-language"] == "fr"
+    assert '<html lang="fr">' in homepage.text
+    assert '<option value="fr" selected>Français</option>' in homepage.text
+    assert "Détails du service" in homepage.text
+    assert "Fonctionnement du service" in homepage.text
+    assert "Identité du service" in homepage.text
+    assert "Copier l’URL du service" in homepage.text
+    assert "Harbour Lab Credits" in homepage.text
+    assert "smiles" in homepage.text
+    assert MINT_SERVICE_NPUB in homepage.text
+    assert information.json()["description"] == (
+        "Credit-Liability Ecash: Authorized and Redeemable"
+    )
+
+
+def test_browser_homepage_uses_accept_language_without_a_selector(tmp_path) -> None:
+    with TestClient(create_app(settings(tmp_path))) as client:
+        homepage = client.get(
+            "/",
+            headers={
+                "Accept": "text/html",
+                "Accept-Language": "fr-CA,fr;q=0.9,en;q=0.5",
+            },
+        )
+
+    assert homepage.status_code == 200
+    assert '<html lang="fr">' in homepage.text
+    assert "En ligne" in homepage.text
 
 
 def test_root_authority_npub_is_reported_as_policy_metadata(tmp_path) -> None:
