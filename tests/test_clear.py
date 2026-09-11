@@ -379,7 +379,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert homepage.headers["content-type"].startswith("text/html")
     assert homepage.headers["content-language"] == "en"
     assert homepage.headers["vary"] == "Accept-Language"
-    assert '<html lang="en">' in homepage.text
+    assert '<html lang="en" dir="ltr">' in homepage.text
     assert '<select id="language" name="lang"' in homepage.text
     assert '<option value="en" selected>English</option>' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
@@ -425,7 +425,7 @@ def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:
 
     assert homepage.status_code == 200
     assert homepage.headers["content-language"] == "fr"
-    assert '<html lang="fr">' in homepage.text
+    assert '<html lang="fr" dir="ltr">' in homepage.text
     assert '<option value="fr" selected>Français</option>' in homepage.text
     assert "Détails du service" in homepage.text
     assert "Fonctionnement du service" in homepage.text
@@ -450,8 +450,58 @@ def test_browser_homepage_uses_accept_language_without_a_selector(tmp_path) -> N
         )
 
     assert homepage.status_code == 200
-    assert '<html lang="fr">' in homepage.text
+    assert '<html lang="fr" dir="ltr">' in homepage.text
     assert "En ligne" in homepage.text
+
+
+def test_browser_homepage_renders_arabic_with_isolated_technical_values(
+    tmp_path,
+) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    with TestClient(create_app(configured)) as client:
+        homepage = client.get(
+            "/?lang=ar",
+            headers={"Accept": "text/html"},
+        )
+        information = client.get(
+            "/?lang=ar",
+            headers={"Accept": "application/json"},
+        )
+
+    assert homepage.status_code == 200
+    assert homepage.headers["content-language"] == "ar"
+    assert '<html lang="ar" dir="rtl">' in homepage.text
+    assert '<option value="ar" selected>العربية</option>' in homepage.text
+    assert "تفاصيل الخدمة" in homepage.text
+    assert "كيفية عمل هذه الخدمة" in homepage.text
+    assert '<bdi dir="auto">Harbour Lab Credits</bdi>' in homepage.text
+    assert (
+        '<code class="technical" id="mint-url" dir="ltr">'
+        "https://clear.example</code>"
+    ) in homepage.text
+    assert MINT_SERVICE_NPUB in homepage.text
+    assert information.json()["description"] == (
+        "Credit-Liability Ecash: Authorized and Redeemable"
+    )
+
+
+def test_browser_homepage_negotiates_arabic_region_locale(tmp_path) -> None:
+    with TestClient(create_app(settings(tmp_path))) as client:
+        homepage = client.get(
+            "/",
+            headers={
+                "Accept": "text/html",
+                "Accept-Language": "ar-EG,ar;q=0.9,en;q=0.5",
+            },
+        )
+
+    assert homepage.headers["content-language"] == "ar"
+    assert '<html lang="ar" dir="rtl">' in homepage.text
+    assert "متصل" in homepage.text
 
 
 def test_root_authority_npub_is_reported_as_policy_metadata(tmp_path) -> None:

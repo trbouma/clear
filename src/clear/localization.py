@@ -24,7 +24,10 @@ SUPPORTED_LANGUAGES = {
     "de": "Deutsch",
     "it": "Italiano",
     "zh-Hans": "简体中文",
+    "ar": "العربية",
 }
+
+RIGHT_TO_LEFT_LANGUAGES = {"ar"}
 
 _LANGUAGE_TAG_PATTERN = re.compile(
     r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
@@ -368,6 +371,63 @@ _SIMPLIFIED_CHINESE = {
     "Select URL to copy": "请选择要复制的网址",
 }
 
+_ARABIC = {
+    "Clear Mint": "خدمة Clear",
+    "Online": "متصل",
+    HOMEPAGE_TAGLINE: (
+        "نقد إلكتروني قائم على الائتمان والالتزام: مصرح به وقابل للاسترداد"
+    ),
+    HOMEPAGE_LEDE: (
+        "قيمة تحددها المؤسسة، مصرح بها وقابلة للاسترداد، وتصدر في صورة "
+        "أوراق Cashu خاصة."
+    ),
+    "Copy mint URL": "نسخ عنوان الخدمة",
+    "Currency identity": "هوية العملة",
+    "Clear token": "رمز Clear",
+    "Clear Mint Unit": "وحدة Clear النقدية",
+    "Mint details": "تفاصيل الخدمة",
+    "Currency": "العملة",
+    "Friendly name": "الاسم الشائع",
+    "Unit label": "تسمية الوحدة",
+    "Protocol unit": "وحدة البروتوكول",
+    "Keyset": "مجموعة المفاتيح",
+    "Service identity": "هوية الخدمة",
+    "FIPS IPv6 address": "عنوان FIPS IPv6",
+    "Management": "الإدارة",
+    "Identity state": "حالة الهوية",
+    "Operator": "المشغل",
+    "How this mint works": "كيفية عمل هذه الخدمة",
+    "Treasurer-authorized issuance": "إصدار معتمد من أمين الخزانة",
+    "Private bearer transfers": "تحويلات خاصة لحاملها",
+    "Mint-enforced double-spend protection": (
+        "حماية من الإنفاق المزدوج تفرضها الخدمة"
+    ),
+    "Proof swapping and verification": "تبادل الإثباتات والتحقق منها",
+    "Explicit unit retirement": "سحب الوحدات بصورة صريحة",
+    "Root authority configured": "سلطة الجذر مهيأة",
+    "Root bootstrap mode": "وضع التهيئة الأولية للجذر",
+    HOMEPAGE_ABOUT: (
+        "وحدات Clear هي أرصدة أو قسائم أو تصاريح أو غيرها من القيم القابلة "
+        "للتحويل التي تحددها المؤسسة. وهي تختلف عن النقد المدعوم بعملة "
+        "البيتكوين، وتظل خاضعة لشروط المؤسسة المصدرة وقابلة للاسترداد وفقها."
+    ),
+    "Mint resources": "موارد الخدمة",
+    "Mint information": "معلومات الخدمة",
+    "Public keys": "المفاتيح العامة",
+    "Docs": "الوثائق",
+    "Developer-stage software": "برنامج في مرحلة التطوير",
+    "Not configured": "غير مهيأ",
+    "Not commissioned": "غير مفوض",
+    "independent": "مستقل",
+    "mainstay-managed": "تديره Mainstay",
+    "bootstrapped": "مهيأ مبدئيا",
+    "commissioned": "مفوض",
+    "uncommissioned": "غير مفوض",
+    "Language": "اللغة",
+    "Copied": "تم النسخ",
+    "Select URL to copy": "حدد عنوان الخدمة لنسخه",
+}
+
 _CATALOGS = {
     "en": {},
     "fr": _FRENCH,
@@ -376,6 +436,7 @@ _CATALOGS = {
     "de": _GERMAN,
     "it": _ITALIAN,
     "zh-Hans": _SIMPLIFIED_CHINESE,
+    "ar": _ARABIC,
 }
 
 
@@ -443,6 +504,12 @@ def resolve_language(explicit: str | None, accept_language: str | None) -> str:
         if language != DEFAULT_LANGUAGE or language_range.lower().startswith("en"):
             return language
     return DEFAULT_LANGUAGE
+
+
+def language_direction(language: str) -> str:
+    """Return the HTML writing direction for a supported language."""
+
+    return "rtl" if supported_language(language) in RIGHT_TO_LEFT_LANGUAGES else "ltr"
 
 
 def translator(language: str) -> Callable[[str], str]:

@@ -10,6 +10,8 @@ from clear.localization import (
     HOMEPAGE_LEDE,
     HOMEPAGE_TAGLINE,
     SUPPORTED_LANGUAGES,
+    language_direction,
+    supported_language,
     translator,
 )
 
@@ -33,10 +35,20 @@ def render_homepage(
 ) -> str:
     """Render the browser-facing mint overview with escaped configuration."""
 
+    language = supported_language(language)
+    direction = language_direction(language)
     _ = translator(language)
 
     def text(message: str) -> str:
         return escape(_(message))
+
+    def configured_value(value: str) -> str:
+        return f'<bdi dir="auto">{escape(value)}</bdi>'
+
+    def identity_value(value: str | None, fallback: str) -> str:
+        if value:
+            return f'<code class="technical" dir="ltr">{escape(value)}</code>'
+        return f'<span>{text(fallback)}</span>'
 
     display_name = currency_alias or currency_name
     display_unit = currency_unit_alias or "CMU"
@@ -55,21 +67,29 @@ def render_homepage(
     )
     values = {
         "language": escape(language),
+        "direction": direction,
         "language_options": language_options,
         "version": escape(version),
         "mint_url": escape(mint_url),
         "currency_name": escape(currency_name),
+        "currency_name_markup": configured_value(currency_name),
         "display_name": escape(display_name),
+        "display_name_markup": configured_value(display_name),
         "display_unit": escape(display_unit),
+        "display_unit_markup": configured_value(display_unit),
         "protocol_unit": escape(protocol_unit),
         "keyset_id": escape(keyset_id),
-        "service_npub": escape(service_npub or _("Not configured")),
-        "service_fips_ipv6_address": escape(
-            service_fips_ipv6_address or _("Not configured")
+        "service_npub_markup": identity_value(service_npub, "Not configured"),
+        "service_fips_ipv6_address_markup": identity_value(
+            service_fips_ipv6_address,
+            "Not configured",
         ),
         "service_management": escape(_(service_management)),
         "service_state": escape(_(service_state)),
-        "operator_npub": escape(operator_npub or _("Not commissioned")),
+        "operator_npub_markup": identity_value(
+            operator_npub,
+            "Not commissioned",
+        ),
         "authority_label": escape(authority_label),
     }
 
@@ -80,7 +100,7 @@ def render_homepage(
     }
 
     return f"""<!doctype html>
-<html lang="{values['language']}">
+<html lang="{values['language']}" dir="{values['direction']}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -116,6 +136,14 @@ def render_homepage(
     }}
 
     a {{ color: var(--teal-dark); }}
+
+    bdi {{ unicode-bidi: isolate; }}
+
+    .technical {{
+      direction: ltr;
+      unicode-bidi: isolate;
+      text-align: start;
+    }}
 
     .shell {{
       width: min(100% - 2rem, 68rem);
@@ -161,7 +189,8 @@ def render_homepage(
 
     .language-form select {{
       min-height: 2.35rem;
-      padding: 0.4rem 1.8rem 0.4rem 0.6rem;
+      padding-block: 0.4rem;
+      padding-inline: 0.6rem 1.8rem;
       border: 1px solid var(--line);
       border-radius: 5px;
       background: var(--surface);
@@ -229,7 +258,8 @@ def render_homepage(
       max-width: 40rem;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.7rem 0.75rem 0.7rem 1rem;
+      padding-block: 0.7rem;
+      padding-inline: 1rem 0.75rem;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: var(--surface-soft);
@@ -268,7 +298,7 @@ def render_homepage(
       place-items: center;
       align-content: center;
       gap: 1rem;
-      border-left: 1px solid var(--line);
+      border-inline-start: 1px solid var(--line);
       text-align: center;
     }}
 
@@ -350,7 +380,7 @@ def render_homepage(
     .about {{
       margin-top: 1rem;
       padding: 1.2rem 1.35rem;
-      border-left: 0.28rem solid var(--coral);
+      border-inline-start: 0.28rem solid var(--coral);
       background: #fff7f4;
       color: #62483f;
       font-size: 0.9rem;
@@ -367,7 +397,7 @@ def render_homepage(
     }}
 
     .links a {{ font-weight: 680; text-decoration-thickness: 1px; }}
-    .links .version {{ margin-left: auto; color: var(--muted); }}
+    .links .version {{ margin-inline-start: auto; color: var(--muted); }}
 
     @media (max-width: 47rem) {{
       .shell {{ width: min(100% - 1.2rem, 68rem); }}
@@ -382,13 +412,13 @@ def render_homepage(
         min-height: auto;
         padding-top: 1.5rem;
         border-top: 1px solid var(--line);
-        border-left: 0;
+        border-inline-start: 0;
       }}
       .token svg {{ width: 7rem; }}
       .grid {{ grid-template-columns: 1fr; }}
       .mint-address {{ align-items: stretch; flex-direction: column; }}
       button {{ width: 100%; }}
-      .links .version {{ width: 100%; margin-left: 0; }}
+      .links .version {{ width: 100%; margin-inline-start: 0; }}
     }}
 
     @media (prefers-color-scheme: dark) {{
@@ -437,12 +467,12 @@ def render_homepage(
     <section class="hero">
       <div>
         <p class="eyebrow">{text(HOMEPAGE_TAGLINE)}</p>
-        <h1>{values['display_name']}</h1>
+        <h1>{values['display_name_markup']}</h1>
         <p class="lede">
           {text(HOMEPAGE_LEDE)}
         </p>
         <div class="mint-address">
-          <code id="mint-url">{values['mint_url']}</code>
+          <code class="technical" id="mint-url" dir="ltr">{values['mint_url']}</code>
           <button id="copy-mint" type="button" aria-label="{text('Copy mint URL')}">
             {text('Copy mint URL')}
           </button>
@@ -457,7 +487,7 @@ def render_homepage(
           <path fill="#e16f51" d="M222 224h168v64H222z"/>
         </svg>
         <div>
-          <strong>{values['display_unit']}</strong>
+          <strong>{values['display_unit_markup']}</strong>
           <span>{text('Clear Mint Unit')}</span>
         </div>
       </div>
@@ -468,28 +498,31 @@ def render_homepage(
         <h2>{text('Mint details')}</h2>
         <dl>
           <div class="row">
-            <dt>{text('Currency')}</dt><dd>{values['currency_name']}</dd>
+            <dt>{text('Currency')}</dt><dd>{values['currency_name_markup']}</dd>
           </div>
           <div class="row">
-            <dt>{text('Friendly name')}</dt><dd>{values['display_name']}</dd>
+            <dt>{text('Friendly name')}</dt><dd>{values['display_name_markup']}</dd>
           </div>
           <div class="row">
-            <dt>{text('Unit label')}</dt><dd>{values['display_unit']}</dd>
+            <dt>{text('Unit label')}</dt><dd>{values['display_unit_markup']}</dd>
           </div>
           <div class="row">
             <dt>{text('Protocol unit')}</dt>
-            <dd><code>{values['protocol_unit']}</code></dd>
+            <dd><code class="technical" dir="ltr">{values['protocol_unit']}</code></dd>
           </div>
           <div class="row">
-            <dt>{text('Keyset')}</dt><dd><code>{values['keyset_id']}</code></dd>
+            <dt>{text('Keyset')}</dt>
+            <dd>
+              <code class="technical" dir="ltr">{values['keyset_id']}</code>
+            </dd>
           </div>
           <div class="row">
             <dt>{text('Service identity')}</dt>
-            <dd><code>{values['service_npub']}</code></dd>
+            <dd>{values['service_npub_markup']}</dd>
           </div>
           <div class="row">
             <dt>{text('FIPS IPv6 address')}</dt>
-            <dd><code>{values['service_fips_ipv6_address']}</code></dd>
+            <dd>{values['service_fips_ipv6_address_markup']}</dd>
           </div>
           <div class="row">
             <dt>{text('Management')}</dt><dd>{values['service_management']}</dd>
@@ -498,7 +531,7 @@ def render_homepage(
             <dt>{text('Identity state')}</dt><dd>{values['service_state']}</dd>
           </div>
           <div class="row">
-            <dt>{text('Operator')}</dt><dd><code>{values['operator_npub']}</code></dd>
+            <dt>{text('Operator')}</dt><dd>{values['operator_npub_markup']}</dd>
           </div>
         </dl>
       </section>
@@ -525,7 +558,8 @@ def render_homepage(
       <a href="v1/keys">{text('Public keys')}</a>
       <a href="https://trbouma.github.io/clear/">{text('Docs')}</a>
       <span class="version">
-        Clear {values['version']} &middot; {text('Developer-stage software')}
+        Clear <bdi dir="ltr">{values['version']}</bdi>
+        &middot; {text('Developer-stage software')}
       </span>
     </nav>
   </main>
