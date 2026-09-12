@@ -14,7 +14,6 @@ theme:
   favicon: assets/clear-logo.svg
   features:
     - navigation.top
-    - navigation.sections
     - search.suggest
     - search.highlight
     - content.code.copy
