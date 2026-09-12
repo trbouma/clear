@@ -22,6 +22,15 @@ distinction between governance and operation.
 
 [Read the policy brief](old-function-new-tools.md){ .md-button .md-button--primary }
 
+## Coinage and Clear
+
+For centuries and millennia, mints have turned authority, standards, marks, and
+public recognition into portable bearer instruments. This brief explains how
+Clear continues that pattern with Mint Notes, keyset-bound CMUs, and explicit
+issuer policy.
+
+[Read the policy brief](coinage-and-clear.md){ .md-button .md-button--primary }
+
 ## Goldsmiths and Clear
 
 London goldsmith-bankers are often remembered through a misleading story about
