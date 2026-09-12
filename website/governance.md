@@ -186,7 +186,7 @@ logical mints remain separate promises with separate governance and risk.
 Clear never combines them into one balance.
 
 This separation is less novel than it may first appear. Read
-[Old Function, New Tools](old-function-new-tools.md) for the connection to
+[Old Function, New Tools](policy-briefs/old-function-new-tools.md) for the connection to
 ancient administrative records, corporate treasury, and Boards of Internal
 Economy.
 

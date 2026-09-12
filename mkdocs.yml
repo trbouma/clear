@@ -43,12 +43,14 @@ nav:
       - Transferability and Acceptance: transferability.md
       - Unit and Currency Model: currency-model.md
       - How Clear Is Governed: governance.md
-      - Old Function, New Tools: old-function-new-tools.md
-      - Goldsmiths and Clear: goldsmiths-and-clear.md
-      - MintChip and Clear: mintchip-and-clear.md
       - Protocol Model: protocol-model.md
       - CMU Transfer Requests: payment-requests.md
       - Product Family: product-family.md
+  - Policy Briefs:
+      - Overview: policy-briefs/index.md
+      - Old Function, New Tools: policy-briefs/old-function-new-tools.md
+      - Goldsmiths and Clear: policy-briefs/goldsmiths-and-clear.md
+      - MintChip and Clear: policy-briefs/mintchip-and-clear.md
   - Operate Clear:
       - Getting Started: getting-started.md
       - Standalone Deployment: deployment.md

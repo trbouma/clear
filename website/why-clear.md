@@ -128,7 +128,7 @@ voluntarily recognized instruments within a limited network. Ordinary money may
 fund the program and reimburse participating providers; Clear coordinates the
 purpose-specific allocation between issuance and redemption.
 
-Read [Old Function, New Tools](old-function-new-tools.md) for the broader
+Read [Old Function, New Tools](policy-briefs/old-function-new-tools.md) for the broader
 connection between community vouchers, corporate treasury, and longstanding
 institutional governance.
 
