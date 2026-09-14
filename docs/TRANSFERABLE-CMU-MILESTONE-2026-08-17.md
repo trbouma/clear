@@ -90,23 +90,23 @@ The implemented Clear service provides:
 Inside the Clear container:
 
 ```sh
-docker compose exec clear clear-root info
-docker compose exec clear clear-root summary
-docker compose exec clear clear-root wallet balance
-docker compose exec clear clear-root wallet list
+docker compose exec clear-operator clear-root info
+docker compose exec clear-operator clear-root summary
+docker compose exec clear-operator clear-root wallet balance
+docker compose exec clear-operator clear-root wallet list
 ```
 
 Issue CMUs into the local treasury wallet:
 
 ```sh
-docker compose exec clear clear-root issue 100 \
+docker compose exec clear-operator clear-root issue 100 \
   --memo "Program allocation"
 ```
 
 Send an exact amount:
 
 ```sh
-docker compose exec clear clear-root send 100 \
+docker compose exec clear-operator clear-root send 100 \
   recipient@example.org \
   --memo "Program transfer"
 ```
@@ -114,7 +114,7 @@ docker compose exec clear clear-root send 100 \
 Retire returned CMUs:
 
 ```sh
-docker compose exec clear clear-root retire 25 \
+docker compose exec clear-operator clear-root retire 25 \
   --memo "Program settlement"
 ```
 

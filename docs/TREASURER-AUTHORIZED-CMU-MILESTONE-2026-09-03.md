@@ -100,11 +100,11 @@ The Clear mint now provides:
 Operator-side commands run inside the mint container:
 
 ```bash
-docker compose exec clear clear-root treasurer add <npub>
-docker compose exec clear clear-root treasurer grant <npub>
-docker compose exec clear clear-root treasurer grants
-docker compose exec clear clear-root cmu list
-docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+docker compose exec clear-operator clear-root treasurer add <npub>
+docker compose exec clear-operator clear-root treasurer grant <npub>
+docker compose exec clear-operator clear-root treasurer grants
+docker compose exec clear-operator clear-root cmu list
+docker compose exec clear-operator clear-root cmu label cmu-<keyset-id> \
   --name "Food Share Credits" \
   --unit-alias "shares"
 ```
@@ -161,7 +161,7 @@ consuming the CMU creation grant. After the CMU exists, label changes are
 operator-mediated:
 
 ```bash
-docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+docker compose exec clear-operator clear-root cmu label cmu-<keyset-id> \
   --name "Food Share Credits" \
   --unit-alias "shares"
 ```

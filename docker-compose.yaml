@@ -17,6 +17,8 @@ services:
       - /app/data/clear.sqlite3
       - --mint-url
       - "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
+      - --surface
+      - public
       - --log-level
       - "${CLEAR_LOG_LEVEL:-info}"
     environment:
@@ -32,10 +34,70 @@ services:
       CLEAR_MAX_ORDER: "${CLEAR_MAX_ORDER:-20}"
       CLEAR_ROOT_AUTHORITY_NPUB: "${CLEAR_ROOT_AUTHORITY_NPUB:-}"
       CLEAR_ROOT_WALLET: /app/data/clear-root-wallet.json
-      CLEAR_ROOT_API_URL: http://127.0.0.1:3339
+      CLEAR_ROOT_API_URL: http://127.0.0.1:3340
       CLEAR_ROOT_NSEC: "${CLEAR_ROOT_NSEC:-}"
     ports:
       - "${CLEAR_BIND_ADDRESS:-127.0.0.1}:${CLEAR_PORT:-3339}:3339"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    volumes:
+      - clear-data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+  clear-operator:
+    image: ${CLEAR_IMAGE:-clear-mint:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clear-mint-operator
+    restart: unless-stopped
+    init: true
+    command:
+      - clear
+      - --host
+      - 0.0.0.0
+      - --port
+      - "3340"
+      - --database
+      - /app/data/clear.sqlite3
+      - --mint-url
+      - "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
+      - --surface
+      - all
+      - --log-level
+      - "${CLEAR_LOG_LEVEL:-info}"
+    environment:
+      CLEAR_MASTER_SECRET: "${CLEAR_MASTER_SECRET:?Generate CLEAR_MASTER_SECRET before starting}"
+      CLEAR_OPERATOR_TOKEN: "${CLEAR_OPERATOR_TOKEN:?Generate CLEAR_OPERATOR_TOKEN before starting}"
+      CLEAR_MINT_SERVICE_NSEC: "${CLEAR_MINT_SERVICE_NSEC:-}"
+      CLEAR_MINT_SERVICE_MANAGEMENT: "${CLEAR_MINT_SERVICE_MANAGEMENT:-independent}"
+      CLEAR_DATABASE: /app/data/clear.sqlite3
+      CLEAR_MINT_URL: "${CLEAR_MINT_URL:-http://127.0.0.1:3339}"
+      CLEAR_CURRENCY_NAME: "${CLEAR_CURRENCY_NAME:-Clear Lab Credit Program}"
+      CLEAR_CURRENCY_ALIAS: "${CLEAR_CURRENCY_ALIAS:-Clear Lab Credits}"
+      CLEAR_CURRENCY_UNIT_ALIAS: "${CLEAR_CURRENCY_UNIT_ALIAS:-credits}"
+      CLEAR_MAX_ORDER: "${CLEAR_MAX_ORDER:-20}"
+      CLEAR_ROOT_AUTHORITY_NPUB: "${CLEAR_ROOT_AUTHORITY_NPUB:-}"
+      CLEAR_ROOT_WALLET: /app/data/clear-root-wallet.json
+      CLEAR_ROOT_API_URL: http://127.0.0.1:3340
+      CLEAR_ROOT_NSEC: "${CLEAR_ROOT_NSEC:-}"
+      CLEAR_ROOT_API_LOOPBACK_ONLY: "${CLEAR_ROOT_API_LOOPBACK_ONLY:-true}"
+      CLEAR_ROOT_API_ALLOWED_NETWORKS: "${CLEAR_ROOT_API_ALLOWED_NETWORKS:-127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}"
+    expose:
+      - "3340"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3340/health', timeout=3).read()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m

@@ -31,7 +31,7 @@ CLEAR_MASTER_SECRET=<32-byte secret, commonly 64 hex chars>
 CLEAR_OPERATOR_TOKEN=<operator API bearer token>
 CLEAR_DATABASE=./data/clear.sqlite3
 CLEAR_MINT_URL=http://127.0.0.1:3339
-CLEAR_ROOT_API_URL=http://127.0.0.1:3339
+CLEAR_ROOT_API_URL=http://127.0.0.1:3340
 CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
 CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
 CLEAR_CURRENCY_UNIT_ALIAS="credits"
@@ -76,7 +76,7 @@ existing CMU label already persisted in the mint database. To rename a live
 CMU, update the CMU record explicitly:
 
 ```sh
-docker compose exec clear clear-root cmu label cmu-<keyset-id-or-unit> \
+docker compose exec clear-operator clear-root cmu label cmu-<keyset-id-or-unit> \
   --name "Harbour Lab Credits" \
   --unit-alias "credits"
 ```

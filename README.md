@@ -107,8 +107,14 @@ Compose publishes port `3339` on loopback by default through
 interface only when another machine must reach the service, and constrain that
 path with the corresponding firewall or network policy.
 
+The Compose deployment runs two Clear listeners. The public `clear` service on
+port `3339` starts with `--surface public`, so `/v1/operator/*` routes are not
+registered on the service a reverse proxy should target. The internal
+`clear-operator` service on port `3340` is for privileged `clear-root` work and
+is not published to the host.
+
 Inside Docker, `clear-root` connects directly to
-`CLEAR_ROOT_API_URL=http://127.0.0.1:3339`. The command rejects non-loopback
+`CLEAR_ROOT_API_URL=http://127.0.0.1:3340`. The command rejects non-loopback
 API URLs. The mint separately advertises
 `CLEAR_MINT_URL`, and that public URL is encoded into issued and swapped tokens.
 This keeps privileged root traffic on the container loopback interface without
@@ -137,13 +143,13 @@ for the complete operating lifecycle.
 
 The mint database and privileged root wallet are stored in the named
 `clear-data` volume. The same image includes `clear-root`, which can be run in
-the privileged mint container with its injected operator environment:
+the internal operator container with its injected operator environment:
 
 ```bash
-docker compose exec clear clear-root info
-docker compose exec clear clear-root issue 25 --memo "Docker lab issue"
-docker compose exec clear clear-root wallet balance
-docker compose exec clear clear-root summary
+docker compose exec clear-operator clear-root info
+docker compose exec clear-operator clear-root issue 25 --memo "Docker lab issue"
+docker compose exec clear-operator clear-root wallet balance
+docker compose exec clear-operator clear-root summary
 ```
 
 Clear reports the derived service `npub` at `/` and `/v1/info`, but never
@@ -160,11 +166,11 @@ any currency-root authorization of the mint's CMUs and keysets.
 The service-side commissioning primitives are:
 
 ```bash
-docker compose exec clear clear-root service request npub1operator...
-docker compose exec -T clear clear-root service commission < attestation.json
-docker compose exec clear clear-root service show
-docker compose exec clear clear-root service verify
-docker compose exec clear clear-root service publish \
+docker compose exec clear-operator clear-root service request npub1operator...
+docker compose exec -T clear-operator clear-root service commission < attestation.json
+docker compose exec clear-operator clear-root service show
+docker compose exec clear-operator clear-root service verify
+docker compose exec clear-operator clear-root service publish \
   --relay ws://spurline:8080
 ```
 
@@ -179,10 +185,10 @@ Signed treasurer mutations start disabled. Commission the standalone mint and
 then make the separate operator decision to enable them:
 
 ```bash
-docker compose exec clear clear-root treasury status
-docker compose exec clear clear-root verify
-docker compose exec clear clear-root treasury enable
-docker compose exec clear clear-root treasury status
+docker compose exec clear-operator clear-root treasury status
+docker compose exec clear-operator clear-root verify
+docker compose exec clear-operator clear-root treasury enable
+docker compose exec clear-operator clear-root treasury status
 ```
 
 `verify` creates a dedicated inactive commissioning CMU, exercises blinded
@@ -196,7 +202,7 @@ Close the gate without invalidating existing Mint Notes or blocking holder
 swaps:
 
 ```bash
-docker compose exec clear clear-root treasury disable \
+docker compose exec clear-operator clear-root treasury disable \
   --reason "operator maintenance"
 ```
 

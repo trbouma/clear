@@ -32,8 +32,8 @@ For Docker deployments, the operator-side commands are expected to run inside
 the Clear container:
 
 ```bash
-docker compose exec clear clear-root info
-docker compose exec clear clear-root treasury status
+docker compose exec clear-operator clear-root info
+docker compose exec clear-operator clear-root treasury status
 ```
 
 `clear-root` is privileged. It uses the loopback operator API and should not be
@@ -42,9 +42,9 @@ treated as a remote treasurer tool.
 For a new or invalidated mint, commission it before onboarding:
 
 ```bash
-docker compose exec clear clear-root verify
-docker compose exec clear clear-root treasury enable
-docker compose exec clear clear-root treasury status
+docker compose exec clear-operator clear-root verify
+docker compose exec clear-operator clear-root treasury enable
+docker compose exec clear-operator clear-root treasury status
 ```
 
 ## Step 1: Confirm the Current Mint State
@@ -52,8 +52,8 @@ docker compose exec clear clear-root treasury status
 The operator confirms that the mint is reachable and records the current CMUs:
 
 ```bash
-docker compose exec clear clear-root info
-docker compose exec clear clear-root cmu list
+docker compose exec clear-operator clear-root info
+docker compose exec clear-operator clear-root cmu list
 ```
 
 This creates a before-onboarding checkpoint for the operator's notes.
@@ -74,7 +74,7 @@ For development or assisted onboarding only, the helper command can generate a
 keypair and print it without storing it:
 
 ```bash
-docker compose exec clear clear-root treasurer keygen
+docker compose exec clear-operator clear-root treasurer keygen
 ```
 
 If the operator uses this helper for a lab, the `nsec` must be transferred to
@@ -87,13 +87,13 @@ own `nsec`.
 The operator records the treasurer's `npub`:
 
 ```bash
-docker compose exec clear clear-root treasurer add npub1...
+docker compose exec clear-operator clear-root treasurer add npub1...
 ```
 
 Then the operator verifies that the treasurer is active:
 
 ```bash
-docker compose exec clear clear-root treasurer list
+docker compose exec clear-operator clear-root treasurer list
 ```
 
 The add step does not create a CMU and does not issue Mint Notes. It only makes
@@ -104,14 +104,14 @@ the public key eligible for a bounded grant.
 The operator creates a single-use grant for that treasurer:
 
 ```bash
-docker compose exec clear clear-root treasurer grant npub1...
+docker compose exec clear-operator clear-root treasurer grant npub1...
 ```
 
 The command returns a grant identifier. The operator can inspect outstanding
 and consumed grants with:
 
 ```bash
-docker compose exec clear clear-root treasurer grants
+docker compose exec clear-operator clear-root treasurer grants
 ```
 
 A first-release grant is intentionally narrow. It authorizes one
@@ -160,7 +160,7 @@ After the CMU exists, display metadata changes are operator-mediated. The
 treasurer requests the change out of band, and the mint operator applies it:
 
 ```bash
-docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+docker compose exec clear-operator clear-root cmu label cmu-<keyset-id> \
   --name "Food Share Credits" \
   --unit-alias "shares"
 ```
@@ -226,8 +226,8 @@ reports only proofs held in the treasurer's local wallet file.
 The operator verifies that the grant was consumed and the new CMU exists:
 
 ```bash
-docker compose exec clear clear-root treasurer grants
-docker compose exec clear clear-root cmu list
+docker compose exec clear-operator clear-root treasurer grants
+docker compose exec clear-operator clear-root cmu list
 ```
 
 The new CMU should also appear through public key discovery:
@@ -252,7 +252,7 @@ For local bootstrap, development, or tightly controlled recovery work, the
 operator can consume a pending grant from inside the mint container:
 
 ```bash
-docker compose exec clear clear-root cmu create <grant-id> \
+docker compose exec clear-operator clear-root cmu create <grant-id> \
   --name "Gym Guest Passes" \
   --unit-alias "passes"
 ```
@@ -347,7 +347,7 @@ presented proofs.
 Treasurer key rotation for an existing CMU belongs under:
 
 ```bash
-docker compose exec clear clear-root cmu rotate-treasurer cmu-<keyset-id> \
+docker compose exec clear-operator clear-root cmu rotate-treasurer cmu-<keyset-id> \
   --old-npub npub1old... \
   --new-npub npub1new... \
   --reason "out-of-band rotation reference"
