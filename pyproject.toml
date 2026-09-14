@@ -22,7 +22,7 @@ fastapi = ">=0.115.0,<1.0.0"
 uvicorn = { version = ">=0.34.0,<1.0.0", extras = ["standard"] }
 python-dotenv = ">=1.2.0,<2.0.0"
 cryptography = ">=50.0.0,<51.0.0"
-stroma-nostr = { git = "https://github.com/trbouma/stroma.git" }
+stroma-nostr = { git = "https://github.com/trbouma/stroma.git", branch = "main" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3.0,<10.0.0"
