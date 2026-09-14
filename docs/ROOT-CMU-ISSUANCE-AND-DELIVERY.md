@@ -36,6 +36,7 @@ CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
 CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
 CLEAR_CURRENCY_UNIT_ALIAS="credits"
 CLEAR_ROOT_AUTHORITY_NPUB=npub...
+CLEAR_ROOT_API_ALLOWED_NETWORKS=127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
 ```
 
 `CLEAR_MASTER_SECRET` derives the initial test keyset. If
@@ -48,12 +49,41 @@ created with.
 reads it from the privileged environment and sends it as the API authorization
 value when issuing, retiring, or reading operator summaries.
 
+Operator endpoints are additionally restricted by source network. With the
+default loopback-only setting, they require a loopback client. If
+`CLEAR_ROOT_API_LOOPBACK_ONLY=false` is used so another container can call the
+operator API, Clear still limits access to `CLEAR_ROOT_API_ALLOWED_NETWORKS`.
+Keep `/v1/operator/*` blocked at public reverse proxies.
+
+Deployments that expose a public mint should prefer separate listeners. Run the
+public listener with `clear --surface public` so operator routes are absent
+from the proxy target. Run an internal-only listener for privileged tooling,
+for example on port `3340`, and point `CLEAR_ROOT_API_URL` or wrapper tooling
+at that internal URL. Mainstay uses this pattern with public `clear:3339` and
+internal `clear-operator:3340`.
+
 `CLEAR_MINT_URL` is the canonical public URL advertised by the mint and encoded
 in circulating tokens. `CLEAR_ROOT_API_URL` is only the connection used by the
 privileged root CLI. In Docker it remains `http://127.0.0.1:3339`, allowing the
 CLI to bypass the reverse proxy without placing that loopback address in
 tokens. Outside Docker it defaults to `http://127.0.0.1:3339` and rejects
 non-loopback addresses.
+
+`CLEAR_CURRENCY_ALIAS` and `CLEAR_CURRENCY_UNIT_ALIAS` are startup defaults for
+wallet-facing display metadata. They seed the legacy/root CMU label when the
+CMU keyset record is first created or migrated, but they do not overwrite an
+existing CMU label already persisted in the mint database. To rename a live
+CMU, update the CMU record explicitly:
+
+```sh
+docker compose exec clear clear-root cmu label cmu-<keyset-id-or-unit> \
+  --name "Harbour Lab Credits" \
+  --unit-alias "credits"
+```
+
+Wallets resolve the live label from `/v1/keysets`, `/v1/keys`, or
+`/v1/keys/{keyset_id}` and continue to bind balances to the canonical mint,
+CMU, and keyset identity.
 
 By default, `clear-root send` requires the advertised `CLEAR_MINT_URL` to be a
 well-formed public HTTPS route. It refuses an internal-only value such as

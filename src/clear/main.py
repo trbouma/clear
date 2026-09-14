@@ -5,7 +5,7 @@ from __future__ import annotations
 import hmac
 import os
 from contextlib import asynccontextmanager
-from ipaddress import ip_address
+from ipaddress import ip_address, ip_network
 from pathlib import Path
 
 from fastapi import FastAPI, Header, Request
@@ -56,7 +56,13 @@ def _protocol_error(detail: str, code: int = 10000) -> JSONResponse:
     return JSONResponse({"detail": detail, "code": code}, status_code=400)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    surface: str = "all",
+) -> FastAPI:
+    if surface not in {"all", "public", "operator"}:
+        raise ValueError("surface must be one of: all, public, operator")
     configured = settings or Settings.from_env()
     keyset = Keyset(
         configured.master_secret,
@@ -107,16 +113,49 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         max_age=86400,
     )
 
-    def request_is_loopback(request: Request) -> bool:
+    operator_allowed_networks = tuple(
+        ip_network(entry.strip())
+        for entry in configured.root_api_allowed_networks.split(",")
+        if entry.strip()
+    )
+
+    def _request_source_ip(request: Request):
         if request.client is None:
-            return False
+            return None
         host = request.client.host.rstrip(".").lower()
-        if host == "localhost":
-            return True
+        if host in {"localhost", "testclient"}:
+            return ip_address("127.0.0.1")
         try:
-            return ip_address(host).is_loopback
+            return ip_address(host)
         except ValueError:
+            return None
+
+    def _forwarded_source_ip(request: Request):
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        if not forwarded_for:
+            return None
+        forwarded_host = forwarded_for.split(",", maxsplit=1)[0].strip()
+        if not forwarded_host:
+            return None
+        try:
+            return ip_address(forwarded_host)
+        except ValueError:
+            return None
+
+    def request_is_loopback(request: Request) -> bool:
+        source_ip = _request_source_ip(request)
+        return bool(source_ip and source_ip.is_loopback)
+
+    def request_is_from_operator_network(request: Request) -> bool:
+        source_ip = _request_source_ip(request)
+        if source_ip is None:
             return False
+        if not any(source_ip in network for network in operator_allowed_networks):
+            return False
+        forwarded_ip = _forwarded_source_ip(request)
+        if forwarded_ip is None:
+            return True
+        return any(forwarded_ip in network for network in operator_allowed_networks)
 
     def operator_access_error(
         request: Request, authorization: str | None
@@ -124,6 +163,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if configured.root_api_loopback_only and not request_is_loopback(request):
             return JSONResponse(
                 {"detail": "operator API requires loopback access"},
+                status_code=403,
+            )
+        if (
+            not configured.root_api_loopback_only
+            and not request_is_from_operator_network(request)
+        ):
+            return JSONResponse(
+                {"detail": "operator API requires internal network access"},
                 status_code=403,
             )
         scheme, _, token = (authorization or "").partition(" ")
@@ -422,7 +469,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             pending = _export_or_swap(
                 body.amount,
                 wallet_path,
-                api_url="http://127.0.0.1:3339",
+                api_url=os.getenv("CLEAR_ROOT_API_URL", "http://127.0.0.1:3339"),
                 memo=body.memo,
             )
             delivery = deliver_clear_token(
@@ -762,5 +809,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         except ClearError as exc:
             return _protocol_error(str(exc), 15003)
+
+    if surface == "public":
+        app.router.routes = [
+            route
+            for route in app.router.routes
+            if not getattr(route, "path", "").startswith("/v1/operator")
+        ]
+    elif surface == "operator":
+        app.router.routes = [
+            route
+            for route in app.router.routes
+            if getattr(route, "path", "") in {"/health", "/openapi.json"}
+            or getattr(route, "path", "").startswith("/v1/operator")
+        ]
 
     return app

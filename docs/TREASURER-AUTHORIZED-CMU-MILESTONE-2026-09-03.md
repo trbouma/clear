@@ -109,6 +109,12 @@ docker compose exec clear clear-root cmu label cmu-<keyset-id> \
   --unit-alias "shares"
 ```
 
+For the root/legacy CMU, `CLEAR_CURRENCY_ALIAS` and
+`CLEAR_CURRENCY_UNIT_ALIAS` seed the first persisted display label. After a CMU
+record exists, changing those environment variables does not rename the live
+CMU. Operators should use `clear-root cmu label` for any live display-name or
+unit-alias update.
+
 Treasurer-side commands run outside the mint with the treasurer's `nsec`:
 
 ```bash

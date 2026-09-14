@@ -35,6 +35,10 @@ def settings(
     currency_alias: str | None = None,
     currency_unit_alias: str | None = None,
     root_api_loopback_only: bool = False,
+    root_api_allowed_networks: str = (
+        "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,"
+        "192.168.0.0/16,fc00::/7"
+    ),
     mint_service_nsec: str | None = MINT_SERVICE_NSEC,
     mint_service_management: str = "independent",
 ) -> Settings:
@@ -49,6 +53,7 @@ def settings(
         currency_alias=currency_alias,
         currency_unit_alias=currency_unit_alias,
         root_api_loopback_only=root_api_loopback_only,
+        root_api_allowed_networks=root_api_allowed_networks,
         mint_service_nsec=mint_service_nsec,
         mint_service_management=mint_service_management,
     )
@@ -533,6 +538,74 @@ def test_operator_api_requires_loopback_client(tmp_path) -> None:
     assert accepted.status_code == 200
 
 
+def test_operator_api_allows_internal_network_client(tmp_path) -> None:
+    configured = settings(tmp_path, root_api_loopback_only=False)
+    app = create_app(configured)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(app, client=("172.18.0.12", 50000)) as internal_client:
+        accepted = internal_client.get("/v1/operator/summary", headers=headers)
+
+    assert accepted.status_code == 200
+
+
+def test_operator_api_blocks_external_network_client(tmp_path) -> None:
+    configured = settings(tmp_path, root_api_loopback_only=False)
+    app = create_app(configured)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(app, client=("203.0.113.10", 50000)) as remote_client:
+        rejected = remote_client.get("/v1/operator/summary", headers=headers)
+
+    assert rejected.status_code == 403
+    assert rejected.json() == {
+        "detail": "operator API requires internal network access"
+    }
+
+
+def test_operator_api_blocks_external_forwarded_client(tmp_path) -> None:
+    configured = settings(tmp_path, root_api_loopback_only=False)
+    app = create_app(configured)
+    headers = {
+        "Authorization": f"Bearer {OPERATOR_TOKEN}",
+        "X-Forwarded-For": "203.0.113.10",
+    }
+
+    with TestClient(app, client=("172.18.0.12", 50000)) as proxy_client:
+        rejected = proxy_client.get("/v1/operator/summary", headers=headers)
+
+    assert rejected.status_code == 403
+    assert rejected.json() == {
+        "detail": "operator API requires internal network access"
+    }
+
+
+def test_public_surface_does_not_register_operator_routes(tmp_path) -> None:
+    app = create_app(settings(tmp_path), surface="public")
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(app, client=("127.0.0.1", 50000)) as client:
+        info = client.get("/v1/info")
+        operator = client.get("/v1/operator/summary", headers=headers)
+
+    assert info.status_code == 200
+    assert operator.status_code == 404
+
+
+def test_operator_surface_only_registers_operator_routes(tmp_path) -> None:
+    app = create_app(settings(tmp_path), surface="operator")
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(app, client=("127.0.0.1", 50000)) as client:
+        health = client.get("/health")
+        info = client.get("/v1/info")
+        operator = client.get("/v1/operator/summary", headers=headers)
+
+    assert health.status_code == 200
+    assert info.status_code == 404
+    assert operator.status_code == 200
+
+
 def test_currency_aliases_can_be_configured_for_wallet_display(tmp_path) -> None:
     configured = settings(
         tmp_path,
@@ -735,6 +808,7 @@ def test_operator_root_send_uses_root_wallet_and_delivery_helpers(
     monkeypatch.setattr("clear.main._export_or_swap", fake_export_or_swap)
     monkeypatch.setattr("clear.main.deliver_clear_token", fake_deliver)
     monkeypatch.setattr("clear.main.export_token", fake_export_token)
+    monkeypatch.setenv("CLEAR_ROOT_API_URL", "http://127.0.0.1:3340")
 
     with TestClient(app) as client:
         response = client.post(
@@ -756,7 +830,7 @@ def test_operator_root_send_uses_root_wallet_and_delivery_helpers(
         "mint_url": configured.mint_url,
         "unit": keyset.unit,
     }
-    assert calls["export_or_swap"]["api_url"] == "http://127.0.0.1:3339"
+    assert calls["export_or_swap"]["api_url"] == "http://127.0.0.1:3340"
     assert calls["deliver"]["relays"] == ["ws://spurline:8080"]
     assert calls["export_token"]["remove"] is True
 
@@ -1476,6 +1550,7 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
                 "CLEAR_MINT_SERVICE_MANAGEMENT=mainstay-managed",
                 "CLEAR_CURRENCY_ALIAS=Dotenv Alias",
                 "CLEAR_CURRENCY_UNIT_ALIAS=beans",
+                "CLEAR_ROOT_API_ALLOWED_NETWORKS=127.0.0.0/8,172.20.0.0/16",
             ]
         )
     )
@@ -1489,6 +1564,7 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     monkeypatch.delenv("CLEAR_MINT_SERVICE_MANAGEMENT", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_ALIAS", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_UNIT_ALIAS", raising=False)
+    monkeypatch.delenv("CLEAR_ROOT_API_ALLOWED_NETWORKS", raising=False)
 
     settings = Settings.from_env()
 
@@ -1501,6 +1577,7 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     assert settings.mint_service_management == "mainstay-managed"
     assert settings.currency_alias == "Dotenv Alias"
     assert settings.currency_unit_alias == "beans"
+    assert settings.root_api_allowed_networks == "127.0.0.0/8,172.20.0.0/16"
 
 
 def test_environment_values_override_dotenv_file(tmp_path, monkeypatch) -> None:

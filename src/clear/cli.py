@@ -25,6 +25,12 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--database", type=Path)
     result.add_argument("--currency-name")
     result.add_argument("--mint-url")
+    result.add_argument(
+        "--surface",
+        choices=("all", "public", "operator"),
+        default="all",
+        help="API surface to serve.",
+    )
     result.add_argument("--log-level", default="info")
     return result
 
@@ -43,7 +49,7 @@ def main() -> None:
         overrides["mint_url"] = f"http://{args.host}:{args.port}"
     configured = replace(settings, **overrides)
     uvicorn.run(
-        create_app(configured),
+        create_app(configured, surface=args.surface),
         host=args.host,
         port=args.port,
         log_level=args.log_level,

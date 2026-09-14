@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from ipaddress import ip_network
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,6 +12,10 @@ from stroma import KeyError as StromaKeyError
 from stroma import Keys, fips_ipv6_address
 
 SERVICE_MANAGEMENT_MODES = {"independent", "mainstay-managed"}
+DEFAULT_ROOT_API_ALLOWED_NETWORKS = (
+    "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,"
+    "192.168.0.0/16,fc00::/7"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +31,7 @@ class Settings:
     currency_unit_alias: str | None = None
     key_encryption_key: str | None = None
     root_api_loopback_only: bool = True
+    root_api_allowed_networks: str = DEFAULT_ROOT_API_ALLOWED_NETWORKS
     mint_service_nsec: str | None = None
     mint_service_management: str = "independent"
 
@@ -44,6 +50,9 @@ class Settings:
             raise ValueError(
                 "mainstay-managed Clear requires CLEAR_MINT_SERVICE_NSEC"
             )
+        for network in self.root_api_allowed_networks.split(","):
+            if network.strip():
+                ip_network(network.strip())
         if self.mint_service_nsec:
             try:
                 Keys(priv_k=self.mint_service_nsec)
@@ -90,6 +99,10 @@ class Settings:
             root_api_loopback_only=(
                 os.getenv("CLEAR_ROOT_API_LOOPBACK_ONLY", "true").lower()
                 not in {"0", "false", "no", "off"}
+            ),
+            root_api_allowed_networks=os.getenv(
+                "CLEAR_ROOT_API_ALLOWED_NETWORKS",
+                DEFAULT_ROOT_API_ALLOWED_NETWORKS,
             ),
             mint_service_nsec=os.getenv("CLEAR_MINT_SERVICE_NSEC") or None,
             mint_service_management=os.getenv(

@@ -50,7 +50,7 @@ COPY --from=builder --chown=clear:clear /app/src /app/src
 
 USER clear
 
-EXPOSE 3339
+EXPOSE 3339 3340
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3339/health', timeout=3).read()"]

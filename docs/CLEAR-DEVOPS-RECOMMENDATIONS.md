@@ -211,6 +211,25 @@ Proxy controls are useful but insufficient by themselves. Clear should also
 have application-level bounds because it may run behind different gateways or
 inside a local network where the proxy is bypassed.
 
+Operator routes under `/v1/operator/*` are administrative and should remain
+internal-only. Keep them blocked at any public reverse proxy. For Docker
+deployments where another container, such as Mainstay Local, must call the
+operator API directly, set `CLEAR_ROOT_API_LOOPBACK_ONLY=false` and keep
+`CLEAR_ROOT_API_ALLOWED_NETWORKS` limited to loopback and private container
+networks. Clear will reject operator requests whose source address is outside
+that allowlist; when a proxy supplies `X-Forwarded-For`, Clear also checks the
+forwarded client address. If the proxy does not send forwarded client headers,
+an external request mistakenly forwarded by that proxy will appear to come from
+the proxy container, so the proxy path block is still required.
+
+For stronger protection, run separate public and operator listeners. Start the
+public listener with `clear --surface public` so `/v1/operator/*` is not
+registered on the service that a reverse proxy targets. Run the privileged
+listener on an internal-only Docker service or port with `clear --surface all`
+or `clear --surface operator`, and point root/operator tooling at that internal
+URL. The `all` surface preserves legacy `clear-root` compatibility because some
+root commands still use public mint routes and operator routes together.
+
 IP rate limiting is an abuse control, not an identity or authorization model.
 It can affect users behind carrier NAT or shared venue networks and should be
 tuned conservatively.
