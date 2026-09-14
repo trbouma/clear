@@ -187,6 +187,8 @@ The first release does not include:
 - mint clusters;
 - mint-to-mint nullifier reservation or spent-state synchronization;
 - issuance of one CMU across independently operating databases;
+- switching mint operators by exporting circulation state from one mint and
+  importing it into another;
 - quorum or partition handling;
 - automatic exchange between CMUs;
 - proof- or keyset-enforced expiration;
@@ -194,8 +196,10 @@ The first release does not include:
 - implicit equivalence across keyset rotation; or
 - production claims before independent security review.
 
-These are candidates for the next release after the single-deployment,
-multi-keyset model is stable.
+These are candidates for a later release after the single-deployment,
+multi-keyset model is stable. The first release still keeps treasurer
+authority, CMU identity, mint operation, and circulation accounting separated
+so a future migration ceremony can be added without redefining those roles.
 
 ## Definition of done
 

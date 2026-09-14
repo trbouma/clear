@@ -133,6 +133,13 @@ cluster is an explicitly configured set of Clear mint instances that serve the
 same CMU as one logical mint and coordinate one authoritative issuance and
 spent-note state.
 
+This mirrors the stable-identity pattern used for addressable services. A
+service `npub` can remain the same while callers use different Docker, LAN,
+public HTTPS, VPN, or FIPS routes to reach it. A CMU remains the same when its
+complete `cmu-<keyset-id>` is unchanged, even if a wallet reaches the
+responsible mint through a different verified route. In both cases, routes are
+reachability information and must not replace the stable identity.
+
 Two notes are directly interchangeable only when they are recognized under the
 same issuer policy and have the same canonical CMU identifier. Equal numeric
 amounts do not make notes from different issuers or keysets equivalent.

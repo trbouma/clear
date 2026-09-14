@@ -70,7 +70,7 @@ through `trbouma@acorn.safebox.dev`.
 The implemented Clear service provides:
 
 - deterministic key derivation from `CLEAR_MASTER_SECRET`;
-- optional root-authority participation through
+- optional root-operator authority participation through
   `CLEAR_ROOT_AUTHORITY_NPUB`;
 - canonical keyset-bound units in the form `cmu-<keyset-id>`;
 - a public mint URL distinct from the privileged loopback API URL;
@@ -162,8 +162,8 @@ This milestone does not establish production readiness.
   currency-scoped treasurer authorization.
 - The software has not received an independent security audit.
 - Clear credits depend on the issuer's policy and ability to honour them.
-- A root authority, mint operator, and treasurer may currently be the same
-  person even though the product model treats them as separate roles.
+- A root operator authority, mint operator, and treasurer may currently be the
+  same person even though the product model treats them as separate roles.
 - Keyset rotation creates a distinct CMU; it does not silently preserve
   currency equivalence.
 - Recipient wallets can receive, dismiss, and accept pending transfers into

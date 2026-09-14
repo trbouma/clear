@@ -57,7 +57,7 @@ on the configured keyset type, it includes:
 - `CLEAR_KEY_ENCRYPTION_KEY` for encrypted random keyset secrets;
 - `CLEAR_MINT_SERVICE_NSEC` for the stable service identity;
 - the operator token and critical configuration;
-- the configured root-authority npub and canonical mint URL;
+- the configured root-operator authority npub and canonical mint URL;
 - signed service commissioning and treasurer authorization evidence; and
 - treasurer-held keys maintained separately by each treasurer.
 

@@ -172,6 +172,16 @@ Migration is an exceptional custody transfer, not an ordinary treasurer
 operation. It requires explicit authorization, source-operator confirmation,
 a frozen source keyset, and an identified destination.
 
+One important future use case is a treasurer choosing to move a CMU from one
+mint operator to another. The intended direction is an explicit export/import
+ceremony: freeze the source mint's authority for that CMU, export the current
+circulation and spent-state evidence, import it into a destination mint, and
+resume service there only after the destination can preserve the same CMU
+identity and accounting boundary. This is not planned for the first release,
+but the first-release role separation is meant to keep it straightforward:
+the treasurer owns currency authority, the CMU is identified by its keyset, and
+the mint operator supplies service infrastructure.
+
 The migration package contains only the selected keyset's material and state:
 
 - the random keyset secret;

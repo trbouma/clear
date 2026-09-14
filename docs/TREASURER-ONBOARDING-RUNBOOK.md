@@ -15,6 +15,14 @@ one CMU -> one active treasurer npub
 The treasurer's `nsec` must stay with the treasurer. The mint operator stores
 only the treasurer's `npub`.
 
+Onboarding a treasurer is an infrastructure and authorization ceremony, not an
+endorsement of the treasurer's program. The mint operator provides the Clear
+service, protects operational key material, records the treasurer public key,
+and enforces protocol checks. The treasurer, or the issuer represented by that
+treasurer, remains responsible for issuance policy, supply discipline,
+redemption terms, holder communications, and any real-world obligation attached
+to the CMU.
+
 ## Preconditions
 
 Before onboarding a treasurer:

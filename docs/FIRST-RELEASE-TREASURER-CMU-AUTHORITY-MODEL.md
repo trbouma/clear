@@ -292,3 +292,6 @@ therefore should not change the holder-facing balance identity.
   proofs.
 - Existing Mint Notes survive treasurer removal or `npub` rotation.
 - Ambiguous multi-CMU control by one `npub` is deferred.
+- Switching mint operators by exporting a CMU's circulation state and
+  importing it into another mint is deferred, but the model keeps treasurer
+  authority separate from mint operation so that migration can be added later.

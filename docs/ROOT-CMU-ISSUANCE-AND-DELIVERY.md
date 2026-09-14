@@ -12,6 +12,14 @@ Clear mint environment where the operator token and mint configuration are
 available. It lets the mint operator issue, hold, export, send, retire, and
 summarize test CMU denominated in the mint's active Clear Mint Unit.
 
+The root CMU exists for deployment simplicity and mint reliability testing.
+It behaves like other CMUs once issued, so it can be sent through wallets and
+used to prove that issuance, transfer, swap, proof-state, retirement, metadata,
+and recovery paths work end to end. Its main job is operational confidence
+before and between formal treasury workflows. Ordinary community, venue, or
+program currencies should move to treasurer-managed CMUs once the operator is
+ready to delegate currency authority.
+
 The active unit is the keyset-bound protocol unit:
 
 ```text
@@ -40,8 +48,9 @@ CLEAR_ROOT_API_ALLOWED_NETWORKS=127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192
 ```
 
 `CLEAR_MASTER_SECRET` derives the initial test keyset. If
-`CLEAR_ROOT_AUTHORITY_NPUB` is configured, it participates in key derivation, so
-changing the root authority creates a different keyset and therefore a
+`CLEAR_ROOT_AUTHORITY_NPUB` is configured, it represents the root operator
+authority for this bootstrap mint and participates in key derivation. Changing
+that root operator authority creates a different keyset and therefore a
 different CMU. Existing databases are bound to the keyset identity they were
 created with.
 
@@ -64,10 +73,11 @@ internal `clear-operator:3340`.
 
 `CLEAR_MINT_URL` is the canonical public URL advertised by the mint and encoded
 in circulating tokens. `CLEAR_ROOT_API_URL` is only the connection used by the
-privileged root CLI. In Docker it remains `http://127.0.0.1:3339`, allowing the
-CLI to bypass the reverse proxy without placing that loopback address in
+privileged root CLI. In Docker it points at the private operator listener, for
+example `http://127.0.0.1:3340` inside the `clear-operator` container, allowing
+the CLI to bypass the reverse proxy without placing that loopback address in
 tokens. Outside Docker it defaults to `http://127.0.0.1:3339` and rejects
-non-loopback addresses.
+non-loopback addresses unless explicitly configured otherwise.
 
 `CLEAR_CURRENCY_ALIAS` and `CLEAR_CURRENCY_UNIT_ALIAS` are startup defaults for
 wallet-facing display metadata. They seed the legacy/root CMU label when the

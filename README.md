@@ -26,6 +26,23 @@ treasurer's `nsec` never enters the mint. This creates a practical new pattern
 for community-issued value: one operator can provide reliable mint operations,
 while many communities retain their own issuance authority.
 
+The root operator authority and the currency or treasury authority are
+separate roles. The root operator authority can bootstrap and operate the mint
+service, configure infrastructure, and grant a treasurer a bounded CMU creation
+path. It is not a promise that a CMU is valuable, accepted, redeemable, or
+properly issued. A treasurer, or the issuer the treasurer represents, is
+responsible for the CMU's issuance policy, supply decisions, redemption terms,
+and real-world obligations. The mint operator provides the service and custody
+machinery; hosting a CMU must not be read as endorsing or guaranteeing that
+CMU's policy.
+
+For simplicity, a deployment also has a root CMU controlled by the operator.
+That CMU can be issued, transferred, swapped, retired, and displayed like other
+CMUs, but its primary purpose is to test the mint and prove operational
+reliability before relying on treasurer-managed currencies. It is a bootstrap
+and diagnostics instrument, not the normal home for a community's issuance
+policy.
+
 Clear is designed to work alongside Bitcoin- and Lightning-backed Cashu mints,
 not replace them. A wallet can present sat-denominated funds from those mints as
 one **Cash Balance**: general-purpose value that can be transferred broadly and
@@ -44,8 +61,8 @@ different logical mints or CMUs together. One logical mint may expose an
 operator-approved **mint cluster** only when its instances synchronously
 coordinate authoritative issuance and spent-note state. A friendly name is
 presentation metadata, not the identity of a Clear Mint Unit. When configured,
-the root authority npub is part of keyset derivation, so a new root authority
-creates a new CMU.
+the root operator authority npub is part of keyset derivation, so a new root
+operator authority creates a new CMU.
 
 Mint Note and CMU are the canonical documentation terms. *Cashu proof* remains
 the implementation term for the structure encoding a spendable note. The
@@ -161,7 +178,7 @@ fails if the service key is absent or derives a different `npub`. A database
 created before service identities existed may adopt its first configured
 identity once. The reported state is `bootstrapped` until a recognized operator
 commissions the service identity. This operator relationship is separate from
-any currency-root authorization of the mint's CMUs and keysets.
+the bootstrap/root-operator authority used for the mint's CMUs and keysets.
 
 The service-side commissioning primitives are:
 
