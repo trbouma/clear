@@ -680,6 +680,87 @@ def test_issue_swap_check_state_and_retire(tmp_path) -> None:
     assert still_unspent.json()["states"][0]["state"] == "UNSPENT"
 
 
+def test_operator_root_send_uses_root_wallet_and_delivery_helpers(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    configured = settings(tmp_path)
+    app = create_app(configured)
+    keyset = app.state.keyset
+    calls = {}
+
+    def fake_discover(address, *, mint_url, unit):
+        calls["discover"] = {"address": address, "mint_url": mint_url, "unit": unit}
+        return {
+            "supported": True,
+            "mint": mint_url,
+            "unit": unit,
+            "recipient_pubkey": "ab" * 32,
+            "recipient_npub": "npub1recipient",
+            "relays": ["ws://spurline:8080"],
+        }
+
+    def fake_export_or_swap(amount, wallet_path, *, api_url, memo):
+        calls["export_or_swap"] = {
+            "amount": amount,
+            "api_url": api_url,
+            "memo": memo,
+        }
+        return {"token": "cashu-token"}
+
+    def fake_deliver(discovery, *, token, amount, memo, relays, expiration):
+        calls["deliver"] = {
+            "token": token,
+            "amount": amount,
+            "memo": memo,
+            "relays": relays,
+            "expiration": expiration,
+        }
+        return {
+            "delivery": {"recipient_npub": "npub1recipient"},
+            "publish": {"status": "OK", "verified": True},
+        }
+
+    def fake_export_token(amount, wallet_path, *, memo, remove):
+        calls["export_token"] = {"amount": amount, "memo": memo, "remove": remove}
+        return {
+            "mint": configured.mint_url,
+            "unit": keyset.unit,
+            "amount": amount,
+            "token": "cashu-token",
+            "proofs": [{"secret": "proof-secret"}],
+        }
+
+    monkeypatch.setattr("clear.main.discover_clear_support", fake_discover)
+    monkeypatch.setattr("clear.main._export_or_swap", fake_export_or_swap)
+    monkeypatch.setattr("clear.main.deliver_clear_token", fake_deliver)
+    monkeypatch.setattr("clear.main.export_token", fake_export_token)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/operator/root/send",
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+            json={
+                "amount": 25,
+                "address": "ab" * 32,
+                "memo": "initial distribution",
+                "relays": ["ws://spurline:8080"],
+                "allow_internal_mint_delivery": True,
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["amount"] == 25
+    assert calls["discover"] == {
+        "address": "ab" * 32,
+        "mint_url": configured.mint_url,
+        "unit": keyset.unit,
+    }
+    assert calls["export_or_swap"]["api_url"] == "http://127.0.0.1:3339"
+    assert calls["deliver"]["relays"] == ["ws://spurline:8080"]
+    assert calls["export_token"]["remove"] is True
+
+
 def test_operator_can_add_and_list_treasurers(tmp_path) -> None:
     configured = settings(tmp_path)
     npub = "npub1treasurer0000000000000000000000000000000000000000"

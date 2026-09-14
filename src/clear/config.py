@@ -87,6 +87,10 @@ class Settings:
             currency_alias=os.getenv("CLEAR_CURRENCY_ALIAS") or None,
             currency_unit_alias=os.getenv("CLEAR_CURRENCY_UNIT_ALIAS") or None,
             key_encryption_key=os.getenv("CLEAR_KEY_ENCRYPTION_KEY") or None,
+            root_api_loopback_only=(
+                os.getenv("CLEAR_ROOT_API_LOOPBACK_ONLY", "true").lower()
+                not in {"0", "false", "no", "off"}
+            ),
             mint_service_nsec=os.getenv("CLEAR_MINT_SERVICE_NSEC") or None,
             mint_service_management=os.getenv(
                 "CLEAR_MINT_SERVICE_MANAGEMENT", "independent"

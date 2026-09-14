@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import hmac
+import os
 from contextlib import asynccontextmanager
 from ipaddress import ip_address
+from pathlib import Path
 
 from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +25,7 @@ from clear.models import (
     MintQuoteRequest,
     MintRequest,
     RetireRequest,
+    RootSendRequest,
     ServiceAttestationRequest,
     ServiceCommissioningRequest,
     SwapRequest,
@@ -31,6 +34,14 @@ from clear.models import (
     TreasuryDisableRequest,
     TreasuryEnvelopeRequest,
 )
+from clear.root_cli import _export_or_swap
+from clear.root_delivery import (
+    DeliveryError,
+    deliver_clear_token,
+    discover_clear_support,
+    mint_has_public_route,
+)
+from clear.root_wallet import DEFAULT_WALLET_PATH, export_token
 from clear.service_commissioning import (
     create_commissioning_request,
     create_service_descriptor,
@@ -370,6 +381,67 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ClearError as exc:
             return _protocol_error(str(exc), 13000)
         return {"status": "RETIRED", **retired}
+
+    @app.post("/v1/operator/root/send")
+    def operator_root_send(
+        body: RootSendRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        mint_url = configured.mint_url.rstrip("/")
+        unit = keyset.unit
+        if (
+            not mint_has_public_route(mint_url)
+            and not body.allow_internal_mint_delivery
+        ):
+            return _protocol_error(
+                "cannot deliver from an internal-only mint without explicit "
+                "internal delivery approval",
+                17001,
+            )
+        if not mint_has_public_route(mint_url) and not body.relays:
+            return _protocol_error(
+                "internal mint delivery requires at least one explicit relay",
+                17002,
+            )
+        try:
+            discovery = discover_clear_support(
+                body.address,
+                mint_url=mint_url,
+                unit=unit,
+            )
+            if not discovery["supported"]:
+                raise DeliveryError(
+                    "recipient does not advertise compatible Clear support"
+                )
+            wallet_path = Path(
+                os.getenv("CLEAR_ROOT_WALLET") or DEFAULT_WALLET_PATH
+            )
+            pending = _export_or_swap(
+                body.amount,
+                wallet_path,
+                api_url="http://127.0.0.1:3339",
+                memo=body.memo,
+            )
+            delivery = deliver_clear_token(
+                discovery,
+                token=pending["token"],
+                amount=body.amount,
+                memo=body.memo,
+                relays=body.relays,
+                expiration=body.expiration,
+            )
+            withdrawn = export_token(
+                body.amount,
+                wallet_path,
+                memo=body.memo,
+                remove=True,
+            )
+        except (DeliveryError, ValueError, ClearError) as exc:
+            return _protocol_error(str(exc), 17003)
+        return {**withdrawn, **delivery}
 
     @app.get("/v1/operator/summary")
     async def operator_summary(

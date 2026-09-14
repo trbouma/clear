@@ -53,6 +53,15 @@ class RetireRequest(BaseModel):
     memo: str | None = Field(default=None, max_length=280)
 
 
+class RootSendRequest(BaseModel):
+    amount: int = Field(gt=0)
+    address: str = Field(min_length=1, max_length=256)
+    memo: str | None = Field(default=None, max_length=200)
+    relays: list[str] = Field(default_factory=list, max_length=8)
+    allow_internal_mint_delivery: bool = False
+    expiration: int | None = None
+
+
 class TreasurerRequest(BaseModel):
     npub: str = Field(min_length=1, max_length=256)
 
