@@ -390,6 +390,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
     assert "Active keysets" in homepage.text
+    assert "Operator keyset" in homepage.text
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
     assert "Credit-Liability Ecash: Authorized and Redeemable" in homepage.text
@@ -441,14 +442,21 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
             headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
         ).json()
         homepage = client.get("/", headers={"Accept": "text/html"})
+        keysets = client.get("/v1/keysets").json()["keysets"]
 
     assert homepage.status_code == 200
     assert "Active keysets" in homepage.text
+    assert "Operator keyset" in homepage.text
+    assert "Authorized treasury keyset" in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "Gym Guest Passes" in homepage.text
     assert "passes" in homepage.text
     assert created["unit"] in homepage.text
     assert created["keyset_id"] in homepage.text
+    assert {item["authority"] for item in keysets} == {
+        "operator",
+        "authorized-treasury",
+    }
 
 
 def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:

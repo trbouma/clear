@@ -521,7 +521,7 @@ class Store:
             response["keys"] = {
                 str(amount): key for amount, key in keyset.public_keys.items()
             }
-        metadata = self._cmu_display_metadata(keyset.id)
+        metadata = self._cmu_keyset_metadata(keyset.id)
         response.update(metadata)
         return response
 
@@ -534,11 +534,12 @@ class Store:
         if "friendly_unit_alias" not in columns:
             connection.execute("ALTER TABLE cmus ADD COLUMN friendly_unit_alias TEXT")
 
-    def _cmu_display_metadata(self, keyset_id: str) -> dict:
+    def _cmu_keyset_metadata(self, keyset_id: str) -> dict:
         with self._connection() as connection:
             row = connection.execute(
                 """
-                SELECT friendly_name, friendly_unit_alias
+                SELECT friendly_name, friendly_unit_alias, treasurer_npub,
+                    material_kind
                 FROM cmus WHERE keyset_id = ?
                 """,
                 (keyset_id,),
@@ -548,11 +549,19 @@ class Store:
                 "friendly_name": None,
                 "friendly_alias": None,
                 "friendly_unit_alias": None,
+                "authority": "operator",
             }
+        authority = (
+            "authorized-treasury"
+            if row["treasurer_npub"] is not None
+            or row["material_kind"] == "random-encrypted-v1"
+            else "operator"
+        )
         return {
             "friendly_name": row["friendly_name"],
             "friendly_alias": row["friendly_name"],
             "friendly_unit_alias": row["friendly_unit_alias"],
+            "authority": authority,
         }
 
     def _cmu_status(self, keyset_id: str) -> str:

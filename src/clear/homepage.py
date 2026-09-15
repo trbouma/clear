@@ -51,9 +51,14 @@ def render_homepage(
             return f'<code class="technical" dir="ltr">{escape(value)}</code>'
         return f'<span>{text(fallback)}</span>'
 
+    def authority_label(value: str | None) -> str:
+        if value == "authorized-treasury":
+            return text("Authorized treasury keyset")
+        return text("Operator keyset")
+
     display_name = currency_alias or currency_name
     display_unit = currency_unit_alias or "CMU"
-    authority_label = (
+    root_authority_label = (
         _("Root authority configured")
         if root_authority_configured
         else _("Root bootstrap mode")
@@ -76,6 +81,7 @@ def render_homepage(
         keyset_rows.append(
             "<tr>"
             f"<td>{configured_value(str(name))}</td>"
+            f"<td>{authority_label(item.get('authority'))}</td>"
             f"<td>{configured_value(str(unit_label))}</td>"
             "<td>"
             f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
@@ -86,7 +92,7 @@ def render_homepage(
             "</tr>"
         )
     active_keyset_rows = "".join(keyset_rows) or (
-        f'<tr><td colspan="4">{text("No active keysets")}</td></tr>'
+        f'<tr><td colspan="5">{text("No active keysets")}</td></tr>'
     )
 
     values = {
@@ -115,7 +121,7 @@ def render_homepage(
             operator_npub,
             "Not commissioned",
         ),
-        "authority_label": escape(authority_label),
+        "authority_label": escape(root_authority_label),
     }
 
     copy_labels = {
@@ -609,6 +615,7 @@ def render_homepage(
           <thead>
             <tr>
               <th>{text('Name')}</th>
+              <th>{text('Authority')}</th>
               <th>{text('Unit label')}</th>
               <th>{text('Protocol unit')}</th>
               <th>{text('Keyset ID')}</th>
