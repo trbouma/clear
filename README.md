@@ -16,6 +16,16 @@ necessarily mean convertible to money, bitcoin, or another CMU.
 organization defines what each transferable unit represents and the policy
 under which it is issued, accepted, redeemed, or retired.
 
+This is similar to older treasury functions. A corporate treasurer may
+authorize issuance of ownership shares, debt claims, credits, vouchers, or
+other instruments, while separate systems record and circulate those claims.
+Clear plays the circulation-mechanics role for private bearer Mint Notes: it
+checks authority, signs notes, tracks spent state, supports transfer and
+retirement, and exposes supply evidence. The treasurer or issuer still defines
+what the instrument means. Clear does not decide whether something is a share,
+a security, a voucher, or a service credit, and it does not provide the legal,
+governance, disclosure, or compliance rules that such instruments may require.
+
 Clear can support multiple treasurers on one mint deployment by giving each
 authorized treasurer their own CMU. This lets a mint operator serve many
 communities, programs, venues, or working groups from shared mint

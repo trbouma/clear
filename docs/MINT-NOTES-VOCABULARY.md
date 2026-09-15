@@ -84,6 +84,14 @@ guest pass, service credit, allowance, benefit, voucher, or another bounded
 entitlement. Its issuer defines the equivalence domain, acceptance rules, and
 redemption or retirement policy.
 
+The same treasury function can appear in corporate settings. A treasurer may
+be authorized to issue ownership shares, debt claims, internal credits, or
+other instruments, while another system handles their circulation. Clear can
+model the bearer circulation mechanics for an issuer-defined unit, but the
+issuer's policy determines the legal and economic meaning. Minting a CMU does
+not by itself make an instrument compliant, transferable under corporate law,
+or suitable for securities-like use.
+
 Clear Mint Unit is the exact Clear protocol term for a transferable unit
 defined by a Clear keyset. Mint Notes are the unique bearer instruments that
 represent quantities of that unit.
