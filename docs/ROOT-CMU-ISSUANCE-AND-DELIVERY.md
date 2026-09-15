@@ -326,3 +326,38 @@ payload after receipt.
 Acorn receives kind `7379` Clear transfers through a separate pending Clear
 receipt path. Clear tokens are not merged into Acorn's normal sats proof state
 and are not counted in the sats balance.
+
+Acorn's private `home_relay` and its public receive route are deliberately
+separate. The home relay is the wallet's current state context and may be
+reachable only inside a Mainstay, local network, or private deployment. Remote
+Clear senders should use the recipient's public NIP-05 relay hints, signed
+inbox relays, or explicit public relay override.
+
+Operators troubleshooting a missing Acorn receipt should first inspect the
+recipient's public receive configuration:
+
+```sh
+poetry run acorn set --show-public-relays
+poetry run acorn inbox-relays --json
+```
+
+If the Acorn moved contexts or the public relay changed, refresh the public
+route and then rescan the receiving relays:
+
+```sh
+poetry run acorn inbox-relays wss://spurline.safebox.dev --json
+poetry run acorn set --public-relays wss://spurline.safebox.dev
+poetry run acorn receive-clear --preview --json
+```
+
+When the sender reports a published event ID, target it directly:
+
+```sh
+poetry run acorn receive-clear --event-id <event-id> --json
+poetry run acorn clear accept <event-id> --json
+```
+
+A Safebox Web NIP-05 endpoint that advertises Clear receive support must list
+externally reachable WebSocket relays. Context-local relays, Docker service
+names, loopback addresses, and VPN-only routes are not suitable public receive
+routes for remote treasury delivery.

@@ -280,6 +280,7 @@ def create_app(
                     root_authority_configured=(
                         configured.root_authority_npub is not None
                     ),
+                    active_keysets=store.keyset_responses(include_keys=False),
                     language=language,
                 ),
                 headers={

@@ -348,6 +348,75 @@ Delivery uses an ephemeral Nostr sender key by default. The treasurer `nsec`
 authorizes treasury actions and selects the local wallet; it is not reused as
 the delivery sender key.
 
+## Recipient Public Receive Routes
+
+Treasury delivery depends on the recipient's public receive route, not on the
+recipient wallet's private or current home relay. A Safebox or Acorn may move
+between Mainstay contexts, local relays, standalone relays, or hosted relays
+without changing its Nostr key. When that happens, operators and recipients
+must keep the public receive route current.
+
+Use this distinction when debugging delivery:
+
+- `home_relay` is the wallet's current private state and operating context.
+  It may be local-only and must not be assumed to be reachable by a remote
+  Clear treasurer.
+- signed inbox relays and `public_relays` are externally reachable receive
+  hints. These are the routes remote senders can use for NIP-59 gift wraps.
+- a NIP-05 provider, such as Safebox Web, advertises the public receive
+  context. Its relay list must name relays that outside senders can actually
+  reach.
+
+On an Acorn wallet, inspect the current public route before investigating a
+missing Clear transfer:
+
+```bash
+poetry run acorn set --show-public-relays
+poetry run acorn inbox-relays --json
+```
+
+If the wallet has moved context, or the public relay changed, publish the new
+public route from the wallet that controls the receiving key:
+
+```bash
+poetry run acorn inbox-relays wss://spurline.safebox.dev --json
+poetry run acorn set --public-relays wss://spurline.safebox.dev
+```
+
+Then verify receive discovery and pending Clear transfers:
+
+```bash
+poetry run acorn receive-clear --preview --json
+poetry run acorn receive-clear --relay wss://spurline.safebox.dev --preview --json
+```
+
+If the sender returned a specific event ID, target that event directly:
+
+```bash
+poetry run acorn receive-clear --event-id <event-id> --json
+poetry run acorn clear accept <event-id> --json
+poetry run acorn clear balances --json
+```
+
+For Safebox Web deployments, keep the NIP-05 external relay configuration in
+sync with the public route used by Acorn. The advertised relays should be
+public WebSocket relay URLs, not Docker service names, loopback addresses,
+VPN-only addresses, or context-local home relays.
+
+If a stale wallet has an old cursor or stale relay route, prefer a bounded
+historical scan from the relevant public relay:
+
+```bash
+poetry run acorn receive-clear --relay wss://spurline.safebox.dev \
+  --since <unix-timestamp> \
+  --json
+```
+
+See the Acorn relay configuration, token delivery routing, and relay migration
+runbooks for the deeper model. The short operator invariant is: an Acorn can
+migrate contexts safely only if its public receive route is refreshable,
+inspectable, and separate from private home-relay state.
+
 Remote treasurer retirement is separate follow-on work. Until that command
 exists, `clear-root` remains the privileged local operator path for retiring
 presented proofs.

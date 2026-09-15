@@ -18,8 +18,8 @@ the treasurer.
 Run privileged operator commands inside the Clear container:
 
 ```bash
-docker compose exec clear clear-root info
-docker compose exec clear clear-root cmu list
+docker compose exec clear-operator clear-root info
+docker compose exec clear-operator clear-root cmu list
 ```
 
 `clear-root` uses the loopback operator API and is not a remote treasurer
@@ -40,7 +40,7 @@ For development only, the container includes a helper that prints a keypair and
 stores nothing:
 
 ```bash
-docker compose exec clear clear-root treasurer keygen
+docker compose exec clear-operator clear-root treasurer keygen
 ```
 
 In separated custody, the treasurer should generate and keep their own `nsec`.
@@ -48,8 +48,8 @@ In separated custody, the treasurer should generate and keep their own `nsec`.
 ## 3. Add the Treasurer
 
 ```bash
-docker compose exec clear clear-root treasurer add npub1...
-docker compose exec clear clear-root treasurer list
+docker compose exec clear-operator clear-root treasurer add npub1...
+docker compose exec clear-operator clear-root treasurer list
 ```
 
 Adding the treasurer records a public key. It does not create a CMU or issue
@@ -58,8 +58,8 @@ Mint Notes.
 ## 4. Grant One CMU Creation
 
 ```bash
-docker compose exec clear clear-root treasurer grant npub1...
-docker compose exec clear clear-root treasurer grants
+docker compose exec clear-operator clear-root treasurer grant npub1...
+docker compose exec clear-operator clear-root treasurer grants
 ```
 
 Copy the returned grant ID. A first-release grant is single-use and intended to
@@ -105,7 +105,7 @@ After the CMU exists, display metadata changes are operator-mediated. The
 treasurer requests the change out of band, and the mint operator applies it:
 
 ```bash
-docker compose exec clear clear-root cmu label cmu-<keyset-id> \
+docker compose exec clear-operator clear-root cmu label cmu-<keyset-id> \
   --name "Food Share Credits" \
   --unit-alias "shares"
 ```
@@ -141,8 +141,8 @@ closed.
 The operator checks the consumed grant and the created CMU:
 
 ```bash
-docker compose exec clear clear-root treasurer grants
-docker compose exec clear clear-root cmu list
+docker compose exec clear-operator clear-root treasurer grants
+docker compose exec clear-operator clear-root cmu list
 ```
 
 The CMU should also appear in public key discovery:
@@ -161,7 +161,7 @@ For development or controlled local bootstrap, the operator can consume a
 grant from inside the container:
 
 ```bash
-docker compose exec clear clear-root cmu create <grant-id> \
+docker compose exec clear-operator clear-root cmu create <grant-id> \
   --name "Gym Guest Passes" \
   --unit-alias "passes"
 ```
@@ -237,5 +237,39 @@ same treasurer wallet.
 Delivery uses an ephemeral Nostr sender key by default. The treasurer `nsec`
 authorizes treasury actions and selects the local wallet; it is not reused as
 the delivery sender key.
+
+## 10. Check Recipient Receive Routes
+
+Clear delivery uses the recipient's public receive route. It must not depend on
+a private or context-local home relay that remote senders cannot reach.
+
+For an Acorn recipient, inspect the advertised route:
+
+```bash
+poetry run acorn set --show-public-relays
+poetry run acorn inbox-relays --json
+```
+
+If the Acorn moved to a new context or the public relay changed, refresh the
+public route from the receiving wallet:
+
+```bash
+poetry run acorn inbox-relays wss://spurline.safebox.dev --json
+poetry run acorn set --public-relays wss://spurline.safebox.dev
+```
+
+Then scan or accept the transfer:
+
+```bash
+poetry run acorn receive-clear --preview --json
+poetry run acorn receive-clear --event-id <event-id> --json
+poetry run acorn clear accept <event-id> --json
+poetry run acorn clear balances --json
+```
+
+For Safebox Web, the NIP-05 external relay list should contain public WebSocket
+relay URLs. Do not advertise Docker service names, loopback URLs, VPN-only
+routes, or other context-local home relays as the recipient's public Clear
+delivery route.
 
 Remote treasurer retirement is follow-on work.

@@ -31,6 +31,7 @@ def render_homepage(
     service_state: str,
     operator_npub: str | None,
     root_authority_configured: bool,
+    active_keysets: list[dict] | None = None,
     language: str = "en",
 ) -> str:
     """Render the browser-facing mint overview with escaped configuration."""
@@ -65,10 +66,34 @@ def render_homepage(
         )
         for tag, label in SUPPORTED_LANGUAGES.items()
     )
+
+    keyset_rows = []
+    for item in active_keysets or []:
+        if item.get("active") is False:
+            continue
+        name = item.get("friendly_alias") or item.get("friendly_name") or item["unit"]
+        unit_label = item.get("friendly_unit_alias") or "CMU"
+        keyset_rows.append(
+            "<tr>"
+            f"<td>{configured_value(str(name))}</td>"
+            f"<td>{configured_value(str(unit_label))}</td>"
+            "<td>"
+            f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
+            "</td>"
+            "<td>"
+            f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['id']))}</code>"
+            "</td>"
+            "</tr>"
+        )
+    active_keyset_rows = "".join(keyset_rows) or (
+        f'<tr><td colspan="4">{text("No active keysets")}</td></tr>'
+    )
+
     values = {
         "language": escape(language),
         "direction": direction,
         "language_options": language_options,
+        "active_keyset_rows": active_keyset_rows,
         "version": escape(version),
         "mint_url": escape(mint_url),
         "currency_name": escape(currency_name),
@@ -387,6 +412,36 @@ def render_homepage(
       line-height: 1.6;
     }}
 
+    .keysets {{
+      grid-column: 1 / -1;
+      overflow-x: auto;
+    }}
+
+    .keyset-table {{
+      width: 100%;
+      min-width: 42rem;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }}
+
+    .keyset-table th, .keyset-table td {{
+      padding: 0.72rem 0.7rem;
+      border-top: 1px solid var(--line);
+      text-align: start;
+      vertical-align: top;
+    }}
+
+    .keyset-table th {{
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 720;
+    }}
+
+    .keyset-table td {{
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }}
+
     .links {{
       display: flex;
       flex-wrap: wrap;
@@ -546,6 +601,23 @@ def render_homepage(
           <li>{text('Explicit unit retirement')}</li>
           <li>{values['authority_label']}</li>
         </ul>
+      </section>
+
+      <section class="panel keysets">
+        <h2>{text('Active keysets')}</h2>
+        <table class="keyset-table">
+          <thead>
+            <tr>
+              <th>{text('Name')}</th>
+              <th>{text('Unit label')}</th>
+              <th>{text('Protocol unit')}</th>
+              <th>{text('Keyset ID')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {values['active_keyset_rows']}
+          </tbody>
+        </table>
       </section>
     </div>
 

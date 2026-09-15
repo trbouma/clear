@@ -389,6 +389,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert '<option value="en" selected>English</option>' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
+    assert "Active keysets" in homepage.text
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
     assert "Credit-Liability Ecash: Authorized and Redeemable" in homepage.text
@@ -410,6 +411,44 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert information.json()["currency"]["friendly_alias"] == (
         "Harbour Lab Credits"
     )
+
+
+def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={
+                "grant_id": grant["id"],
+                "name": "Gym Guest Passes",
+                "unit_alias": "passes",
+            },
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        homepage = client.get("/", headers={"Accept": "text/html"})
+
+    assert homepage.status_code == 200
+    assert "Active keysets" in homepage.text
+    assert "Harbour Lab Credits" in homepage.text
+    assert "Gym Guest Passes" in homepage.text
+    assert "passes" in homepage.text
+    assert created["unit"] in homepage.text
+    assert created["keyset_id"] in homepage.text
 
 
 def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:
