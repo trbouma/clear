@@ -206,6 +206,99 @@ def test_root_cli_publishes_only_retained_service_evidence(
     assert '"state": "published"' in capsys.readouterr().out
 
 
+def test_root_cli_treasurer_profile_queries_kind_0_metadata(
+    monkeypatch,
+    capsys,
+) -> None:
+    keys = root_cli.Keys(priv_k="44" * 32)
+    npub = keys.public_key_bech32()
+    pubkey = keys.public_key_hex()
+    calls = []
+
+    class FakeEvent:
+        id = "aa" * 32
+        pub_key = pubkey
+        kind = 0
+        created_at = 123
+        content = json.dumps(
+            {
+                "name": "Workshop Treasurer",
+                "nip05": "treasurer@example.com",
+                "picture": "https://example.com/avatar.png",
+            }
+        )
+
+        def data(self):
+            return {"id": self.id, "created_at": self.created_at}
+
+    class FakeRelayClient:
+        def __init__(self, relay, *, timeout):
+            calls.append((relay, timeout))
+
+        async def query(self, filters):
+            assert filters == [{"authors": [pubkey], "kinds": [0], "limit": 1}]
+            return [FakeEvent()]
+
+    monkeypatch.setattr(root_cli, "RelayClient", FakeRelayClient)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "treasurer",
+            "profile",
+            npub,
+            "--relay",
+            "wss://relay.example",
+            "--timeout",
+            "3",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert calls == [("wss://relay.example", 3.0)]
+    assert output["npub"] == npub
+    assert output["pubkey"] == pubkey
+    assert output["profile"]["name"] == "Workshop Treasurer"
+    assert output["profile"]["nip05"] == "treasurer@example.com"
+    assert output["event"] == {"id": "aa" * 32, "created_at": 123}
+
+
+def test_root_cli_treasurer_profile_reports_missing_profile(
+    monkeypatch,
+    capsys,
+) -> None:
+    npub = root_cli.Keys(priv_k="55" * 32).public_key_bech32()
+
+    class FakeRelayClient:
+        def __init__(self, relay, *, timeout):
+            pass
+
+        async def query(self, filters):
+            return []
+
+    monkeypatch.setattr(root_cli, "RelayClient", FakeRelayClient)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "treasurer",
+            "profile",
+            npub,
+            "--relay",
+            "wss://relay.example",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["npub"] == npub
+    assert output["profile"] is None
+    assert output["relays"] == ["wss://relay.example"]
+
+
 def test_root_cli_migrates_legacy_wallet_file(tmp_path) -> None:
     legacy = tmp_path / "clear-lab-wallet.json"
     root_wallet = tmp_path / "clear-root-wallet.json"

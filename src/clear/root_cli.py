@@ -12,7 +12,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
-from stroma import Event, Keys, RelayError, RelayPool
+from stroma import Event, Keys, RelayClient, RelayError, RelayPool
+from stroma import KeyError as StromaKeyError
 
 from clear.root_delivery import (
     DeliveryError,
@@ -39,6 +40,12 @@ from clear.treasury import (
 )
 
 DEFAULT_MINT_URL = "http://127.0.0.1:3339"
+DEFAULT_PROFILE_RELAYS = [
+    "wss://relay.damus.io",
+    "wss://nos.lol",
+    "wss://relay.primal.net",
+    "wss://relay.nostr.band",
+]
 CONFIG_KEYS = {
     "currency_name": "CLEAR_CURRENCY_NAME",
     "currency_alias": "CLEAR_CURRENCY_ALIAS",
@@ -472,6 +479,99 @@ def treasurer_keygen(args) -> int:
                 "Give the npub to the mint operator. Keep the nsec with the "
                 "treasurer; the mint must never store it."
             ),
+        }
+    )
+    return 0
+
+
+def _event_field(event, name: str):
+    if isinstance(event, dict):
+        return event.get(name)
+    return getattr(event, name, None)
+
+
+def _event_pubkey(event) -> str | None:
+    return _event_field(event, "pub_key") or _event_field(event, "pubkey")
+
+
+def _event_int(event, name: str, default: int = 0) -> int:
+    value = _event_field(event, name)
+    return default if value is None else int(value)
+
+
+def _event_data(event) -> dict:
+    if isinstance(event, dict):
+        return event
+    data = event.data() if hasattr(event, "data") else {}
+    return data if isinstance(data, dict) else {}
+
+
+def treasurer_profile(args) -> int:
+    try:
+        pubkey = Keys(pub_k=args.npub).public_key_hex()
+        npub = Keys(pub_k=pubkey).public_key_bech32()
+    except StromaKeyError as exc:
+        raise TreasuryError("treasurer profile requires an npub or public key") from exc
+
+    relays = args.relay or DEFAULT_PROFILE_RELAYS
+
+    async def query_profile() -> tuple[dict | None, dict[str, str]]:
+        errors: dict[str, str] = {}
+        best_event = None
+        for relay in relays:
+            try:
+                client = RelayClient(relay, timeout=args.timeout)
+                events = await client.query(
+                    [
+                        {
+                            "authors": [pubkey],
+                            "kinds": [0],
+                            "limit": 1,
+                        }
+                    ]
+                )
+            except Exception as exc:
+                errors[relay] = str(exc)
+                continue
+            for event in events:
+                if _event_pubkey(event) != pubkey:
+                    continue
+                if _event_int(event, "kind", -1) != 0:
+                    continue
+                if (
+                    best_event is None
+                    or _event_int(event, "created_at")
+                    > _event_int(best_event, "created_at")
+                ):
+                    best_event = event
+        if best_event is None:
+            return None, errors
+        content = _event_field(best_event, "content") or "{}"
+        try:
+            profile = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise TreasuryError("treasurer profile metadata is not valid JSON") from exc
+        if not isinstance(profile, dict):
+            raise TreasuryError("treasurer profile metadata must be a JSON object")
+        event_data = _event_data(best_event)
+        return {
+            "profile": profile,
+            "event": {
+                "id": event_data.get("id") or _event_field(best_event, "id"),
+                "created_at": event_data.get("created_at")
+                or _event_field(best_event, "created_at"),
+            },
+        }, errors
+
+    profile, errors = asyncio.run(query_profile())
+    _print_json(
+        {
+            "npub": npub,
+            "pubkey": pubkey,
+            "profile": profile["profile"] if profile else None,
+            **({"event": profile["event"]} if profile else {}),
+            "relays": relays,
+            **({"errors": errors} if errors else {}),
         }
     )
     return 0
@@ -942,6 +1042,26 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         help="Generate a local treasurer npub/nsec pair without storing it.",
     )
     treasurer_keygen_parser.set_defaults(handler=treasurer_keygen)
+    treasurer_profile_parser = treasurer_subcommands.add_parser(
+        "profile",
+        help="Look up public Nostr profile metadata for a treasurer npub.",
+    )
+    treasurer_profile_parser.add_argument("npub")
+    treasurer_profile_parser.add_argument(
+        "--relay",
+        action="append",
+        default=None,
+        help="Nostr relay to query. Repeatable. Defaults to common public relays.",
+    )
+    treasurer_profile_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=8.0,
+        help="Relay query timeout in seconds.",
+    )
+    treasurer_profile_parser.set_defaults(
+        handler=treasurer_profile,
+    )
 
     cmu_parser = subcommands.add_parser(
         "cmu",

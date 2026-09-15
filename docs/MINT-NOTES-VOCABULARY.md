@@ -148,6 +148,11 @@ complete `cmu-<keyset-id>` is unchanged, even if a wallet reaches the
 responsible mint through a different verified route. In both cases, routes are
 reachability information and must not replace the stable identity.
 
+This differs from URL-centered naming, where a DNS-backed URL often acts as
+both identity and route. Clear keeps the CMU identity context-free so future
+address spaces and transports, including FIPS, can be added as verified routes
+around the same keyset identity.
+
 Two notes are directly interchangeable only when they are recognized under the
 same issuer policy and have the same canonical CMU identifier. Equal numeric
 amounts do not make notes from different issuers or keysets equivalent.
