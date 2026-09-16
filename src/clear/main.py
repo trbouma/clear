@@ -7,8 +7,9 @@ import os
 from contextlib import asynccontextmanager
 from ipaddress import ip_address, ip_network
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -34,6 +35,7 @@ from clear.models import (
     TreasuryDisableRequest,
     TreasuryEnvelopeRequest,
 )
+from clear.nostr_profiles import ProfileLookupError, lookup_nostr_profile
 from clear.root_cli import _export_or_swap
 from clear.root_delivery import (
     DeliveryError,
@@ -378,6 +380,17 @@ def create_app(
     @app.get("/v1/keysets")
     async def keysets():
         return {"keysets": store.keyset_responses(include_keys=False)}
+
+    @app.get("/v1/nostr/profiles/{npub}")
+    async def nostr_profile(
+        npub: str,
+        relay: Annotated[list[str] | None, Query()] = None,
+        timeout: Annotated[float, Query(ge=0.25, le=10.0)] = 2.0,
+    ):
+        try:
+            return await lookup_nostr_profile(npub, relays=relay, timeout=timeout)
+        except ProfileLookupError as exc:
+            return _protocol_error(str(exc), 17000)
 
     @app.post("/v1/mint/quote/clear")
     async def create_mint_quote(request: MintQuoteRequest):

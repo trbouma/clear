@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from html import escape
+from urllib.parse import quote
 
 from clear.localization import (
     HOMEPAGE_ABOUT,
@@ -53,9 +54,19 @@ def render_homepage(
             return f'<code class="technical" dir="ltr">{escape(value)}</code>'
         return f'<span>{text(fallback)}</span>'
 
-    def authority_label(value: str | None) -> str:
-        if value == "authorized-treasury":
-            return text("Authorized treasury keyset")
+    def authority_label(item: dict) -> str:
+        if item.get("authority") == "authorized-treasury" and item.get(
+            "treasurer_npub"
+        ):
+            npub = str(item["treasurer_npub"])
+            profile_url = f"v1/nostr/profiles/{quote(npub, safe='')}"
+            return (
+                '<button class="profile-trigger technical" type="button" '
+                f'data-profile-url="{escape(profile_url)}" '
+                f'data-npub="{escape(npub)}" '
+                'aria-describedby="profile-card">'
+                f"{escape(npub)}</button>"
+            )
         return text("Operator keyset")
 
     display_name = mint_title or "Clear Mint"
@@ -87,7 +98,7 @@ def render_homepage(
         keyset_rows.append(
             "<tr>"
             f"<td>{configured_value(str(name))}</td>"
-            f"<td>{authority_label(item.get('authority'))}</td>"
+            f"<td>{authority_label(item)}</td>"
             f"<td>{configured_value(str(unit_label))}</td>"
             f"<td>{configured_value(str(outstanding))}</td>"
             "<td>"
@@ -142,6 +153,12 @@ def render_homepage(
         "copied": _("Copied"),
         "failed": _("Select URL to copy"),
         "ready": _("Copy mint URL"),
+    }
+    profile_labels = {
+        "loading": _("Loading profile"),
+        "not_found": _("No public profile found"),
+        "unavailable": _("Profile unavailable"),
+        "npub": "npub",
     }
 
     return f"""<!doctype html>
@@ -462,6 +479,68 @@ def render_homepage(
       overflow-wrap: anywhere;
     }}
 
+    .profile-trigger {{
+      width: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--teal-dark);
+      cursor: help;
+      font: inherit;
+      text-align: start;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18rem;
+    }}
+
+    .profile-trigger:focus-visible {{
+      outline: 2px solid var(--coral);
+      outline-offset: 0.18rem;
+    }}
+
+    .profile-card {{
+      position: fixed;
+      z-index: 20;
+      display: none;
+      width: min(22rem, calc(100vw - 2rem));
+      padding: 0.9rem;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }}
+
+    .profile-card[data-open="true"] {{ display: block; }}
+
+    .profile-card-header {{
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.65rem;
+    }}
+
+    .profile-card img {{
+      width: 2.8rem;
+      height: 2.8rem;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      object-fit: cover;
+    }}
+
+    .profile-card strong {{
+      display: block;
+      font-size: 0.95rem;
+    }}
+
+    .profile-card p {{
+      margin: 0.5rem 0 0;
+      color: var(--muted);
+    }}
+
     .links {{
       display: flex;
       flex-wrap: wrap;
@@ -658,6 +737,7 @@ def render_homepage(
       </span>
     </nav>
   </main>
+  <div id="profile-card" class="profile-card" role="status" aria-live="polite"></div>
   <script>
     const button = document.getElementById("copy-mint");
     button.addEventListener("click", async () => {{
@@ -671,6 +751,103 @@ def render_homepage(
       window.setTimeout(() => {{
         button.textContent = {json.dumps(copy_labels['ready'], ensure_ascii=False)};
       }}, 1800);
+    }});
+
+    const profileCard = document.getElementById("profile-card");
+    const profileCache = new Map();
+    const profileLabels = {json.dumps(profile_labels, ensure_ascii=False)};
+
+    function escapeText(value) {{
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }}
+
+    function profileMessage(npub, label) {{
+      return `<strong>${{escapeText(npub)}}</strong><p>${{escapeText(label)}}</p>`;
+    }}
+
+    function renderProfile(payload, fallbackNpub) {{
+      const profile = payload && payload.profile;
+      if (!profile) {{
+        return profileMessage(fallbackNpub, profileLabels.not_found);
+      }}
+      const name = profile.display_name || profile.displayName || profile.name ||
+        profile.nip05 || fallbackNpub;
+      const about = profile.about || profile.nip05 || "";
+      const picture = profile.picture || profile.image || "";
+      const pictureMarkup = picture
+        ? `<img src="${{escapeText(picture)}}" alt="">`
+        : "";
+      const nip05 = profile.nip05
+        ? `<p>${{escapeText(profile.nip05)}}</p>`
+        : "";
+      const aboutMarkup = about && about !== profile.nip05
+        ? `<p>${{escapeText(about)}}</p>`
+        : "";
+      return `
+        <div class="profile-card-header">
+          ${{pictureMarkup}}
+          <div>
+            <strong>${{escapeText(name)}}</strong>
+            <code class="technical" dir="ltr">${{escapeText(fallbackNpub)}}</code>
+          </div>
+        </div>
+        ${{nip05}}
+        ${{aboutMarkup}}
+      `;
+    }}
+
+    function placeProfileCard(trigger) {{
+      const rect = trigger.getBoundingClientRect();
+      const margin = 12;
+      const top = Math.min(
+        rect.bottom + margin,
+        window.innerHeight - profileCard.offsetHeight - margin,
+      );
+      const left = Math.min(
+        rect.left,
+        window.innerWidth - profileCard.offsetWidth - margin,
+      );
+      profileCard.style.top = `${{Math.max(margin, top)}}px`;
+      profileCard.style.left = `${{Math.max(margin, left)}}px`;
+    }}
+
+    async function showProfile(trigger) {{
+      const url = trigger.dataset.profileUrl;
+      const npub = trigger.dataset.npub;
+      profileCard.innerHTML = profileMessage(npub, profileLabels.loading);
+      profileCard.dataset.open = "true";
+      placeProfileCard(trigger);
+      try {{
+        if (!profileCache.has(url)) {{
+          const response = await fetch(
+            url,
+            {{ headers: {{ "Accept": "application/json" }} }},
+          );
+          if (!response.ok) throw new Error("profile lookup failed");
+          profileCache.set(url, await response.json());
+        }}
+        profileCard.innerHTML = renderProfile(profileCache.get(url), npub);
+      }} catch (_error) {{
+        profileCard.innerHTML = profileMessage(npub, profileLabels.unavailable);
+      }}
+      placeProfileCard(trigger);
+    }}
+
+    function hideProfile() {{
+      profileCard.dataset.open = "false";
+    }}
+
+    document.querySelectorAll(".profile-trigger").forEach((trigger) => {{
+      trigger.addEventListener("mouseenter", () => showProfile(trigger));
+      trigger.addEventListener("focus", () => showProfile(trigger));
+      trigger.addEventListener("click", () => showProfile(trigger));
+      trigger.addEventListener("mouseleave", hideProfile);
+      trigger.addEventListener("blur", hideProfile);
     }});
   </script>
 </body>

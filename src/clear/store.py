@@ -550,6 +550,7 @@ class Store:
                 "friendly_alias": None,
                 "friendly_unit_alias": None,
                 "authority": "operator",
+                "treasurer_npub": None,
             }
         authority = (
             "authorized-treasury"
@@ -562,6 +563,7 @@ class Store:
             "friendly_alias": row["friendly_name"],
             "friendly_unit_alias": row["friendly_unit_alias"],
             "authority": authority,
+            "treasurer_npub": row["treasurer_npub"],
         }
 
     def _cmu_status(self, keyset_id: str) -> str:

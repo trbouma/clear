@@ -462,7 +462,10 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert homepage.status_code == 200
     assert "Mint Units In Circulation" in homepage.text
     assert "Operator keyset" in homepage.text
-    assert "Authorized treasury keyset" in homepage.text
+    assert "Authorized treasury keyset" not in homepage.text
+    assert npub in homepage.text
+    assert f'data-profile-url="v1/nostr/profiles/{npub}"' in homepage.text
+    assert 'id="profile-card"' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "Gym Guest Passes" in homepage.text
     assert "passes" in homepage.text
@@ -474,6 +477,46 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
         "operator",
         "authorized-treasury",
     }
+    assert next(
+        item for item in keysets if item["authority"] == "authorized-treasury"
+    )["treasurer_npub"] == npub
+    assert next(item for item in keysets if item["authority"] == "operator")[
+        "treasurer_npub"
+    ] is None
+
+
+def test_public_nostr_profile_endpoint_returns_kind_0_profile(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="66" * 32)
+    npub = treasurer.public_key_bech32()
+    calls = []
+
+    async def fake_lookup(value, *, relays=None, timeout=2.0):
+        calls.append((value, relays, timeout))
+        return {
+            "npub": npub,
+            "pubkey": treasurer.public_key_hex(),
+            "profile": {
+                "name": "Workshop Treasurer",
+                "nip05": "treasurer@example.com",
+            },
+            "relays": relays,
+        }
+
+    monkeypatch.setattr("clear.main.lookup_nostr_profile", fake_lookup)
+    with TestClient(create_app(configured)) as client:
+        response = client.get(
+            f"/v1/nostr/profiles/{npub}",
+            params={"relay": "wss://relay.example", "timeout": "3"},
+        )
+
+    assert response.status_code == 200
+    assert calls == [(npub, ["wss://relay.example"], 3.0)]
+    assert response.json()["profile"]["name"] == "Workshop Treasurer"
+    assert response.json()["profile"]["nip05"] == "treasurer@example.com"
 
 
 def test_browser_homepage_uses_configured_mint_title(tmp_path) -> None:
