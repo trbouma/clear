@@ -8,6 +8,7 @@ from stroma import Event, Keys
 
 from clear import treasury_cli
 from clear.root_wallet import deposit_issue, load_wallet
+from clear.tokens import decode_token_v3
 from clear.treasury_auth import TREASURY_EVENT_KIND
 
 
@@ -180,6 +181,58 @@ def test_treasury_cli_cmu_summary_signs_and_posts_envelope(
     assert json.loads(event.content)["keyset_id"] == "keyset-created"
 
 
+def test_treasury_cli_cmu_info_accepts_cmu_id(monkeypatch, capsys) -> None:
+    calls = []
+    treasurer = Keys(priv_k="1".zfill(64))
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        if path == "/v1/keysets":
+            return {
+                "keysets": [
+                    {"id": "keyset-created", "unit": "cmu-created"},
+                    {"id": "other-keyset", "unit": "cmu-other"},
+                ]
+            }
+        event = Event.load(payload["event"], validate=True)
+        assert event is not None
+        content = json.loads(event.content)
+        assert content["keyset_id"] == "keyset-created"
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "friendly_name": "Gym Guest Passes",
+            "status": "active",
+        }
+
+    monkeypatch.setattr(treasury_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example/",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "cmu",
+            "info",
+            "--cmu-id",
+            "cmu-created",
+        ],
+    )
+
+    assert treasury_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["keyset_id"] == "keyset-created"
+    assert calls[0][:3] == ("https://clear.example", "GET", "/v1/keysets")
+    assert calls[1][:3] == (
+        "https://clear.example",
+        "POST",
+        "/v1/treasury/cmus/info",
+    )
+
+
 def test_treasury_cli_issue_deposits_to_treasurer_wallet(
     monkeypatch, capsys, tmp_path
 ) -> None:
@@ -249,6 +302,92 @@ def test_treasury_cli_issue_deposits_to_treasurer_wallet(
     assert output["wallet"]["balances"] == [
         {"mint": "https://clear.example", "unit": "cmu-created", "amount": 13}
     ]
+
+
+def test_treasury_cli_issue_accepts_cmu_id(monkeypatch, capsys) -> None:
+    calls = []
+    treasurer = Keys(priv_k="1".zfill(64))
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {"keysets": [{"id": "keyset-created", "unit": "cmu-created"}]}
+
+    def fake_issue_treasury_units(
+        mint_url,
+        nsec,
+        amount,
+        *,
+        keyset_id=None,
+        memo=None,
+        lifetime_seconds=300,
+    ):
+        assert keyset_id == "keyset-created"
+        return {
+            "mint": mint_url,
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "quote": "quote-id",
+            "amount": amount,
+            "memo": memo,
+            "token": "cashuAtoken",
+            "proofs": [],
+        }
+
+    monkeypatch.setattr(treasury_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        treasury_cli,
+        "issue_treasury_units",
+        fake_issue_treasury_units,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "issue",
+            "13",
+            "--cmu-id",
+            "cmu-created",
+            "--to-token",
+        ],
+    )
+
+    assert treasury_cli.main() == 0
+    output = json.loads(capsys.readouterr().out)
+
+    assert output["keyset_id"] == "keyset-created"
+    assert calls[0][:3] == ("https://clear.example", "GET", "/v1/keysets")
+
+
+def test_treasury_cli_rejects_unknown_cmu_id(monkeypatch, capsys) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    monkeypatch.setattr(
+        treasury_cli,
+        "request_json",
+        lambda *args, **kwargs: {
+            "keysets": [{"id": "keyset-created", "unit": "cmu-created"}]
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "issue",
+            "13",
+            "--cmu-id",
+            "cmu-missing",
+        ],
+    )
+
+    assert treasury_cli.main() == 1
+    assert "CMU was not found: cmu-missing" in capsys.readouterr().err
 
 
 def test_treasury_cli_wallet_balance_uses_scoped_default_wallet(
@@ -347,6 +486,21 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
     deposit_issue(
         {
             "mint": "https://clear.example",
+            "unit": "cmu-other",
+            "quote": "other-quote-id",
+            "amount": 13,
+            "memo": None,
+            "proofs": [
+                {"amount": 8, "id": "other-keyset", "secret": "o1", "C": "oc1"},
+                {"amount": 4, "id": "other-keyset", "secret": "o2", "C": "oc2"},
+                {"amount": 1, "id": "other-keyset", "secret": "o3", "C": "oc3"},
+            ],
+        },
+        wallet_path,
+    )
+    deposit_issue(
+        {
+            "mint": "https://clear.example",
             "unit": "cmu-created",
             "quote": "quote-id",
             "amount": 13,
@@ -392,6 +546,11 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
         expiration=None,
     ):
         assert token.startswith("cashuA")
+        decoded = decode_token_v3(token)
+        assert decoded["unit"] == "cmu-created"
+        assert {proof["id"] for proof in decoded["token"][0]["proofs"]} == {
+            "keyset-created"
+        }
         assert amount == 13
         assert sender_secret is None
         assert memo == "Gift"
@@ -431,9 +590,12 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
     output = json.loads(capsys.readouterr().out)
 
     assert output["amount"] == 13
+    assert output["unit"] == "cmu-created"
     assert output["treasurer_npub"] == treasurer.public_key_bech32()
     assert output["publish"]["verified"] is True
-    assert load_wallet(wallet_path)["entries"] == []
+    assert treasury_cli.wallet_summary(load_wallet(wallet_path), wallet_path)[
+        "balances"
+    ] == [{"mint": "https://clear.example", "unit": "cmu-other", "amount": 13}]
 
 
 def test_treasury_cli_send_rejects_internal_mint_before_discovery(
@@ -515,6 +677,19 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
 ) -> None:
     treasurer = Keys(priv_k="1".zfill(64))
     wallet_path = tmp_path / "treasury-wallet.json"
+    deposit_issue(
+        {
+            "mint": "https://clear.example",
+            "unit": "cmu-other",
+            "quote": "other-quote-id",
+            "amount": 16,
+            "memo": None,
+            "proofs": [
+                {"amount": 16, "id": "other-keyset", "secret": "o16", "C": "oc16"},
+            ],
+        },
+        wallet_path,
+    )
     deposit_issue(
         {
             "mint": "https://clear.example",
@@ -605,11 +780,12 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
     assert treasury_cli.main() == 0
     summary = treasury_cli.wallet_summary(load_wallet(wallet_path), wallet_path)
     assert summary["balances"] == [
-        {"mint": "https://clear.example", "unit": "cmu-created", "amount": 3}
+        {"mint": "https://clear.example", "unit": "cmu-created", "amount": 3},
+        {"mint": "https://clear.example", "unit": "cmu-other", "amount": 16},
     ]
 
 
-def test_treasury_cli_issue_requires_keyset_id(monkeypatch, capsys) -> None:
+def test_treasury_cli_issue_requires_cmu_selector(monkeypatch, capsys) -> None:
     treasurer = Keys(priv_k="1".zfill(64))
     monkeypatch.setattr(
         "sys.argv",
@@ -627,7 +803,9 @@ def test_treasury_cli_issue_requires_keyset_id(monkeypatch, capsys) -> None:
     with pytest.raises(SystemExit) as exc:
         treasury_cli.main()
     assert exc.value.code == 2
-    assert "--keyset-id" in capsys.readouterr().err
+    error = capsys.readouterr().err
+    assert "--keyset-id" in error
+    assert "--cmu-id" in error
 
 
 def test_treasury_cli_requires_nsec(monkeypatch, capsys) -> None:

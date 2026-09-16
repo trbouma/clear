@@ -79,7 +79,7 @@ CMUs sequentially.
 
 Keyset rotation requires an explicit future procedure. Multiple CMUs under one
 treasurer remain distinct by keyset ID and unit; treasurer-side operations must
-always name the intended keyset.
+always name the intended CMU or keyset.
 
 Removing a treasurer prevents future authorizations. It does not invalidate a
 keyset already created, alter its CMU, or invalidate its circulating Mint
@@ -261,6 +261,7 @@ or submit the `nsec` to the mint. In separated custody, the treasurer should
 generate and retain their own `nsec`.
 
 In the first-release treasury CLI flow, the treasurer's `nsec` derives an
-`npub`, and the mint resolves that `npub` plus the required keyset ID to one
-CMU. If the `npub` is unknown, rotated out, suspended, or not authorized for
-the requested keyset, the command fails closed.
+`npub`; the CLI resolves `--cmu-id cmu-...` or `--keyset-id ...` to a keyset;
+and the mint resolves that `npub` plus the required keyset ID to one CMU. If
+the `npub` is unknown, rotated out, suspended, or not authorized for the
+requested CMU/keyset, the command fails closed.

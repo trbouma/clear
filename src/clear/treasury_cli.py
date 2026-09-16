@@ -68,6 +68,43 @@ def _wallet_path(args, nsec: str | None = None) -> Path:
     return DEFAULT_TREASURY_WALLET_BASE / f"{host}-{digest}" / f"{treasurer_npub}.json"
 
 
+def _resolve_keyset_id(mint: str, args) -> str:
+    keyset_id = getattr(args, "keyset_id", None)
+    if keyset_id:
+        return keyset_id
+    cmu_id = getattr(args, "cmu_id", None)
+    if not cmu_id:
+        raise TreasuryError("treasurer CMU selection requires --keyset-id or --cmu-id")
+    response = request_json(mint, "GET", "/v1/keysets")
+    matches = [
+        item
+        for item in response.get("keysets") or []
+        if item.get("unit") == cmu_id
+    ]
+    if not matches:
+        raise TreasuryError(f"CMU was not found: {cmu_id}")
+    if len(matches) > 1:
+        raise TreasuryError(f"CMU matched multiple keysets: {cmu_id}")
+    resolved = matches[0].get("id")
+    if not isinstance(resolved, str) or not resolved:
+        raise TreasuryError(f"CMU keyset id is missing: {cmu_id}")
+    return resolved
+
+
+def _add_cmu_selector(command_parser: argparse.ArgumentParser, *, action: str) -> None:
+    selector = command_parser.add_mutually_exclusive_group(required=True)
+    selector.add_argument(
+        "--keyset-id",
+        default=None,
+        help=f"Treasurer CMU keyset id to {action}.",
+    )
+    selector.add_argument(
+        "--cmu-id",
+        default=None,
+        help=f"Canonical CMU id, for example cmu-..., to {action}.",
+    )
+
+
 def cmu_create(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
@@ -91,11 +128,13 @@ def cmu_create(args) -> int:
 
 def issue(args) -> int:
     nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    keyset_id = _resolve_keyset_id(mint, args)
     issued = issue_treasury_units(
-        args.mint.rstrip("/"),
+        mint,
         nsec,
         args.amount,
-        keyset_id=args.keyset_id,
+        keyset_id=keyset_id,
         memo=args.memo,
         lifetime_seconds=args.lifetime,
     )
@@ -141,12 +180,24 @@ def _export_or_swap(
     memo: str | None = None,
 ) -> dict:
     try:
-        return export_token(amount, wallet_path, memo=memo, remove=False)
+        return export_token(
+            amount,
+            wallet_path,
+            mint=mint_url,
+            unit=unit,
+            memo=memo,
+            remove=False,
+        )
     except ValueError as exc:
         if str(exc) != "wallet cannot export exact amount with current proof set":
             raise
 
-    selected = select_proofs_for_amount(amount, wallet_path)
+    selected = select_proofs_for_amount(
+        amount,
+        wallet_path,
+        mint=mint_url,
+        unit=unit,
+    )
     if selected["mint"] != mint_url or selected["unit"] != unit:
         raise TreasuryError("selected wallet proofs are not for this treasurer CMU")
     swapped = swap_token_for_amount(
@@ -160,6 +211,8 @@ def _export_or_swap(
     replace_selected_with_change(
         selected["amount"],
         wallet_path,
+        mint=mint_url,
+        unit=unit,
         change={
             "mint": swapped["mint"],
             "unit": unit,
@@ -169,13 +222,21 @@ def _export_or_swap(
             "proofs": replacement_proofs,
         },
     )
-    return export_token(amount, wallet_path, memo=memo, remove=False)
+    return export_token(
+        amount,
+        wallet_path,
+        mint=mint_url,
+        unit=unit,
+        memo=memo,
+        remove=False,
+    )
 
 
 def send(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
-    cmu = _cmu_info(mint, nsec, args.lifetime, keyset_id=args.keyset_id)
+    keyset_id = _resolve_keyset_id(mint, args)
+    cmu = _cmu_info(mint, nsec, args.lifetime, keyset_id=keyset_id)
     if not mint_has_public_route(mint) and not args.allow_internal_mint_delivery:
         raise DeliveryError(
             "clear-treasury cannot deliver tokens from an internal-only mint; "
@@ -210,7 +271,14 @@ def send(args) -> int:
         relays=args.relay,
         expiration=args.expiration,
     )
-    withdrawn = export_token(args.amount, wallet_path, memo=args.memo, remove=True)
+    withdrawn = export_token(
+        args.amount,
+        wallet_path,
+        mint=mint,
+        unit=cmu["unit"],
+        memo=args.memo,
+        remove=True,
+    )
     _print_json(
         {
             **withdrawn,
@@ -236,10 +304,11 @@ def wallet_balance(args) -> int:
 def cmu_info(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
+    keyset_id = _resolve_keyset_id(mint, args)
     envelope = build_cmu_info_envelope(
         mint=mint,
         nsec=nsec,
-        keyset_id=args.keyset_id,
+        keyset_id=keyset_id,
         lifetime_seconds=args.lifetime,
     )
     result = request_json(mint, "POST", "/v1/treasury/cmus/info", envelope)
@@ -255,10 +324,11 @@ def cmu_info(args) -> int:
 def cmu_summary(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
+    keyset_id = _resolve_keyset_id(mint, args)
     envelope = build_cmu_summary_envelope(
         mint=mint,
         nsec=nsec,
-        keyset_id=args.keyset_id,
+        keyset_id=keyset_id,
         lifetime_seconds=args.lifetime,
     )
     result = request_json(mint, "POST", "/v1/treasury/cmus/summary", envelope)
@@ -304,11 +374,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Issue CMU controlled by the treasurer nsec into the treasury wallet.",
     )
     issue_parser.add_argument("amount", type=int, help="Amount of CMU to issue.")
-    issue_parser.add_argument(
-        "--keyset-id",
-        required=True,
-        help="Treasurer CMU keyset id to issue.",
-    )
+    _add_cmu_selector(issue_parser, action="issue")
     issue_parser.add_argument("--memo", default=None, help="Optional quote memo.")
     issue_parser.add_argument(
         "--to-token",
@@ -332,11 +398,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     )
     send_parser.add_argument("amount", type=int)
     send_parser.add_argument("address")
-    send_parser.add_argument(
-        "--keyset-id",
-        required=True,
-        help="Treasurer CMU keyset id to send.",
-    )
+    _add_cmu_selector(send_parser, action="send")
     send_parser.add_argument("--memo", default=None)
     send_parser.add_argument(
         "--sender-nsec",
@@ -398,11 +460,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         "info",
         help="Show the active CMU controlled by the treasurer nsec.",
     )
-    cmu_info_parser.add_argument(
-        "--keyset-id",
-        required=True,
-        help="Treasurer CMU keyset id to inspect.",
-    )
+    _add_cmu_selector(cmu_info_parser, action="inspect")
     cmu_info_parser.add_argument(
         "--lifetime",
         type=int,
@@ -414,11 +472,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         "summary",
         help="Show supply totals for the CMU controlled by the treasurer nsec.",
     )
-    cmu_summary_parser.add_argument(
-        "--keyset-id",
-        required=True,
-        help="Treasurer CMU keyset id to summarize.",
-    )
+    _add_cmu_selector(cmu_summary_parser, action="summarize")
     cmu_summary_parser.add_argument(
         "--lifetime",
         type=int,

@@ -1097,17 +1097,16 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
     assert keys.json()["keysets"][0]["friendly_alias"] == "Gym Guest Passes"
     assert keys.json()["keysets"][0]["friendly_unit_alias"] == "passes"
     assert keys.json()["keysets"][0]["keys"]
-    assert grants == [
-        {
-            **grant,
-            "uses": 1,
-            "status": "consumed",
-            "updated_at": grants[0]["updated_at"],
-            "consumed_at": grants[0]["consumed_at"],
-            "keyset_id": cmu["keyset_id"],
-        },
-        next_grant.json(),
-    ]
+    grants_by_id = {item["id"]: item for item in grants}
+    assert grants_by_id[grant["id"]] == {
+        **grant,
+        "uses": 1,
+        "status": "consumed",
+        "updated_at": grants_by_id[grant["id"]]["updated_at"],
+        "consumed_at": grants_by_id[grant["id"]]["consumed_at"],
+        "keyset_id": cmu["keyset_id"],
+    }
+    assert grants_by_id[next_grant.json()["id"]] == next_grant.json()
 
 
 def test_operator_can_update_cmu_display_labels(tmp_path) -> None:

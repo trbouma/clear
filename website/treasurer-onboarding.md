@@ -126,7 +126,7 @@ The treasurer can ask the mint which active CMU is bound to their key:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   cmu info \
-  --keyset-id <keyset-id>
+  --cmu-id <cmu-id>
 ```
 
 Or, with `CLEAR_TREASURER_NSEC` already exported:
@@ -134,11 +134,12 @@ Or, with `CLEAR_TREASURER_NSEC` already exported:
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   cmu info \
-  --keyset-id <keyset-id>
+  --cmu-id <cmu-id>
 ```
 
 This is a signed read-only request. The mint returns the requested active CMU
-only if that treasurer key controls the named keyset.
+only if that treasurer key controls the named unit. `--keyset-id <keyset-id>` is
+also accepted when the treasurer wants to name the underlying keyset directly.
 
 ## 8. Operator Verifies the CMU
 
@@ -193,7 +194,7 @@ After onboarding, the treasurer can issue Mint Notes for their CMU:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Workshop credits"
 ```
 
@@ -221,7 +222,7 @@ To issue directly to a token instead of the local wallet:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Workshop credits" \
   --to-token
 ```
@@ -233,7 +234,7 @@ NIP-05 address or `npub`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   send 10 alice@example.com \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Guest pass"
 ```
 

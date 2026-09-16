@@ -76,17 +76,24 @@ def wallet_summary(
 
 def _compatible_proofs(
     wallet: dict[str, Any],
+    *,
+    mint: str | None = None,
+    unit: str | None = None,
 ) -> tuple[str | None, str | None, list[tuple[int, int, dict[str, Any]]]]:
     selected_mint: str | None = None
     selected_unit: str | None = None
     proofs: list[tuple[int, int, dict[str, Any]]] = []
     for entry_index, entry in enumerate(wallet["entries"]):
-        mint = entry["mint"]
-        unit = entry["unit"]
+        entry_mint = entry["mint"]
+        entry_unit = entry["unit"]
+        if mint is not None and entry_mint != mint:
+            continue
+        if unit is not None and entry_unit != unit:
+            continue
         if selected_mint is None:
-            selected_mint = mint
-            selected_unit = unit
-        if mint != selected_mint or unit != selected_unit:
+            selected_mint = entry_mint
+            selected_unit = entry_unit
+        if entry_mint != selected_mint or entry_unit != selected_unit:
             continue
         for proof_index, proof in enumerate(entry["proofs"]):
             proofs.append((entry_index, proof_index, proof))
@@ -133,9 +140,16 @@ def _remove_selected(
 def select_proofs_for_amount(
     amount: int,
     path: Path = DEFAULT_WALLET_PATH,
+    *,
+    mint: str | None = None,
+    unit: str | None = None,
 ) -> dict[str, Any]:
     wallet = load_wallet(path)
-    selected_mint, selected_unit, proofs = _compatible_proofs(wallet)
+    selected_mint, selected_unit, proofs = _compatible_proofs(
+        wallet,
+        mint=mint,
+        unit=unit,
+    )
     selected = _best_selection(proofs, amount, exact=False)
     if selected is None or selected_mint is None or selected_unit is None:
         raise ValueError("insufficient wallet balance")
@@ -152,10 +166,12 @@ def replace_selected_with_change(
     selected_amount: int,
     path: Path = DEFAULT_WALLET_PATH,
     *,
+    mint: str | None = None,
+    unit: str | None = None,
     change: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     wallet = load_wallet(path)
-    _, _, proofs = _compatible_proofs(wallet)
+    _, _, proofs = _compatible_proofs(wallet, mint=mint, unit=unit)
     selected = _best_selection(proofs, selected_amount, exact=True)
     if selected is None:
         raise ValueError("selected wallet proofs changed before update")
@@ -170,6 +186,8 @@ def export_token(
     amount: int,
     path: Path = DEFAULT_WALLET_PATH,
     *,
+    mint: str | None = None,
+    unit: str | None = None,
     memo: str | None = None,
     remove: bool = True,
 ) -> dict[str, Any]:
@@ -177,7 +195,11 @@ def export_token(
     if amount <= 0:
         raise ValueError("amount must be greater than zero")
 
-    selected_mint, selected_unit, proofs = _compatible_proofs(wallet)
+    selected_mint, selected_unit, proofs = _compatible_proofs(
+        wallet,
+        mint=mint,
+        unit=unit,
+    )
     selected = _best_selection(proofs, amount, exact=True)
     if selected is not None and selected_mint and selected_unit:
         selected_proofs = [proof for _, _, proof in selected]

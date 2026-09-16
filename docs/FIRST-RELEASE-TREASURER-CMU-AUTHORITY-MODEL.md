@@ -156,26 +156,29 @@ the treasurer supplies only:
 mint URL + treasurer nsec
 ```
 
-The CLI derives the corresponding `npub`, includes the intended keyset ID, asks
-the mint which CMU is currently authorized for that `npub` and keyset, and
-signs actions for that CMU.
+The CLI derives the corresponding `npub`, resolves the intended CMU id or
+keyset ID to a keyset, asks the mint which CMU is currently authorized for that
+`npub` and keyset, and signs actions for that CMU.
 
 ```text
 treasury CLI has nsec
   -> derives npub
+  -> CLI resolves cmu-... or keyset ID to one keyset
   -> mint resolves npub and required keyset ID to one CMU
   -> CLI signs issue or retire action for that CMU
   -> mint verifies signature against the CMU's current treasurer npub
 ```
 
-The CLI requires a keyset selector even when the treasurer controls only one
-active CMU. This prevents habit-forming commands that later become ambiguous.
+The CLI requires an explicit CMU selector even when the treasurer controls only
+one active CMU. The recommended selector is `--cmu-id cmu-...`; `--keyset-id`
+is accepted when the treasurer wants to name the underlying keyset directly.
+This prevents habit-forming commands that later become ambiguous.
 
 Required failure cases:
 
 - no CMU is bound to the derived `npub`;
 - the `npub` was rotated out;
-- the signed request omits the keyset ID;
+- the signed request omits the resolved keyset ID;
 - the derived `npub` does not control the requested keyset;
 - the CMU is suspended or not active for the requested action; or
 - the treasury gate is closed.
@@ -284,7 +287,7 @@ therefore should not change the holder-facing balance identity.
 - One CMU has exactly one active treasurer `npub`.
 - `clear-root treasurer grant <npub>` must fail while that treasurer already
   has an unused grant.
-- Treasurer operations must include a keyset ID.
+- Treasurer operations must include a CMU id or keyset ID.
 - A treasurer-created CMU is defined by its keyset, not by the treasurer key.
 - Treasurer `npub` rotation changes future authority only.
 - Keyset rotation creates a new CMU.

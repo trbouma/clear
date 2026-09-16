@@ -205,7 +205,7 @@ The treasurer can ask the mint which active CMU is bound to their `nsec`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   cmu info \
-  --keyset-id <keyset-id>
+  --cmu-id <cmu-id>
 ```
 
 Or, with `CLEAR_TREASURER_NSEC` already exported:
@@ -213,13 +213,14 @@ Or, with `CLEAR_TREASURER_NSEC` already exported:
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   cmu info \
-  --keyset-id <keyset-id>
+  --cmu-id <cmu-id>
 ```
 
 This command signs a read-only `cmu:info` request. The mint returns the
-requested active CMU only if that treasurer key controls the named keyset, and
+requested active CMU only if that treasurer key controls the named unit, and
 fails closed if the key is unknown, rotated out, inactive, or not authorized for
-that keyset.
+that CMU. `--keyset-id <keyset-id>` is also accepted when the treasurer wants to
+name the underlying keyset directly.
 
 The treasurer can inspect total supply for that CMU with:
 
@@ -227,7 +228,7 @@ The treasurer can inspect total supply for that CMU with:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   cmu summary \
-  --keyset-id <keyset-id>
+  --cmu-id <cmu-id>
 ```
 
 This is different from `wallet balance`: `cmu summary` reports mint-side issued,
@@ -295,7 +296,7 @@ After onboarding, the treasurer can issue Mint Notes for their CMU:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Workshop credits"
 ```
 
@@ -324,7 +325,7 @@ Or issue directly to a token instead of storing the proofs:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Workshop credits" \
   --to-token
 ```
@@ -336,7 +337,7 @@ compatible NIP-05 address or `npub`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   send 10 alice@example.com \
-  --keyset-id <keyset-id> \
+  --cmu-id <cmu-id> \
   --memo "Guest pass"
 ```
 
