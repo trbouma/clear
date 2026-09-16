@@ -3,12 +3,12 @@
 Status: First-release operator procedure
 
 This runbook describes the step-by-step flow for onboarding one treasurer to
-one Clear Mint Unit (CMU).
+one or more Clear Mint Units (CMUs).
 
-The first-release rule is strict:
+The first-release authority rule is:
 
 ```text
-one active treasurer npub -> one CMU
+one active treasurer npub -> one or more CMUs
 one CMU -> one active treasurer npub
 ```
 
@@ -123,9 +123,10 @@ docker compose exec clear-operator clear-root treasurer grants
 ```
 
 A first-release grant is intentionally narrow. It authorizes one
-keyset/CMU-creation path for one active treasurer. If that treasurer has
-already produced a keyset, a later `grant` for the same active `npub` must
-fail.
+keyset/CMU-creation path for one active treasurer. After the treasurer consumes
+that grant, the operator may issue another grant to the same active `npub`.
+Clear rejects overlapping unused grants so each CMU creation path remains
+explicit.
 
 ## Step 5: Give the Grant to the Treasurer
 
@@ -203,26 +204,30 @@ The treasurer can ask the mint which active CMU is bound to their `nsec`:
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu info
+  cmu info \
+  --keyset-id <keyset-id>
 ```
 
 Or, with `CLEAR_TREASURER_NSEC` already exported:
 
 ```bash
-clear-treasury --mint https://clear.safebox.dev cmu info
+clear-treasury --mint https://clear.safebox.dev \
+  cmu info \
+  --keyset-id <keyset-id>
 ```
 
-This command signs a read-only `cmu:info` request. The mint returns the single
-active CMU controlled by that treasurer key and fails closed if the key is
-unknown, rotated out, inactive, or ambiguously associated with more than one
-active CMU.
+This command signs a read-only `cmu:info` request. The mint returns the
+requested active CMU only if that treasurer key controls the named keyset, and
+fails closed if the key is unknown, rotated out, inactive, or not authorized for
+that keyset.
 
 The treasurer can inspect total supply for that CMU with:
 
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu summary
+  cmu summary \
+  --keyset-id <keyset-id>
 ```
 
 This is different from `wallet balance`: `cmu summary` reports mint-side issued,
@@ -278,8 +283,8 @@ The following failures are expected and should be treated as safety features:
 - consuming a grant with the wrong treasurer key is rejected;
 - consuming the same grant twice is rejected;
 - signing for a different mint URL is rejected;
-- creating a second grant for the same active treasurer after keyset creation
-  is rejected; and
+- creating another grant for the same active treasurer while an unused grant is
+  still pending is rejected; and
 - `clear-root` refuses to use a non-loopback operator API URL.
 
 ## After Onboarding
@@ -290,6 +295,7 @@ After onboarding, the treasurer can issue Mint Notes for their CMU:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
+  --keyset-id <keyset-id> \
   --memo "Workshop credits"
 ```
 
@@ -318,6 +324,7 @@ Or issue directly to a token instead of storing the proofs:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
+  --keyset-id <keyset-id> \
   --memo "Workshop credits" \
   --to-token
 ```
@@ -329,6 +336,7 @@ compatible NIP-05 address or `npub`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   send 10 alice@example.com \
+  --keyset-id <keyset-id> \
   --memo "Guest pass"
 ```
 

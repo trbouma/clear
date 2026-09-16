@@ -73,14 +73,13 @@ A grant records:
 
 In the first release, `clear-root treasurer grant <npub>` sets up one
 keyset/CMU creation path for that treasurer. The grant is consumed when the
-keyset is created. If that treasurer `npub` has already produced a keyset, a
-second grant for the same active treasurer must fail instead of creating
-another CMU.
+keyset is created. A treasurer may receive another grant after the previous
+grant has been consumed, allowing one treasurer identity to authorize multiple
+CMUs sequentially.
 
-Keyset rotation requires an explicit future procedure. In the first release,
-one treasurer identity authorizes at most one CMU at a time; allowing one
-treasurer identity to authorize multiple CMUs is deferred until explicit
-selection and policy rules exist.
+Keyset rotation requires an explicit future procedure. Multiple CMUs under one
+treasurer remain distinct by keyset ID and unit; treasurer-side operations must
+always name the intended keyset.
 
 Removing a treasurer prevents future authorizations. It does not invalidate a
 keyset already created, alter its CMU, or invalidate its circulating Mint
@@ -262,6 +261,6 @@ or submit the `nsec` to the mint. In separated custody, the treasurer should
 generate and retain their own `nsec`.
 
 In the first-release treasury CLI flow, the treasurer's `nsec` derives an
-`npub`, and the mint resolves that `npub` to exactly one CMU. If the `npub` is
-unknown, rotated out, suspended, or ambiguously associated with more than one
-CMU, the command fails closed.
+`npub`, and the mint resolves that `npub` plus the required keyset ID to one
+CMU. If the `npub` is unknown, rotated out, suspended, or not authorized for
+the requested keyset, the command fails closed.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
+import pytest
 from stroma import Event, Keys
 
 from clear import treasury_cli
@@ -99,6 +100,8 @@ def test_treasury_cli_cmu_info_signs_and_posts_envelope(monkeypatch, capsys) -> 
             treasurer.private_key_bech32(),
             "cmu",
             "info",
+            "--keyset-id",
+            "keyset-created",
         ],
     )
 
@@ -113,6 +116,9 @@ def test_treasury_cli_cmu_info_signs_and_posts_envelope(monkeypatch, capsys) -> 
         "/v1/treasury/cmus/info",
     )
     assert calls[0][4] is None
+    event = Event.load(calls[0][3]["event"], validate=True)
+    assert event is not None
+    assert json.loads(event.content)["keyset_id"] == "keyset-created"
 
 
 def test_treasury_cli_cmu_summary_signs_and_posts_envelope(
@@ -152,6 +158,8 @@ def test_treasury_cli_cmu_summary_signs_and_posts_envelope(
             treasurer.private_key_bech32(),
             "cmu",
             "summary",
+            "--keyset-id",
+            "keyset-created",
         ],
     )
 
@@ -167,6 +175,9 @@ def test_treasury_cli_cmu_summary_signs_and_posts_envelope(
         "/v1/treasury/cmus/summary",
     )
     assert calls[0][4] is None
+    event = Event.load(calls[0][3]["event"], validate=True)
+    assert event is not None
+    assert json.loads(event.content)["keyset_id"] == "keyset-created"
 
 
 def test_treasury_cli_issue_deposits_to_treasurer_wallet(
@@ -180,12 +191,14 @@ def test_treasury_cli_issue_deposits_to_treasurer_wallet(
         nsec,
         amount,
         *,
+        keyset_id=None,
         memo=None,
         lifetime_seconds=300,
     ):
         assert mint_url == "https://clear.example"
         assert nsec == treasurer.private_key_bech32()
         assert amount == 13
+        assert keyset_id == "keyset-created"
         assert memo == "Workshop credits"
         assert lifetime_seconds == 300
         return {
@@ -220,6 +233,8 @@ def test_treasury_cli_issue_deposits_to_treasurer_wallet(
             str(wallet_path),
             "issue",
             "13",
+            "--keyset-id",
+            "keyset-created",
             "--memo",
             "Workshop credits",
         ],
@@ -348,7 +363,7 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
     monkeypatch.setattr(
         treasury_cli,
         "_cmu_info",
-        lambda mint, nsec, lifetime_seconds: {
+        lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
         },
@@ -401,6 +416,8 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
             "send",
             "13",
             "alice@example.com",
+            "--keyset-id",
+            "keyset-created",
             "--memo",
             "Gift",
             "--relay",
@@ -426,7 +443,7 @@ def test_treasury_cli_send_rejects_internal_mint_before_discovery(
     monkeypatch.setattr(
         treasury_cli,
         "_cmu_info",
-        lambda mint, nsec, lifetime_seconds: {
+        lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
         },
@@ -451,6 +468,8 @@ def test_treasury_cli_send_rejects_internal_mint_before_discovery(
             "send",
             "20",
             "alice@example.com",
+            "--keyset-id",
+            "keyset-created",
         ],
     )
 
@@ -465,7 +484,7 @@ def test_treasury_cli_internal_mint_override_requires_explicit_relay(
     monkeypatch.setattr(
         treasury_cli,
         "_cmu_info",
-        lambda mint, nsec, lifetime_seconds: {
+        lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
         },
@@ -481,6 +500,8 @@ def test_treasury_cli_internal_mint_override_requires_explicit_relay(
             "send",
             "20",
             "alice@example.com",
+            "--keyset-id",
+            "keyset-created",
             "--allow-internal-mint-delivery",
         ],
     )
@@ -511,7 +532,7 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
     monkeypatch.setattr(
         treasury_cli,
         "_cmu_info",
-        lambda mint, nsec, lifetime_seconds: {
+        lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
             "keyset_id": "keyset-created",
         },
@@ -576,6 +597,8 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
             "send",
             "13",
             "alice@example.com",
+            "--keyset-id",
+            "keyset-created",
         ],
     )
 
@@ -584,6 +607,27 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
     assert summary["balances"] == [
         {"mint": "https://clear.example", "unit": "cmu-created", "amount": 3}
     ]
+
+
+def test_treasury_cli_issue_requires_keyset_id(monkeypatch, capsys) -> None:
+    treasurer = Keys(priv_k="1".zfill(64))
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-treasury",
+            "--mint",
+            "https://clear.example",
+            "--nsec",
+            treasurer.private_key_bech32(),
+            "issue",
+            "13",
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        treasury_cli.main()
+    assert exc.value.code == 2
+    assert "--keyset-id" in capsys.readouterr().err
 
 
 def test_treasury_cli_requires_nsec(monkeypatch, capsys) -> None:

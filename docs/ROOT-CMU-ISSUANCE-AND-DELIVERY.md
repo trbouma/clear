@@ -41,6 +41,8 @@ CLEAR_DATABASE=./data/clear.sqlite3
 CLEAR_MINT_URL=http://127.0.0.1:3339
 CLEAR_ROOT_API_URL=http://127.0.0.1:3340
 CLEAR_CURRENCY_NAME="Clear Lab Credit Program"
+CLEAR_MINT_TITLE="Clear Mint"
+CLEAR_MINT_TAG_LINE="Privately issued community value."
 CLEAR_CURRENCY_ALIAS="Clear Lab Credits"
 CLEAR_CURRENCY_UNIT_ALIAS="credits"
 CLEAR_ROOT_AUTHORITY_NPUB=npub...
@@ -79,11 +81,14 @@ the CLI to bypass the reverse proxy without placing that loopback address in
 tokens. Outside Docker it defaults to `http://127.0.0.1:3339` and rejects
 non-loopback addresses unless explicitly configured otherwise.
 
-`CLEAR_CURRENCY_ALIAS` and `CLEAR_CURRENCY_UNIT_ALIAS` are startup defaults for
-wallet-facing display metadata. They seed the legacy/root CMU label when the
-CMU keyset record is first created or migrated, but they do not overwrite an
-existing CMU label already persisted in the mint database. To rename a live
-CMU, update the CMU record explicitly:
+`CLEAR_MINT_TITLE` controls the public homepage title and defaults to
+`Clear Mint`. `CLEAR_MINT_TAG_LINE` controls the homepage tagline and defaults
+to `Privately issued community value.` `CLEAR_CURRENCY_ALIAS` and
+`CLEAR_CURRENCY_UNIT_ALIAS` are startup defaults for wallet-facing display
+metadata. They seed the legacy/root CMU label when the CMU keyset record is
+first created or migrated, but they do not overwrite an existing CMU label
+already persisted in the mint database. To rename a live CMU, update the CMU
+record explicitly:
 
 ```sh
 docker compose exec clear-operator clear-root cmu label cmu-<keyset-id-or-unit> \

@@ -7,11 +7,11 @@ Status: Accepted first-release constraint
 Treasurers are optional. A Clear mint may continue to operate in the simple
 single-operator model with no treasurers configured.
 
-When treasurers are configured for the first release, Clear uses a strict
-one-to-one authority model:
+When treasurers are configured for the first release, each CMU has one active
+treasurer, while a treasurer may control more than one CMU:
 
 ```text
-one active treasurer npub -> one CMU
+one active treasurer npub -> one or more CMUs
 one CMU -> one active treasurer npub
 ```
 
@@ -135,18 +135,17 @@ In the `clear-root` command model, `add` and `grant` have distinct meanings:
   `nsec`.
 - `clear-root treasurer add <npub>` records a treasurer public key that may be
   considered for authority.
-- `clear-root treasurer grant <npub>` sets up that treasurer's one permitted
-  keyset/CMU creation path.
+- `clear-root treasurer grant <npub>` sets up one permitted keyset/CMU
+  creation path for that treasurer.
 - `clear-root cmu create <grant-id> --name <name>` consumes the pending grant,
   generates the mint-held random keyset, and creates the corresponding CMU.
 - `clear-root cmu list` shows the legacy/default CMU and any treasurer-created
   CMUs.
 
-For the first release, `grant` is single-use and CMU-creating in intent. If a
-grant for that treasurer has already produced a keyset, a second grant for the
-same active treasurer must fail. The operator should rotate the treasurer
-`npub` for the existing CMU, suspend/remove the treasurer, or use a later
-explicit multi-CMU model instead of silently creating another unit.
+For the first release, each grant is single-use and CMU-creating in intent.
+The operator may issue another grant to the same active treasurer after the
+previous grant is consumed. Clear still rejects overlapping unused grants for
+the same treasurer so every CMU creation path remains explicit.
 
 ## Treasury CLI Resolution
 
@@ -157,31 +156,32 @@ the treasurer supplies only:
 mint URL + treasurer nsec
 ```
 
-The CLI derives the corresponding `npub`, asks the mint which CMU is currently
-authorized for that `npub`, and signs actions for that CMU.
+The CLI derives the corresponding `npub`, includes the intended keyset ID, asks
+the mint which CMU is currently authorized for that `npub` and keyset, and
+signs actions for that CMU.
 
 ```text
 treasury CLI has nsec
   -> derives npub
-  -> mint resolves npub to exactly one CMU
+  -> mint resolves npub and required keyset ID to one CMU
   -> CLI signs issue or retire action for that CMU
   -> mint verifies signature against the CMU's current treasurer npub
 ```
 
-The CLI should not require a normal treasurer to manually choose a keyset or
-CMU. If the derived `npub` is not the current authority for exactly one CMU,
-the command fails closed.
+The CLI requires a keyset selector even when the treasurer controls only one
+active CMU. This prevents habit-forming commands that later become ambiguous.
 
 Required failure cases:
 
 - no CMU is bound to the derived `npub`;
 - the `npub` was rotated out;
-- the mint returns more than one CMU for the `npub`;
+- the signed request omits the keyset ID;
+- the derived `npub` does not control the requested keyset;
 - the CMU is suspended or not active for the requested action; or
 - the treasury gate is closed.
 
-The first release must reject the ambiguous "one `npub` controls multiple
-CMUs" case instead of adding selection UX.
+The first release must reject ambiguous treasury operations instead of guessing
+which CMU a treasurer intended.
 
 ## Authority Rotation
 
@@ -280,10 +280,11 @@ therefore should not change the holder-facing balance identity.
 - `clear-root` remains the local single-operator path when no treasurers are
   configured.
 - The mint stores treasurer `npub` values only, never treasurer `nsec` values.
-- One active treasurer `npub` resolves to exactly one CMU.
+- One active treasurer `npub` may control multiple CMUs.
 - One CMU has exactly one active treasurer `npub`.
-- `clear-root treasurer grant <npub>` must fail if that treasurer has already
-  created a keyset/CMU.
+- `clear-root treasurer grant <npub>` must fail while that treasurer already
+  has an unused grant.
+- Treasurer operations must include a keyset ID.
 - A treasurer-created CMU is defined by its keyset, not by the treasurer key.
 - Treasurer `npub` rotation changes future authority only.
 - Keyset rotation creates a new CMU.

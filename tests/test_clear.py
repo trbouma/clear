@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 from dataclasses import replace
 
 import pytest
@@ -17,6 +18,7 @@ from clear.treasury_auth import (
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
     build_quote_authorize_envelope,
+    sign_payload,
 )
 
 MASTER_SECRET = "11" * 32
@@ -31,6 +33,8 @@ def settings(
     *,
     master_secret: str = MASTER_SECRET,
     currency_name: str = "Example Credits",
+    mint_title: str = "Clear Mint",
+    mint_tag_line: str = "Privately issued community value.",
     root_authority_npub: str | None = None,
     currency_alias: str | None = None,
     currency_unit_alias: str | None = None,
@@ -47,6 +51,8 @@ def settings(
         master_secret=master_secret,
         operator_token=OPERATOR_TOKEN,
         currency_name=currency_name,
+        mint_title=mint_title,
+        mint_tag_line=mint_tag_line,
         mint_url="https://clear.example",
         max_order=10,
         root_authority_npub=root_authority_npub,
@@ -387,9 +393,11 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert '<html lang="en" dir="ltr">' in homepage.text
     assert '<select id="language" name="lang"' in homepage.text
     assert '<option value="en" selected>English</option>' in homepage.text
+    assert "<h1><bdi dir=\"auto\">Clear Mint</bdi></h1>" in homepage.text
+    assert "Privately issued community value." in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
-    assert "Active keysets" in homepage.text
+    assert "Mint Units In Circulation" in homepage.text
     assert "Operator keyset" in homepage.text
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
@@ -441,22 +449,47 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
             },
             headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
         ).json()
+        created_keyset = client.app.state.store.keysets[created["keyset_id"]]
+        issue_proof(
+            client,
+            created_keyset,
+            amount=8,
+            secret="homepage-created-cmu-proof",
+        )
         homepage = client.get("/", headers={"Accept": "text/html"})
         keysets = client.get("/v1/keysets").json()["keysets"]
 
     assert homepage.status_code == 200
-    assert "Active keysets" in homepage.text
+    assert "Mint Units In Circulation" in homepage.text
     assert "Operator keyset" in homepage.text
     assert "Authorized treasury keyset" in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "Gym Guest Passes" in homepage.text
     assert "passes" in homepage.text
+    assert "Outstanding" in homepage.text
+    assert "<td><bdi dir=\"auto\">8</bdi></td>" in homepage.text
     assert created["unit"] in homepage.text
     assert created["keyset_id"] in homepage.text
     assert {item["authority"] for item in keysets} == {
         "operator",
         "authorized-treasury",
     }
+
+
+def test_browser_homepage_uses_configured_mint_title(tmp_path) -> None:
+    configured = settings(
+        tmp_path,
+        mint_title="Harbour Credit Service",
+        mint_tag_line="Community credits for neighbourly exchange.",
+        currency_alias="Harbour Lab Credits",
+    )
+    with TestClient(create_app(configured)) as client:
+        homepage = client.get("/", headers={"Accept": "text/html"})
+
+    assert homepage.status_code == 200
+    assert "<h1><bdi dir=\"auto\">Harbour Credit Service</bdi></h1>" in homepage.text
+    assert "Community credits for neighbourly exchange." in homepage.text
+    assert "Harbour Lab Credits" in homepage.text
 
 
 def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:
@@ -976,7 +1009,7 @@ def test_operator_grant_requires_active_treasurer_and_is_single_use(tmp_path) ->
     assert listed.json()["grants"] == [granted.json()]
 
 
-def test_store_rejects_grant_after_treasurer_created_cmu(tmp_path) -> None:
+def test_store_allows_new_grant_after_treasurer_created_cmu(tmp_path) -> None:
     configured = settings(tmp_path)
     app = create_app(configured)
     npub = "npub1treasurer0000000000000000000000000000000000000000"
@@ -986,12 +1019,14 @@ def test_store_rejects_grant_after_treasurer_created_cmu(tmp_path) -> None:
         consumed = app.state.store.consume_treasurer_grant(
             grant["id"], "keyset-created-by-grant"
         )
-        with pytest.raises(ClearError, match="already created a CMU"):
-            app.state.store.grant_treasurer(npub)
+        next_grant = app.state.store.grant_treasurer(npub)
 
     assert consumed["status"] == "consumed"
     assert consumed["uses"] == 1
     assert consumed["keyset_id"] == "keyset-created-by-grant"
+    assert next_grant["status"] == "pending"
+    assert next_grant["npub"] == npub
+    assert next_grant["keyset_id"] is None
 
 
 def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> None:
@@ -1023,7 +1058,7 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
             json={"grant_id": grant["id"], "name": "Again"},
             headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
         )
-        duplicate_grant = client.post(
+        next_grant = client.post(
             "/v1/operator/treasurer-grants",
             json={"npub": npub},
             headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
@@ -1047,8 +1082,10 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
     assert cmu["status"] == "active"
     assert duplicate_create.status_code == 400
     assert "not pending" in duplicate_create.json()["detail"]
-    assert duplicate_grant.status_code == 400
-    assert "already created a CMU" in duplicate_grant.json()["detail"]
+    assert next_grant.status_code == 200
+    assert next_grant.json()["npub"] == npub
+    assert next_grant.json()["status"] == "pending"
+    assert next_grant.json()["keyset_id"] is None
     assert len(legacy_keysets) == 1
     assert len(keysets) == 2
     assert {item["id"] for item in keysets} == {
@@ -1068,7 +1105,8 @@ def test_operator_can_create_cmu_from_grant_and_discover_keyset(tmp_path) -> Non
             "updated_at": grants[0]["updated_at"],
             "consumed_at": grants[0]["consumed_at"],
             "keyset_id": cmu["keyset_id"],
-        }
+        },
+        next_grant.json(),
     ]
 
 
@@ -1269,6 +1307,7 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
         envelope = build_cmu_info_envelope(
             mint="https://clear.example",
             nsec=treasurer.private_key_bech32(),
+            keyset_id=created["keyset_id"],
         )
         response = client.post("/v1/treasury/cmus/info", json=envelope)
         replay = client.post("/v1/treasury/cmus/info", json=envelope)
@@ -1282,6 +1321,80 @@ def test_treasurer_can_inspect_bound_cmu_over_public_treasury_route(tmp_path) ->
     assert response.json()["treasurer_pubkey"] == treasurer.public_key_hex()
     assert replay.status_code == 400
     assert "nonce has already been used" in replay.json()["detail"]
+
+
+def test_treasurer_selects_cmu_when_multiple_are_active(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        first_grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        first_cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=first_grant["id"],
+                name="First Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        second_grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        second_cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=second_grant["id"],
+                name="Second Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        now = int(time.time())
+        missing_keyset_payload = {
+            "action": "cmu:info",
+            "mint": "https://clear.example",
+            "nonce": "ab" * 32,
+            "created_at": now,
+            "expires_at": now + 300,
+        }
+        missing_keyset = client.post(
+            "/v1/treasury/cmus/info",
+            json={
+                "payload": missing_keyset_payload,
+                "event": sign_payload(
+                    missing_keyset_payload,
+                    treasurer.private_key_bech32(),
+                ),
+            },
+        )
+        selected = client.post(
+            "/v1/treasury/cmus/info",
+            json=build_cmu_info_envelope(
+                mint="https://clear.example",
+                nsec=treasurer.private_key_bech32(),
+                keyset_id=second_cmu["keyset_id"],
+            ),
+        )
+
+    assert first_cmu["keyset_id"] != second_cmu["keyset_id"]
+    assert missing_keyset.status_code == 400
+    assert "keyset_id is required" in missing_keyset.json()["detail"]
+    assert selected.status_code == 200
+    assert selected.json()["keyset_id"] == second_cmu["keyset_id"]
+    assert selected.json()["friendly_name"] == "Second Credits"
 
 
 def test_treasurer_can_inspect_bound_cmu_supply_summary(tmp_path) -> None:
@@ -1325,6 +1438,7 @@ def test_treasurer_can_inspect_bound_cmu_supply_summary(tmp_path) -> None:
         envelope = build_cmu_summary_envelope(
             mint="https://clear.example",
             nsec=treasurer.private_key_bech32(),
+            keyset_id=cmu["keyset_id"],
         )
         response = client.post("/v1/treasury/cmus/summary", json=envelope)
         replay = client.post("/v1/treasury/cmus/summary", json=envelope)
@@ -1353,11 +1467,12 @@ def test_treasury_cmu_info_rejects_unbound_treasurer(tmp_path) -> None:
             json=build_cmu_info_envelope(
                 mint="https://clear.example",
                 nsec=treasurer.private_key_bech32(),
+                keyset_id="missing-keyset",
             ),
         )
 
     assert response.status_code == 400
-    assert "does not control an active CMU" in response.json()["detail"]
+    assert "does not control requested CMU" in response.json()["detail"]
 
 
 def test_treasurer_can_authorize_quote_for_bound_cmu(tmp_path) -> None:
@@ -1592,6 +1707,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
                 f"CLEAR_OPERATOR_TOKEN={OPERATOR_TOKEN}",
                 f"CLEAR_DATABASE={database_path}",
                 "CLEAR_CURRENCY_NAME=Dotenv Credits",
+                "CLEAR_MINT_TITLE=Dotenv Mint",
+                "CLEAR_MINT_TAG_LINE=Dotenv tagline",
                 "CLEAR_ROOT_AUTHORITY_NPUB=npub1dotenvrootauthority",
                 f"CLEAR_MINT_SERVICE_NSEC={MINT_SERVICE_NSEC}",
                 "CLEAR_MINT_SERVICE_MANAGEMENT=mainstay-managed",
@@ -1606,6 +1723,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     monkeypatch.delenv("CLEAR_OPERATOR_TOKEN", raising=False)
     monkeypatch.delenv("CLEAR_DATABASE", raising=False)
     monkeypatch.delenv("CLEAR_CURRENCY_NAME", raising=False)
+    monkeypatch.delenv("CLEAR_MINT_TITLE", raising=False)
+    monkeypatch.delenv("CLEAR_MINT_TAG_LINE", raising=False)
     monkeypatch.delenv("CLEAR_ROOT_AUTHORITY_NPUB", raising=False)
     monkeypatch.delenv("CLEAR_MINT_SERVICE_NSEC", raising=False)
     monkeypatch.delenv("CLEAR_MINT_SERVICE_MANAGEMENT", raising=False)
@@ -1619,6 +1738,8 @@ def test_settings_load_from_working_directory_env_file(tmp_path, monkeypatch) ->
     assert settings.operator_token == OPERATOR_TOKEN
     assert settings.database_path == database_path
     assert settings.currency_name == "Dotenv Credits"
+    assert settings.mint_title == "Dotenv Mint"
+    assert settings.mint_tag_line == "Dotenv tagline"
     assert settings.root_authority_npub == "npub1dotenvrootauthority"
     assert settings.mint_service_npub == MINT_SERVICE_NPUB
     assert settings.mint_service_management == "mainstay-managed"

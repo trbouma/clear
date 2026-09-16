@@ -1108,14 +1108,22 @@ class Store:
             "outstanding": circulating,
         }
 
-    def _active_cmu_for_treasury_pubkey(self, connection, pubkey: str):
+    def _active_cmu_for_treasury_pubkey(
+        self,
+        connection,
+        pubkey: str,
+        keyset_id: str | None = None,
+    ):
         rows = connection.execute(
             """
             SELECT c.* FROM cmus c
             JOIN treasurers t ON t.npub = c.treasurer_npub
-            WHERE t.status = 'active' AND c.status = 'active'
+            WHERE t.status = 'active'
+              AND c.status = 'active'
+              AND (? IS NULL OR c.keyset_id = ?)
             ORDER BY c.created_at, c.keyset_id
-            """
+            """,
+            (keyset_id, keyset_id),
         ).fetchall()
         matches = [
             row
@@ -1123,9 +1131,13 @@ class Store:
             if self._grant_matches_pubkey(row["treasurer_npub"], pubkey)
         ]
         if not matches:
+            if keyset_id is not None:
+                raise ClearError("treasurer does not control requested CMU")
             raise ClearError("treasurer does not control an active CMU")
         if len(matches) > 1:
-            raise ClearError("treasurer controls multiple active CMUs")
+            raise ClearError(
+                "treasurer controls multiple active CMUs; keyset_id is required"
+            )
         return matches[0]
 
     @staticmethod
@@ -1201,14 +1213,6 @@ class Store:
             ).fetchone()
             if treasurer is None or treasurer["status"] != "active":
                 raise ClearError("treasurer must be active before grant")
-            consumed = connection.execute(
-                "SELECT * FROM treasurer_grants "
-                "WHERE npub = ? AND keyset_id IS NOT NULL "
-                "ORDER BY consumed_at DESC LIMIT 1",
-                (normalized,),
-            ).fetchone()
-            if consumed is not None:
-                raise ClearError("treasurer grant has already created a CMU")
             pending = connection.execute(
                 "SELECT * FROM treasurer_grants "
                 "WHERE npub = ? AND status = 'pending' "
@@ -1251,13 +1255,6 @@ class Store:
                 raise ClearError("treasurer grant not found")
             if row["status"] != "pending":
                 raise ClearError("treasurer grant is not pending")
-            consumed = connection.execute(
-                "SELECT 1 FROM treasurer_grants "
-                "WHERE npub = ? AND keyset_id IS NOT NULL",
-                (row["npub"],),
-            ).fetchone()
-            if consumed is not None:
-                raise ClearError("treasurer grant has already created a CMU")
             now = self._now(row["updated_at"])
             connection.execute(
                 "UPDATE treasurer_grants SET uses = 1, status = 'consumed', "
@@ -1370,7 +1367,14 @@ class Store:
                 action=payload["action"],
                 now=now,
             )
-            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"])
+            keyset_id = payload.get("keyset_id")
+            if not isinstance(keyset_id, str) or not keyset_id:
+                raise ClearError("treasury request keyset_id is required")
+            cmu = self._active_cmu_for_treasury_pubkey(
+                connection,
+                event["pubkey"],
+                keyset_id,
+            )
         return {
             **self._cmu_response(cmu),
             "treasurer_pubkey": event["pubkey"],
@@ -1399,7 +1403,14 @@ class Store:
                 action=payload["action"],
                 now=now,
             )
-            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"])
+            keyset_id = payload.get("keyset_id")
+            if not isinstance(keyset_id, str) or not keyset_id:
+                raise ClearError("treasury request keyset_id is required")
+            cmu = self._active_cmu_for_treasury_pubkey(
+                connection,
+                event["pubkey"],
+                keyset_id,
+            )
             summary = self._summary_for_keyset_id(connection, cmu["keyset_id"])
         return {
             **summary,
@@ -1466,12 +1477,6 @@ class Store:
         ).fetchone()
         if treasurer is None or treasurer["status"] != "active":
             raise ClearError("treasurer must be active before CMU creation")
-        consumed = connection.execute(
-            "SELECT 1 FROM treasurer_grants WHERE npub = ? AND keyset_id IS NOT NULL",
-            (grant["npub"],),
-        ).fetchone()
-        if consumed is not None:
-            raise ClearError("treasurer grant has already created a CMU")
         return grant
 
     @staticmethod

@@ -24,6 +24,8 @@ class Settings:
     master_secret: str
     operator_token: str
     currency_name: str = "Clear Mint Units"
+    mint_title: str = "Clear Mint"
+    mint_tag_line: str = "Privately issued community value."
     mint_url: str = "http://127.0.0.1:3339"
     max_order: int = 20
     root_authority_npub: str | None = None
@@ -90,6 +92,11 @@ class Settings:
             master_secret=master_secret,
             operator_token=operator_token,
             currency_name=os.getenv("CLEAR_CURRENCY_NAME", "Clear Mint Units"),
+            mint_title=os.getenv("CLEAR_MINT_TITLE", "Clear Mint"),
+            mint_tag_line=os.getenv(
+                "CLEAR_MINT_TAG_LINE",
+                "Privately issued community value.",
+            ),
             mint_url=os.getenv("CLEAR_MINT_URL", "http://127.0.0.1:3339").rstrip("/"),
             max_order=int(os.getenv("CLEAR_MAX_ORDER", "20")),
             root_authority_npub=os.getenv("CLEAR_ROOT_AUTHORITY_NPUB") or None,

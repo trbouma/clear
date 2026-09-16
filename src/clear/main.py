@@ -255,6 +255,20 @@ def create_app(
     async def information(request: Request):
         accept = request.headers.get("accept", "").lower()
         if "text/html" in accept:
+            active_keysets = []
+            for item in store.keyset_responses(include_keys=False):
+                active_keyset = dict(item)
+                try:
+                    supply = store.summary_for_keyset(str(item["id"]))
+                except ClearError:
+                    supply = {
+                        "issued": 0,
+                        "retired": 0,
+                        "circulating": 0,
+                        "outstanding": 0,
+                    }
+                active_keyset["supply"] = supply
+                active_keysets.append(active_keyset)
             language = resolve_language(
                 request.query_params.get("lang"),
                 request.headers.get("accept-language"),
@@ -265,6 +279,8 @@ def create_app(
                 render_homepage(
                     version=__version__,
                     mint_url=configured.mint_url,
+                    mint_title=configured.mint_title,
+                    mint_tag_line=configured.mint_tag_line,
                     currency_name=configured.currency_name,
                     currency_alias=configured.currency_alias,
                     currency_unit_alias=configured.currency_unit_alias,
@@ -280,7 +296,7 @@ def create_app(
                     root_authority_configured=(
                         configured.root_authority_npub is not None
                     ),
-                    active_keysets=store.keyset_responses(include_keys=False),
+                    active_keysets=active_keysets,
                     language=language,
                 ),
                 headers={

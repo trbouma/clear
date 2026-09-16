@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from stroma import Event, Keys
 
@@ -175,6 +177,7 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
         "https://clear.example/",
         treasurer.private_key_bech32(),
         13,
+        keyset_id="keyset-created",
         memo="test issuance",
     )
 
@@ -190,6 +193,9 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
     )
     assert calls[4][0:2] == ("POST", "/v1/treasury/quotes/quote-id/authorize")
     assert calls[4][3] is None
+    info_event = Event.load(calls[0][2]["event"], validate=True)
+    assert info_event is not None
+    assert json.loads(info_event.content)["keyset_id"] == "keyset-created"
 
 
 def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> None:

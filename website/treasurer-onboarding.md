@@ -1,12 +1,12 @@
 # Onboarding a Treasurer
 
 This page gives the first-release operator flow for adding one treasurer and
-creating one treasurer-authorized Clear Mint Unit (CMU).
+creating one or more treasurer-authorized Clear Mint Units (CMUs).
 
-The rule is strict:
+The authority rule is:
 
 ```text
-one active treasurer npub -> one CMU
+one active treasurer npub -> one or more CMUs
 one CMU -> one active treasurer npub
 ```
 
@@ -63,7 +63,8 @@ docker compose exec clear-operator clear-root treasurer grants
 ```
 
 Copy the returned grant ID. A first-release grant is single-use and intended to
-produce one keyset and one CMU.
+produce one keyset and one CMU. After it is consumed, the same treasurer may
+receive another grant for another CMU.
 
 ## 5. Send the Grant Out of Band
 
@@ -124,17 +125,20 @@ The treasurer can ask the mint which active CMU is bound to their key:
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu info
+  cmu info \
+  --keyset-id <keyset-id>
 ```
 
 Or, with `CLEAR_TREASURER_NSEC` already exported:
 
 ```bash
-clear-treasury --mint https://clear.safebox.dev cmu info
+clear-treasury --mint https://clear.safebox.dev \
+  cmu info \
+  --keyset-id <keyset-id>
 ```
 
-This is a signed read-only request. The mint returns one active CMU or fails
-closed.
+This is a signed read-only request. The mint returns the requested active CMU
+only if that treasurer key controls the named keyset.
 
 ## 8. Operator Verifies the CMU
 
@@ -177,8 +181,8 @@ These failures are expected:
 - consuming a grant with the wrong key is rejected;
 - consuming a grant twice is rejected;
 - signing for a different mint URL is rejected;
-- creating another grant for the same active treasurer after CMU creation is
-  rejected; and
+- creating another grant for the same active treasurer while an unused grant is
+  still pending is rejected; and
 - `clear-root` refuses non-loopback operator API URLs.
 
 ## 9. Treasurer Issues Mint Notes
@@ -189,6 +193,7 @@ After onboarding, the treasurer can issue Mint Notes for their CMU:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
+  --keyset-id <keyset-id> \
   --memo "Workshop credits"
 ```
 
@@ -216,6 +221,7 @@ To issue directly to a token instead of the local wallet:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
+  --keyset-id <keyset-id> \
   --memo "Workshop credits" \
   --to-token
 ```
@@ -227,6 +233,7 @@ NIP-05 address or `npub`:
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   send 10 alice@example.com \
+  --keyset-id <keyset-id> \
   --memo "Guest pass"
 ```
 

@@ -126,15 +126,18 @@ clear-treasury --mint https://clear.safebox.dev \
 
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu info
+  cmu info \
+  --keyset-id <keyset-id>
 
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu summary
+  cmu summary \
+  --keyset-id <keyset-id>
 
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   issue 25 \
+  --keyset-id <keyset-id> \
   --memo "Food share allocation"
 
 clear-treasury --mint https://clear.safebox.dev \
@@ -144,6 +147,7 @@ clear-treasury --mint https://clear.safebox.dev \
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
   send 10 recipient@example.org \
+  --keyset-id <keyset-id> \
   --memo "Food share"
 ```
 

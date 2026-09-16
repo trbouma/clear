@@ -200,6 +200,7 @@ def issue_treasury_units(
     nsec: str,
     amount: int,
     *,
+    keyset_id: str,
     memo: str | None = None,
     lifetime_seconds: int = 300,
 ) -> dict[str, Any]:
@@ -216,6 +217,7 @@ def issue_treasury_units(
         build_cmu_info_envelope(
             mint=api_url,
             nsec=nsec,
+            keyset_id=keyset_id,
             lifetime_seconds=lifetime_seconds,
         ),
     )

@@ -46,7 +46,7 @@ underlying keyset.
 | --- | --- | --- |
 | `mint_metadata` | Database schema and root keyset identity binding | Deployment-level |
 | `cmus` | CMU registry, display metadata, public keys, and key material metadata | One row per keyset/CMU |
-| `treasurers` | Authorized treasurer public keys | One treasurer may be bound to one CMU in the first release |
+| `treasurers` | Authorized treasurer public keys | One treasurer may be bound to multiple CMUs |
 | `treasurer_grants` | Single-use keyset/CMU creation grants | Consumed grant records resulting `keyset_id` |
 | `treasury_nonces` | Replay protection for signed treasury requests | Shared replay set across treasury actions |
 | `commissioning_verifications` | Durable root-verification results and non-secret evidence | One row per verification run |
@@ -181,8 +181,9 @@ For this keyset:
 - `material_kind` is `legacy-derived-v1`;
 - `encrypted_secret` is `NULL`;
 - `treasurer_npub` is `NULL`;
-- display labels are populated from `CLEAR_CURRENCY_ALIAS` and
-  `CLEAR_CURRENCY_UNIT_ALIAS`; and
+- CMU display labels are populated from `CLEAR_CURRENCY_ALIAS` and
+  `CLEAR_CURRENCY_UNIT_ALIAS`; the homepage title is separately controlled by
+  `CLEAR_MINT_TITLE`, and the homepage tagline by `CLEAR_MINT_TAG_LINE`; and
 - changing `CLEAR_MASTER_SECRET` or `CLEAR_ROOT_AUTHORITY_NPUB` changes the
   root keyset and must not be applied to an existing database.
 
@@ -290,8 +291,8 @@ The current grant scope is `keyset:create`. A grant starts as pending, can be
 used once, and is consumed when the CMU is created. When consumed, the grant row
 records the new `keyset_id`.
 
-The mint rejects a new grant for an active treasurer that has already created a
-CMU in the first-release model.
+The mint rejects a new grant for an active treasurer only while another grant
+for that treasurer is still pending.
 
 ### `treasury_nonces`
 

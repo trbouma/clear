@@ -21,7 +21,7 @@ financial service.
 Treasurers are optional in this release. A mint may remain in single-operator
 mode, where `clear-root` is the local treasury authority path. When treasurers
 are configured, Clear uses a strict first-release invariant: one active
-treasurer `npub` resolves to exactly one CMU, and one CMU has exactly one
+treasurer `npub` may control one or more CMUs, and one CMU has exactly one
 active treasurer `npub`. The detailed model is defined in
 [First-Release Treasurer and CMU Authority Model](FIRST-RELEASE-TREASURER-CMU-AUTHORITY-MODEL.md).
 
@@ -64,11 +64,10 @@ The step-by-step first-release treasurer procedure is defined in
 - Store only treasurer `npub` values. Treasurer `nsec` values must stay with
   treasurers and must never enter mint configuration, storage, logs, backups,
   or API requests.
-- Bind one active treasurer `npub` to one CMU for the first release.
+- Bind each CMU to one active treasurer `npub` for the first release.
 - Make `clear-root treasurer grant <npub>` the single-use operator action that
   sets up one keyset/CMU creation path for that treasurer.
-- Reject `grant` for an active treasurer `npub` that has already produced a
-  keyset/CMU.
+- Reject overlapping unused grants for the same active treasurer `npub`.
 - Require a valid signed request from an active treasurer before creation.
 - Generate an independent random keyset secret inside the mint.
 - Encrypt each keyset secret at rest and never return it through the API.

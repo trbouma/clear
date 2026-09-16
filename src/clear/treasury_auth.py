@@ -81,11 +81,13 @@ def build_cmu_info_envelope(
     *,
     mint: str,
     nsec: str,
+    keyset_id: str,
     lifetime_seconds: int = 300,
 ) -> dict[str, Any]:
     now = int(time.time())
     payload = {
         "action": "cmu:info",
+        "keyset_id": keyset_id,
         "mint": mint.rstrip("/"),
         "nonce": secrets.token_hex(32),
         "created_at": now,
@@ -98,11 +100,13 @@ def build_cmu_summary_envelope(
     *,
     mint: str,
     nsec: str,
+    keyset_id: str,
     lifetime_seconds: int = 300,
 ) -> dict[str, Any]:
     now = int(time.time())
     payload = {
         "action": "cmu:summary",
+        "keyset_id": keyset_id,
         "mint": mint.rstrip("/"),
         "nonce": secrets.token_hex(32),
         "created_at": now,

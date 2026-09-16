@@ -20,6 +20,8 @@ def render_homepage(
     *,
     version: str,
     mint_url: str,
+    mint_title: str,
+    mint_tag_line: str,
     currency_name: str,
     currency_alias: str | None,
     currency_unit_alias: str | None,
@@ -56,7 +58,9 @@ def render_homepage(
             return text("Authorized treasury keyset")
         return text("Operator keyset")
 
-    display_name = currency_alias or currency_name
+    display_name = mint_title or "Clear Mint"
+    display_tag_line = mint_tag_line or HOMEPAGE_LEDE
+    currency_display_name = currency_alias or currency_name
     display_unit = currency_unit_alias or "CMU"
     root_authority_label = (
         _("Root authority configured")
@@ -78,11 +82,14 @@ def render_homepage(
             continue
         name = item.get("friendly_alias") or item.get("friendly_name") or item["unit"]
         unit_label = item.get("friendly_unit_alias") or "CMU"
+        supply = item.get("supply") if isinstance(item.get("supply"), dict) else {}
+        outstanding = supply.get("outstanding", supply.get("circulating", 0))
         keyset_rows.append(
             "<tr>"
             f"<td>{configured_value(str(name))}</td>"
             f"<td>{authority_label(item.get('authority'))}</td>"
             f"<td>{configured_value(str(unit_label))}</td>"
+            f"<td>{configured_value(str(outstanding))}</td>"
             "<td>"
             f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
             "</td>"
@@ -92,7 +99,7 @@ def render_homepage(
             "</tr>"
         )
     active_keyset_rows = "".join(keyset_rows) or (
-        f'<tr><td colspan="5">{text("No active keysets")}</td></tr>'
+        f'<tr><td colspan="6">{text("No active keysets")}</td></tr>'
     )
 
     values = {
@@ -106,6 +113,13 @@ def render_homepage(
         "currency_name_markup": configured_value(currency_name),
         "display_name": escape(display_name),
         "display_name_markup": configured_value(display_name),
+        "display_tag_line": (
+            text(HOMEPAGE_LEDE)
+            if display_tag_line == HOMEPAGE_LEDE
+            else escape(display_tag_line)
+        ),
+        "currency_display_name": escape(currency_display_name),
+        "currency_display_name_markup": configured_value(currency_display_name),
         "display_unit": escape(display_unit),
         "display_unit_markup": configured_value(display_unit),
         "protocol_unit": escape(protocol_unit),
@@ -530,7 +544,7 @@ def render_homepage(
         <p class="eyebrow">{text(HOMEPAGE_TAGLINE)}</p>
         <h1>{values['display_name_markup']}</h1>
         <p class="lede">
-          {text(HOMEPAGE_LEDE)}
+          {values['display_tag_line']}
         </p>
         <div class="mint-address">
           <code class="technical" id="mint-url" dir="ltr">{values['mint_url']}</code>
@@ -562,7 +576,8 @@ def render_homepage(
             <dt>{text('Currency')}</dt><dd>{values['currency_name_markup']}</dd>
           </div>
           <div class="row">
-            <dt>{text('Friendly name')}</dt><dd>{values['display_name_markup']}</dd>
+            <dt>{text('Friendly name')}</dt>
+            <dd>{values['currency_display_name_markup']}</dd>
           </div>
           <div class="row">
             <dt>{text('Unit label')}</dt><dd>{values['display_unit_markup']}</dd>
@@ -610,13 +625,14 @@ def render_homepage(
       </section>
 
       <section class="panel keysets">
-        <h2>{text('Active keysets')}</h2>
+        <h2>{text('Mint Units In Circulation')}</h2>
         <table class="keyset-table">
           <thead>
             <tr>
               <th>{text('Name')}</th>
               <th>{text('Authority')}</th>
               <th>{text('Unit label')}</th>
+              <th>{text('Outstanding')}</th>
               <th>{text('Protocol unit')}</th>
               <th>{text('Keyset ID')}</th>
             </tr>
