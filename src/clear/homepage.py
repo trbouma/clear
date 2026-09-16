@@ -99,7 +99,7 @@ def render_homepage(
             "<tr>"
             f"<td>{configured_value(str(name))}</td>"
             f"<td>{authority_label(item)}</td>"
-            f"<td>{configured_value(str(unit_label))}</td>"
+            f'<td class="unit-label">{configured_value(str(unit_label))}</td>'
             f"<td>{configured_value(str(outstanding))}</td>"
             "<td>"
             f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
@@ -477,6 +477,11 @@ def render_homepage(
     .keyset-table td {{
       font-weight: 650;
       overflow-wrap: anywhere;
+    }}
+
+    .keyset-table .unit-label {{
+      white-space: nowrap;
+      overflow-wrap: normal;
     }}
 
     .profile-trigger {{
