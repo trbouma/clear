@@ -1,15 +1,14 @@
 ---
-title: Coinage and Clear
-description: How Clear continues older practices of minting, recognition, and bearer circulation with digital treasury units.
+title: Embracing an Older Pattern
+description: How Clear continues older patterns of minting, recognition, and bearer circulation with digital treasury units.
 ---
 
-# Coinage and Clear
+# Embracing an Older Pattern
 
 Clear can sound novel because its instruments are digital, private, and
-cryptographic. But the function it performs is old. For centuries and
-millennia, communities have used mints to turn recognized authority, metal,
-weight, marks, and public trust into portable objects that people could carry
-and trade.
+cryptographic. But the pattern it embraces is old. For centuries and millennia,
+communities have used minting, recognition, marks, standards, and public trust
+to create portable instruments that people could carry and trade.
 
 Clear does something similar with different materials. Instead of stamping
 metal, it uses cryptographic keysets. Instead of a coin face, it uses a
@@ -21,7 +20,7 @@ because some authority, issuer, city, ruler, mint, or recognized community stood
 behind its weight, purity, symbol, and acceptance. Just as importantly, a coin
 continued to circulate only when people were willing to receive it.
 
-Clear preserves that older pattern:
+Clear embraces that older pattern:
 
 ```text
 authority recognizes value or obligation
@@ -168,9 +167,9 @@ Clear replaces those physical signals with cryptographic and policy evidence.
 A coin is not just metal. A Mint Note is not just bytes. In both cases the
 instrument combines technical form, issuer meaning, and social recognition.
 
-## What Clear replicates
+## What Clear continues
 
-Clear replicates the old minting pattern at the level of function:
+Clear continues the old minting pattern at the level of function:
 
 1. An authority or community defines what kind of value is being represented.
 2. A mint creates standardized bearer instruments under that authority.
@@ -188,7 +187,7 @@ spent-proof ledger to perform an old mint function with digital bearer notes.
 It is coinage in electronic medium, not merely another network for routing
 payments.
 
-## What Clear does not replicate
+## What Clear does not copy
 
 Clear does not reproduce every property of coinage.
 
@@ -229,7 +228,7 @@ refund credit, a state-recognized voucher, a compute credit, and a membership
 credit should not collapse into one generic number. Their usefulness comes from
 who recognizes them and what they can be redeemed for.
 
-## A very old idea with new tools
+## Older pattern, new tools
 
 Clear is not trying to replace the long history of minting with an app. It is
 trying to make an old pattern usable in digital communities:

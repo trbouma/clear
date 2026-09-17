@@ -22,12 +22,12 @@ distinction between governance and operation.
 
 [Read the policy brief](old-function-new-tools.md){ .md-button .md-button--primary }
 
-## Coinage and Clear
+## Embracing an Older Pattern
 
 For centuries and millennia, mints have turned authority, standards, marks, and
-public recognition into portable bearer instruments. This brief explains how
-Clear continues that pattern with Mint Notes, keyset-bound CMUs, and explicit
-issuer policy.
+public recognition into portable bearer instruments. This brief explains why
+Clear should be read as a continuation of that older pattern, using Mint Notes,
+keyset-bound CMUs, and explicit issuer policy.
 
 [Read the policy brief](coinage-and-clear.md){ .md-button .md-button--primary }
 
