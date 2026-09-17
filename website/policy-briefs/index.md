@@ -31,12 +31,12 @@ issuer policy.
 
 [Read the policy brief](coinage-and-clear.md){ .md-button .md-button--primary }
 
-## Credit, Coinage, and Clear
+## Credit, Coinage and Clear
 
 Drawing on David Graeber's account of the long oscillation between credit
-systems and coinage systems, this brief explains why Clear sits in the middle:
-credit-like in meaning, coin-like in circulation, cryptographic in form, and
-redeemable by treasury policy.
+systems and coinage systems, this brief starts from the oscillation itself and
+then explains why Clear sits in the middle: credit-like in meaning, coin-like
+in circulation, cryptographic in form, and redeemable by treasury policy.
 
 [Read the policy brief](credit-coinage-and-clear.md){ .md-button .md-button--primary }
 

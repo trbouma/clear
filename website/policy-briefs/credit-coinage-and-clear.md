@@ -1,23 +1,34 @@
 ---
-title: Credit, Coinage, and Clear
-description: How Clear sits between credit systems and coinage systems as treasury-backed bearer ecash.
+title: Credit, Coinage and Clear
+description: How Clear sits inside the historical oscillation between credit systems and coinage systems.
 ---
 
-# Credit, Coinage, and Clear
+# Credit, Coinage and Clear
 
 David Graeber's *Debt: The First 5,000 Years* is useful for Clear because it
 breaks the simple story that money evolved in one straight line from barter to
-coins to banks to digital payments. Graeber instead describes a long historical
-oscillation between credit systems and bullion or coinage systems.
+coins to banks to digital payments. The more interesting pattern is an
+oscillation between credit systems and coinage systems.
 
-That oscillation gives Clear a sharper frame.
+That oscillation is the starting point for understanding Clear.
 
-Clear is neither ordinary credit nor ordinary coin. It is a private bearer
-instrument issued against an explicit treasury promise. It carries some of the
-portability and finality people associate with coinage, while preserving the
-issuer-specific obligation and recognition that make credit systems work.
+Credit systems work through records, relationships, account units, and trust.
+Coinage systems work through portable bearer objects that can circulate even
+when the parties do not know or trust one another very much. History moves back
+and forth between those models, and often combines them.
+
+Clear sits inside that oscillation rather than outside it. It is neither
+ordinary credit nor ordinary coin. It is a private bearer instrument issued
+against an explicit treasury promise. It carries some of the portability and
+finality people associate with coinage, while preserving the issuer-specific
+obligation and recognition that make credit systems work.
 
 That middle position is exactly the opportunity.
+
+<figure markdown>
+![Animated pendulum showing Clear between coinage and credit](../assets/credit-coinage-clear-pendulum.svg)
+<figcaption>Clear sits inside the historical oscillation between credit and coinage: credit in meaning, coin-like in circulation, cryptographic in form.</figcaption>
+</figure>
 
 ## The oscillation
 

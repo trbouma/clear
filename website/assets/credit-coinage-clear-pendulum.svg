@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Clear between credit and coinage</title>
+  <desc id="desc">An animated pendulum labeled Clear swings between Coinage on the left and Credit on the right, showing Clear in the middle of the historical oscillation between the two models.</desc>
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    svg {
+      background: #f7fbfc;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .ink {
+      fill: #143d52;
+    }
+
+    .muted {
+      fill: #526b75;
+    }
+
+    .line {
+      stroke: #143d52;
+      stroke-width: 7;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    .fine-line {
+      stroke: #6f8e99;
+      stroke-width: 3;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    .coin-fill {
+      fill: #f6c65b;
+    }
+
+    .coin-stroke {
+      stroke: #9b6a16;
+      stroke-width: 5;
+      fill: none;
+    }
+
+    .credit-fill {
+      fill: #eaf6f7;
+    }
+
+    .clear-fill {
+      fill: #17677b;
+    }
+
+    .clear-stroke {
+      stroke: #ffffff;
+      stroke-width: 8;
+    }
+
+    .trail {
+      stroke: #c9543b;
+      stroke-width: 7;
+      stroke-linecap: round;
+      fill: none;
+      opacity: 0.78;
+    }
+
+    .ghost {
+      opacity: 0.22;
+    }
+
+    .label {
+      font-size: 48px;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      font-size: 24px;
+      font-weight: 560;
+      letter-spacing: 0;
+    }
+
+    .tiny {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .pendulum {
+      transform-origin: 600px 105px;
+      animation: swing 5.4s ease-in-out infinite;
+    }
+
+    .clear-pulse {
+      transform-origin: 600px 430px;
+      animation: pulse 5.4s ease-in-out infinite;
+    }
+
+    @keyframes swing {
+      0%, 100% {
+        transform: rotate(-17deg);
+      }
+      50% {
+        transform: rotate(17deg);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(0.98);
+      }
+      50% {
+        transform: scale(1.02);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg {
+        background: #0f2026;
+      }
+
+      .ink {
+        fill: #edf8fa;
+      }
+
+      .muted {
+        fill: #b4c8cf;
+      }
+
+      .line {
+        stroke: #edf8fa;
+      }
+
+      .fine-line {
+        stroke: #8db0ba;
+      }
+
+      .credit-fill {
+        fill: #172b31;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pendulum,
+      .clear-pulse {
+        animation: none;
+      }
+    }
+  </style>
+
+  <rect x="0" y="0" width="1200" height="620" rx="0" fill="currentColor" opacity="0"/>
+  <path class="fine-line" d="M190 482 C360 282 840 282 1010 482"/>
+  <path class="trail" d="M270 454 C400 336 800 336 930 454"/>
+
+  <g transform="translate(210 344)">
+    <circle class="coin-fill" cx="86" cy="86" r="76"/>
+    <circle class="coin-stroke" cx="86" cy="86" r="76"/>
+    <circle class="coin-stroke" cx="86" cy="86" r="52" opacity="0.45"/>
+    <path class="coin-stroke" d="M86 45 v82 M61 68 c11 -18 39 -18 50 0 M61 104 c11 18 39 18 50 0"/>
+    <text class="label ink" x="86" y="-50" text-anchor="middle">Coinage</text>
+    <text class="sub muted" x="86" y="-14" text-anchor="middle">bearer object</text>
+  </g>
+
+  <g transform="translate(822 344)">
+    <rect class="credit-fill" x="0" y="0" width="172" height="172" rx="18" stroke="#17677b" stroke-width="5"/>
+    <path class="fine-line" d="M36 48 h100 M36 82 h100 M36 116 h72"/>
+    <path class="fine-line" d="M126 116 l18 18 40 -48" stroke="#c9543b"/>
+    <text class="label ink" x="86" y="-50" text-anchor="middle">Credit</text>
+    <text class="sub muted" x="86" y="-14" text-anchor="middle">recorded trust</text>
+  </g>
+
+  <circle cx="600" cy="105" r="18" fill="#c9543b"/>
+  <path class="fine-line" d="M520 105 h160"/>
+  <text class="tiny muted" x="600" y="58" text-anchor="middle">historical oscillation</text>
+
+  <g class="ghost" transform="rotate(-17 600 105)">
+    <path class="line" d="M600 105 L600 430"/>
+    <circle cx="600" cy="430" r="83" fill="#17677b"/>
+  </g>
+  <g class="ghost" transform="rotate(17 600 105)">
+    <path class="line" d="M600 105 L600 430"/>
+    <circle cx="600" cy="430" r="83" fill="#17677b"/>
+  </g>
+
+  <g class="pendulum">
+    <path class="line" d="M600 105 L600 430"/>
+    <g class="clear-pulse">
+      <circle class="clear-fill clear-stroke" cx="600" cy="430" r="92"/>
+      <text x="600" y="416" text-anchor="middle" fill="#ffffff" font-size="46" font-weight="800" letter-spacing="0">Clear</text>
+      <text x="600" y="454" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="650" letter-spacing="0">treasury-backed</text>
+      <text x="600" y="482" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="650" letter-spacing="0">bearer ecash</text>
+    </g>
+  </g>
+
+  <text class="sub muted" x="600" y="575" text-anchor="middle">credit in meaning, coin-like in circulation, cryptographic in form</text>
+</svg>
