@@ -15,7 +15,8 @@ concrete, keyset-bound implementation of that category, carried in unique
 bearer Mint Notes.
 
 The units may represent food credits, member benefits, service allowances,
-event credits, local vouchers, or another promise defined by the issuer. Clear
+event credits, local vouchers, state-recognized benefit units, compute credits,
+or another promise defined by the issuer. Clear
 provides the issuance, circulation and redemption machinery. This includes the
 Mint Notes, transfer mechanics, double-spend protection, and supply accounting.
 The organization remains responsible for explaining and honouring what the
@@ -46,6 +47,10 @@ treasury receives or recognizes value, resources, or obligations
 Clear supplies that technical lifecycle. Each issuing program supplies the
 authority, meaning, eligibility rules, transfer restrictions, redemption
 consequences, and legal framework.
+
+This is digital minting rather than simple payment routing. A payment rail
+moves an already-defined unit. Clear helps an issuer create, govern, circulate,
+and retire a distinct treasury unit in the first place.
 
 ## From a program to a transferable unit
 

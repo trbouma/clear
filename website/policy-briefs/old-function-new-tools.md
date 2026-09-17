@@ -57,6 +57,13 @@ The issuing program must provide the instrument's meaning, governing authority,
 holder eligibility, transfer restrictions, acceptance rules, redemption
 consequences, and applicable legal and regulatory framework.
 
+This is why Clear should be understood as minting infrastructure before it is
+understood as a payment tool. A payment rail moves a unit that already has
+meaning. Clear helps an issuer define a unit, authorize its supply, let it
+circulate as private bearer notes, and close the loop through redemption or
+retirement. The same mint can support multiple treasury units without making
+those units interchangeable.
+
 ## Treasury before software
 
 Some of the earliest surviving written records are administrative accounts.

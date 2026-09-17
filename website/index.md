@@ -1,6 +1,6 @@
 ---
 title: Clear
-description: "Credit-Liability Ecash: Authorized and Redeemable. Private, organization-defined Mint Notes."
+description: "Digital minting infrastructure for issuer-defined treasury units: authorized, redeemable, private Mint Notes."
 ---
 
 <section class="clear-hero" markdown>
@@ -9,9 +9,9 @@ description: "Credit-Liability Ecash: Authorized and Redeemable. Private, organi
 
 # Clear
 
-<p class="clear-tagline">Credit-Liability Ecash: Authorized and Redeemable.</p>
+<p class="clear-tagline">Digital minting infrastructure for issuer-defined treasury units.</p>
 
-<p class="clear-intro">The name describes the relationship: a holder receives a credit, the issuer recognizes a corresponding liability, ecash makes that value privately transferable, issuance is authorized, and each Mint Note is redeemable under the issuer's published policy. Clear provides this issuance, circulation and redemption machinery for organization-defined transferable units using the Cashu protocol for private bearer notes and double-spend protection.</p>
+<p class="clear-intro">Clear is not primarily a payment rail. It is electronic coinage machinery: an issuer defines a treasury unit, an authorized treasurer issues private bearer Mint Notes, holders circulate them, and recognized parties redeem or retire them under policy. The name also describes the relationship: Credit-Liability Ecash, Authorized and Redeemable.</p>
 
 [Why Clear?](why-clear.md){ .md-button .md-button--primary }
 [Organization-issued value](organization-issued-value.md){ .md-button .md-button--primary }
@@ -19,6 +19,23 @@ description: "Credit-Liability Ecash: Authorized and Redeemable. Private, organi
 [View the source](https://github.com/trbouma/clear){ .md-button }
 
 </section>
+
+## Digital coinage, not a payment rail
+
+Blockchains, stablecoins, card networks, and Lightning invoices are mostly
+payment rails: they move value that already has an external unit and settlement
+meaning. Clear starts one layer earlier. It gives an institution a way to mint
+its own distinct bearer units, define the policy that gives them meaning, and
+let holders circulate them without turning every transfer into an account entry
+inside one application.
+
+That makes Clear useful for communities and corporations that need credits,
+vouchers, benefits, allowances, or service units. The same model can also serve
+state-adjacent programs, delegated mints, public-purpose treasury units, or
+compute-credit systems for software agents. In each case, the important
+question is not merely how value moves. It is who is authorized to mint the
+unit, what the unit represents, where it is recognized, and how it is redeemed
+or retired.
 
 ## Clear works alongside cash
 
@@ -31,9 +48,11 @@ Clear adds **Clear Balances** alongside that cash balance. The plural matters:
 each balance holds a distinct issuer-defined **transferable unit** with its own
 mint, Clear Mint Unit, and policy. A Clear balance may represent food credits,
 service units, member benefits, event allowances, or other products and in-kind
-services. It can circulate privately between wallets, but it is useful where
-the relevant issuer and participating providers recognize it; it is not
-presumed to be cash or universally interchangeable with another Clear balance.
+services. It may also represent bounded public-program value or metered compute
+credits for agents. It can circulate privately between wallets, but it is
+useful where the relevant issuer and participating providers recognize it; it
+is not presumed to be cash or universally interchangeable with another Clear
+balance.
 
 ## Mint Notes that can circulate
 

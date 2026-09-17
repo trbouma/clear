@@ -1,5 +1,5 @@
 site_name: Clear
-site_description: "Credit-Liability Ecash: Authorized and Redeemable. Private, organization-defined Mint Notes."
+site_description: "Digital minting infrastructure for issuer-defined treasury units: authorized, redeemable, private Mint Notes."
 site_url: https://trbouma.github.io/clear/
 repo_url: https://github.com/trbouma/clear
 repo_name: trbouma/clear
@@ -49,6 +49,7 @@ nav:
       - Overview: policy-briefs/index.md
       - Old Function, New Tools: policy-briefs/old-function-new-tools.md
       - Coinage and Clear: policy-briefs/coinage-and-clear.md
+      - Credit, Coinage, and Clear: policy-briefs/credit-coinage-and-clear.md
       - Goldsmiths and Clear: policy-briefs/goldsmiths-and-clear.md
       - MintChip and Clear: policy-briefs/mintchip-and-clear.md
   - Operate Clear:

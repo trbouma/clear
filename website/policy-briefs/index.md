@@ -1,13 +1,13 @@
 ---
 title: Policy Briefs
-description: High-level Clear briefs on treasury, private bearer notes, issuer-defined value, and digital cash history.
+description: High-level Clear briefs on digital minting, coinage, treasury authority, private bearer notes, and issuer-defined value.
 ---
 
 # Policy Briefs
 
-Clear policy briefs connect the product and protocol model to older treasury
-functions, public-sector digital-cash experiments, and institutional questions
-about authority, custody, privacy, and recognition.
+Clear policy briefs connect the product and protocol model to older minting and
+treasury functions, public-sector digital-cash experiments, and institutional
+questions about authority, custody, privacy, and recognition.
 
 They are written for leaders, operators, policy makers, and partners who need
 to understand what Clear is trying to make possible before going deep into
@@ -31,6 +31,15 @@ issuer policy.
 
 [Read the policy brief](coinage-and-clear.md){ .md-button .md-button--primary }
 
+## Credit, Coinage, and Clear
+
+Drawing on David Graeber's account of the long oscillation between credit
+systems and coinage systems, this brief explains why Clear sits in the middle:
+credit-like in meaning, coin-like in circulation, cryptographic in form, and
+redeemable by treasury policy.
+
+[Read the policy brief](credit-coinage-and-clear.md){ .md-button .md-button--primary }
+
 ## Goldsmiths and Clear
 
 London goldsmith-bankers are often remembered through a misleading story about
@@ -44,7 +53,7 @@ authority, and transferable claims matters for Clear's treasurer model.
 
 The Royal Canadian Mint's MintChip project explored secure, cash-like digital
 payments before today's CBDC debates became mainstream. This brief compares
-MintChip's national-currency stored-value model with Clear's narrower model:
-private bearer notes for issuer-defined transferable units.
+MintChip's national-currency stored-value model with Clear's minting model:
+private bearer notes for issuer-defined treasury units.
 
 [Read the policy brief](mintchip-and-clear.md){ .md-button .md-button--primary }

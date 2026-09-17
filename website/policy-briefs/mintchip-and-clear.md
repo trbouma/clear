@@ -1,6 +1,6 @@
 ---
 title: MintChip and Clear
-description: Comparing the Royal Canadian Mint's MintChip experiment with Clear's organization-issued Mint Notes.
+description: Comparing the Royal Canadian Mint's MintChip experiment with Clear's electronic minting model.
 ---
 
 # MintChip and Clear
@@ -15,6 +15,12 @@ The similarity is strongest at the level of aspiration. Both systems care about
 portable value, low-friction transfer, and cash-like use. The difference is in
 what kind of value they represent, who issues it, how privacy is achieved, and
 where trust lives.
+
+There is also a category difference. MintChip was framed as a digital payment
+technology for national-currency value. Clear is better understood as digital
+minting infrastructure: it lets an issuer create distinct treasury units,
+authorize their issue, let them circulate as bearer instruments, and redeem or
+retire them under policy.
 
 ## What MintChip was
 
@@ -37,27 +43,30 @@ a move from research and development toward private-sector commercialization.
 
 ## What Clear is
 
-Clear is not a national digital-cash project. It is issuance, circulation and
-redemption machinery for organization-defined transferable units.
+Clear is not simply a national digital-cash project or a general payment rail.
+It is issuance, circulation and redemption machinery for issuer-defined
+treasury units.
 
 A Clear issuer can define a food credit, service credit, member benefit,
-allowance, voucher, refund credit, internal program unit, or other bounded
-entitlement. A treasurer authorizes issuance or retirement. The mint signs
-blinded Cashu outputs for one keyset-bound Clear Mint Unit, and holders carry
-Mint Notes as bearer proofs.
+allowance, voucher, refund credit, internal program unit, public-purpose
+benefit unit, compute credit, or other bounded entitlement. A treasurer
+authorizes issuance or retirement. The mint signs blinded Cashu outputs for one
+keyset-bound Clear Mint Unit, and holders carry Mint Notes as bearer proofs.
 
-Clear's unit is not "the Canadian dollar in digital form." Each Clear balance
-belongs to a specific issuer, policy, mint, and `cmu-<keyset-id>`. Two Clear
-programs can both display CMU, but they are not interchangeable unless an
-explicit issuer policy makes them so.
+Clear's unit is not automatically "the Canadian dollar in digital form."
+Each Clear balance belongs to a specific issuer, policy, mint, and
+`cmu-<keyset-id>`. A state-recognized program could define a CMU, but it would
+still need an explicit policy describing what the unit represents and how it is
+redeemed. Two Clear programs can both display CMU, but they are not
+interchangeable unless an explicit issuer policy makes them so.
 
 ## Comparison
 
 | Question | MintChip | Clear |
 | --- | --- | --- |
-| Issuer model | A Royal Canadian Mint digital-cash technology later sold to nanoPay | Any organization or community operating a Clear mint under its own policy |
+| Issuer model | A Royal Canadian Mint digital-cash technology later sold to nanoPay | Any organization, community, delegated mint, or state-recognized program operating under its own policy |
 | Unit of value | Funds denominated in recognized national currencies | Issuer-defined transferable units denominated in a specific CMU |
-| Main use case | Retail, ecommerce, person-to-person, B2B, and micropayment-style digital cash | Vouchers, credits, benefits, allowances, and other bounded organizational instruments |
+| Main use case | Retail, ecommerce, person-to-person, B2B, and micropayment-style digital cash | Vouchers, credits, benefits, allowances, compute credits, public-purpose units, and other bounded instruments |
 | Custody model | Secure chips or secure asset stores hold balances and execute transfers | Wallets hold bearer Mint Notes; mint holds keyset secrets and spent-proof state |
 | Transfer style | Direct value transfer between devices or asset stores, designed for online and offline use | Bearer proof transfer between wallets; mint needed for issuance, swaps, proof-state checks, redemption, and final retirement |
 | Privacy model | Claimed cash-like privacy without personal identification for ordinary use | Blind signatures unlink issuance from later redemption better than account-ledger credits, while still admitting network and redemption metadata risks |
@@ -85,8 +94,8 @@ programs, limited-connectivity settings, and local trust networks.
 
 MintChip tried to make national-currency value electronic and cash-like.
 
-Clear tries to make organization-defined value portable and cash-like without
-claiming that it is national money.
+Clear tries to make issuer-defined treasury units portable and cash-like
+without claiming that every unit is national money.
 
 That difference changes almost everything. MintChip's hard problem was how a
 government-linked digital cash platform could move dollar-denominated value
@@ -95,17 +104,23 @@ an organization can issue a bounded instrument that remains clear about who
 stands behind it, what it represents, which CMU it belongs to, and what happens
 when it is redeemed.
 
-MintChip asked:
+MintChip asked a payment question:
 
 ```text
 How can Canadian-dollar value move like cash in digital channels?
 ```
 
-Clear asks:
+Clear asks a minting question:
 
 ```text
-How can an organization's promise or allocation move as a private bearer note?
+How can an issuer mint a distinct treasury unit that moves as a private bearer note?
 ```
+
+That distinction is why Clear sits awkwardly beside blockchains and
+stablecoins. Those systems usually focus on moving a pre-existing unit or
+tokenized balance. Clear focuses on the authority, policy, issuance, and
+retirement loop that makes a unit exist as a circulating instrument in the
+first place.
 
 ## Hardware trust and cryptographic trust
 
@@ -162,9 +177,9 @@ value at retail scale, compliance cannot be an afterthought.
 Clear should not copy that framing wholesale, because Clear is not one
 universal payment network. It is a protocol and mint service for many separate
 issuer-defined instruments. The compliance question depends on the instrument.
-A meal voucher, a resort service credit, a refund credit, a securities-like
-interest, and a general-purpose stored-value product may all face different
-legal treatment.
+A meal voucher, a resort service credit, a refund credit, a compute credit, a
+state-recognized benefit unit, a securities-like interest, and a general-purpose
+stored-value product may all face different legal treatment.
 
 Clear's responsibility is to keep the institutional facts legible:
 
@@ -185,18 +200,19 @@ cash directly. Hardware distribution, merchant adoption, privacy expectations,
 regulatory requirements, user experience, offline risk, and commercialization
 all have to line up.
 
-Clear can take a narrower path.
+Clear can take a different path.
 
-It does not need to digitize Canadian dollars. It does not need to become a
-general-purpose retail network. It does not need every merchant to care. It can
-serve organizations that already have a reason to issue bounded value and a
-known set of people or providers who recognize it.
+It does not need to digitize Canadian dollars to be useful. It does not need to
+become a general-purpose retail network. It does not need every merchant to
+care. It can serve organizations, delegated authorities, public-purpose
+programs, and compute markets that already have a reason to mint bounded value
+and a known set of people, providers, or agents who recognize it.
 
 That narrower scope is not a weakness. It is what makes the system honest:
 
 ```text
 MintChip: digital cash for recognized national-currency value
-Clear: digital bearer notes for issuer-defined transferable units
+Clear: digital minting for issuer-defined treasury units
 ```
 
 ## Where the projects meet
@@ -209,12 +225,13 @@ limited disclosure.
 They part ways on monetary ambition.
 
 MintChip tried to bring cash into the digital economy as a broad payment
-technology. Clear brings cash-like bearer mechanics to smaller domains of
-recognition: communities, programs, clubs, facilities, and organizations with
-specific promises to make and settle.
+technology. Clear brings cash-like bearer mechanics to domains of recognition:
+communities, companies, public-purpose programs, delegated mints, compute
+services, and organizations with specific promises to make and settle.
 
 MintChip's history is therefore encouraging, but also clarifying. Clear should
-borrow the cash-like goal, not the universal-cash burden.
+borrow the cash-like goal and the minting imagination, not the universal-cash
+burden or the expensive-hardware trust model.
 
 ## Sources
 

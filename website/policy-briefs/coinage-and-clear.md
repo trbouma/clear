@@ -1,6 +1,6 @@
 ---
 title: Coinage and Clear
-description: How Clear continues older practices of minting, recognition, and bearer circulation with digital Mint Notes.
+description: How Clear continues older practices of minting, recognition, and bearer circulation with digital treasury units.
 ---
 
 # Coinage and Clear
@@ -11,7 +11,10 @@ millennia, communities have used mints to turn recognized authority, metal,
 weight, marks, and public trust into portable objects that people could carry
 and trade.
 
-Clear does something similar with different materials.
+Clear does something similar with different materials. Instead of stamping
+metal, it uses cryptographic keysets. Instead of a coin face, it uses a
+keyset-bound CMU. Instead of handing over a disc of metal, holders transfer
+private bearer Mint Notes.
 
 Coins were not valuable merely because a machine struck them. A coin mattered
 because some authority, issuer, city, ruler, mint, or recognized community stood
@@ -49,9 +52,10 @@ authorities issued distinct instruments into overlapping networks of
 recognition.
 
 Clear follows that plural model more than the modern idea of one national
-currency balance. Each Clear Mint Unit is a distinct issuer-defined unit,
-identified by its complete `cmu-<keyset-id>`. A wallet may display several
-Clear balances, but they remain separate promises under separate policies.
+currency balance. Each Clear Mint Unit is a distinct issuer-defined treasury
+unit, identified by its complete `cmu-<keyset-id>`. A wallet may display
+several Clear balances, but they remain separate promises under separate
+policies.
 
 ## Authority and acceptance
 
@@ -105,12 +109,40 @@ is that minting has long involved a relationship among:
 - the redemption, tax, trade, or settlement context that gives it practical use.
 
 Clear separates those parts into named roles. The root authority governs the
-currency. A treasurer authorizes routine supply changes. A mint operator runs
-the infrastructure. The mint service signs blinded outputs and checks spent
-state. Holders decide whether to accept and carry the resulting Mint Notes.
+unit. A treasurer authorizes routine supply changes. A mint operator runs the
+infrastructure. The mint service signs blinded outputs and checks spent state.
+Holders decide whether to accept and carry the resulting Mint Notes.
 
 That separation makes Clear less mysterious. It is a digital minting stack for
-recognized communities, not a claim that software has become the sovereign.
+recognized communities, corporations, delegated authorities, public-purpose
+programs, and compute-credit systems, not a claim that software has become the
+sovereign.
+
+## Payment rails are not coinage systems
+
+Most digital-money systems are payment rails. A blockchain moves tokens. A
+stablecoin moves a claim defined somewhere else. A card network routes an
+authorization. A Lightning invoice settles a sat-denominated payment. These
+systems can be powerful, but they usually assume the unit already exists.
+
+Coinage asks a different question: how does a unit come into existence as a
+recognized bearer instrument?
+
+Clear is built around that question. It defines a minting path:
+
+```text
+policy defines the unit
+  -> authority appoints or recognizes treasurers
+  -> treasurer authorizes issuance
+  -> mint creates bearer notes for one CMU
+  -> holders circulate them
+  -> issuer redeems or retires them
+```
+
+That is why Clear can support more than community vouchers. The same structure
+can express a corporate credit, a public-purpose treasury unit, a delegated
+mint's local instrument, or a compute-credit allowance for agents. Those are
+not the same legal or economic thing, but they share a minting lifecycle.
 
 ## Marks, metal, and keysets
 
@@ -147,11 +179,14 @@ Clear replicates the old minting pattern at the level of function:
 4. Recognition determines where the instruments are useful.
 5. Redemption or retirement closes the loop and updates the issuer's books.
 
-That loop is familiar in coinage, token, voucher, and credit systems.
+That loop is familiar in coinage, token, voucher, credit, and allowance
+systems.
 
 Clear's novelty is not that it discovered circulation. Its novelty is that it
 uses Cashu blind signatures, keyset-bound CMUs, treasurer authorization, and a
 spent-proof ledger to perform an old mint function with digital bearer notes.
+It is coinage in electronic medium, not merely another network for routing
+payments.
 
 ## What Clear does not replicate
 
@@ -190,9 +225,9 @@ within this community of recognition.
 ```
 
 That is why Clear keeps balances plural. A food credit, a service credit, a
-refund credit, and a membership credit should not collapse into one generic
-number. Their usefulness comes from who recognizes them and what they can be
-redeemed for.
+refund credit, a state-recognized voucher, a compute credit, and a membership
+credit should not collapse into one generic number. Their usefulness comes from
+who recognizes them and what they can be redeemed for.
 
 ## A very old idea with new tools
 

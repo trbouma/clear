@@ -1,6 +1,6 @@
 ---
 title: Why Clear?
-description: Why organizations may need private, transferable Mint Notes.
+description: Why organizations may need digital minting infrastructure for private, transferable treasury units.
 ---
 
 # Why Clear?
@@ -28,12 +28,29 @@ participating network that define it.
 Organizations often need to allocate value before they need a payment rail.
 A community may distribute food credits, a program may allocate service units,
 an event may issue participant credits, a co-working facility may allocate desk
-or room credits, or a resort may issue guest and staff allowances.
+or room credits, a resort may issue guest and staff allowances, a public-purpose
+program may issue a state-recognized benefit unit, or an AI operator may fund
+agents with metered compute credits.
 
 Conventional account systems can do this, but they place every transfer inside
 one application and its central account database. Clear explores a different
 model: the organization issues private bearer Mint Notes that people can hold
 and transfer, while the mint prevents double spending.
+
+## Digital minting before payment routing
+
+Most digital-money projects begin with payment routing: move dollars, sats,
+stablecoin balances, or tokenized assets across a network. That work matters,
+but it is not the same as minting.
+
+Minting asks a prior institutional question: who has authority to create a
+circulating unit, what does that unit represent, where is it recognized, and
+how is it redeemed or retired?
+
+Clear is built for that prior question. It lets a mint instance support
+multiple treasury units, each with its own CMU, policy, treasurer authority,
+ledger, and risk boundary. The result is closer to electronic coinage than to
+a generic payment rail.
 
 ## One wallet, two kinds of balance
 
@@ -64,6 +81,18 @@ This distinction is intentional. Cash is presented as one broadly useful
 sat-denominated balance; Clear balances stay plural because credits from
 different issuers or programs must not be added together or presented as
 universally interchangeable.
+
+## One mint, many treasury units
+
+A Clear deployment can support more than one treasury unit. A single operating
+mint may serve separate CMUs for a food-credit program, a member-benefit
+program, a state-recognized voucher, and an agent compute-credit pool. Those
+units can share infrastructure while remaining separate in authority, policy,
+ledger, redemption, and holder risk.
+
+That is why Clear treats the complete `cmu-<keyset-id>` as identity rather than
+the display name. Friendly labels help humans. Keyset-bound CMUs keep separate
+minted units from collapsing into one balance.
 
 ## Settlement follows policy
 
@@ -172,6 +201,19 @@ own issuance, swap, redemption, and double-spend checks close to the community
 it serves, including during limited-connectivity periods. The CMU remains an
 operator-defined credit—not legal tender and not automatically interchangeable
 with another resort's, vessel's, or keyset's notes.
+
+## Compute credits and funded agents
+
+Clear can also model compute credits. An organization may want to fund agents
+with a bounded allowance for model calls, storage, retrieval, inference, or
+other metered services. Instead of giving every agent an open-ended account or
+payment credential, the issuer can mint a specific amount of compute-credit
+Mint Notes under a policy.
+
+Those notes can be held, delegated, presented, redeemed, or retired according
+to the issuer's rules. Clear does not decide the metering or deliver the
+compute service. It supplies the bearer unit, treasury authorization,
+double-spend protection, and retirement evidence around that service economy.
 
 ## Local-first continuity
 
