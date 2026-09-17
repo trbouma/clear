@@ -12,8 +12,8 @@ to create portable instruments that people could carry and trade.
 
 Clear does something similar with different materials. Instead of stamping
 metal, it uses cryptographic keysets. Instead of a coin face, it uses a
-keyset-bound CMU. Instead of handing over a disc of metal, holders transfer
-private bearer Mint Notes.
+keyset-bound Clear Mint Unit (CMU). Instead of handing over a disc of metal,
+holders transfer private bearer Mint Notes.
 
 Coins were not valuable merely because a machine struck them. A coin mattered
 because some authority, issuer, city, ruler, mint, or recognized community stood
@@ -51,10 +51,9 @@ authorities issued distinct instruments into overlapping networks of
 recognition.
 
 Clear follows that plural model more than the modern idea of one national
-currency balance. Each Clear Mint Unit is a distinct issuer-defined treasury
-unit, identified by its complete `cmu-<keyset-id>`. A wallet may display
-several Clear balances, but they remain separate promises under separate
-policies.
+currency balance. Each CMU is a distinct issuer-defined treasury unit,
+identified by its complete `cmu-<keyset-id>`. A wallet may display several
+Clear balances, but they remain separate promises under separate policies.
 
 ## Authority and acceptance
 

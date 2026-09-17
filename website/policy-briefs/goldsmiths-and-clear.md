@@ -90,7 +90,7 @@ owned a particular coin in the vault.
 
 Clear Mint Notes also are not warehouse receipts for a specific object.
 
-A Mint Note is a bearer instrument denominated in a specific Clear Mint Unit,
+A Mint Note is a bearer instrument denominated in a specific Clear Mint Unit (CMU),
 identified by its complete `cmu-<keyset-id>`. It can circulate because the mint
 can verify its signature, prevent double spending, and redeem or retire it under
 the issuer's policy. The holder does not need an account entry at the mint for

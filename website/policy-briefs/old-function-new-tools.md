@@ -21,7 +21,7 @@ units, let them move between holders, accept them back, and account for their
 retirement or reissue.
 
 The protocol term for the bearer instrument is **Mint Note**. Each Mint Note is
-denominated in a keyset-bound **Clear Mint Unit**, identified as
+denominated in a keyset-bound **Clear Mint Unit (CMU)**, identified as
 `cmu-<keyset-id>`. *Cashu proof* remains the implementation term for the data
 structure encoding a spendable note. Programs may still describe their
 real-world purpose using familiar words such as credits, vouchers, or allowances;

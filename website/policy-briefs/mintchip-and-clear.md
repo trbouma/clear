@@ -34,8 +34,8 @@ for digital payments.
 MintChip was presented as an evolution of physical money for electronic use. In
 contemporary descriptions, value was stored in secure integrated circuit chips
 or secure asset stores. A payer and payee could exchange value directly,
-including by NFC, SMS, email, or other channels, and transfers were intended to
-work online or offline.
+including by near-field communication (NFC), Short Message Service (SMS), email,
+or other channels, and transfers were intended to work online or offline.
 
 The Royal Canadian Mint later sold the MintChip assets to Loyalty Pays Holdings,
 a subsidiary of nanoPay, in January 2016. The Mint described the divestiture as
@@ -51,7 +51,8 @@ A Clear issuer can define a food credit, service credit, member benefit,
 allowance, voucher, refund credit, internal program unit, public-purpose
 benefit unit, compute credit, or other bounded entitlement. A treasurer
 authorizes issuance or retirement. The mint signs blinded Cashu outputs for one
-keyset-bound Clear Mint Unit, and holders carry Mint Notes as bearer proofs.
+keyset-bound Clear Mint Unit (CMU), and holders carry Mint Notes as bearer
+proofs.
 
 Clear's unit is not automatically "the Canadian dollar in digital form."
 Each Clear balance belongs to a specific issuer, policy, mint, and
@@ -66,11 +67,11 @@ interchangeable unless an explicit issuer policy makes them so.
 | --- | --- | --- |
 | Issuer model | A Royal Canadian Mint digital-cash technology later sold to nanoPay | Any organization, community, delegated mint, or state-recognized program operating under its own policy |
 | Unit of value | Funds denominated in recognized national currencies | Issuer-defined transferable units denominated in a specific CMU |
-| Main use case | Retail, ecommerce, person-to-person, B2B, and micropayment-style digital cash | Vouchers, credits, benefits, allowances, compute credits, public-purpose units, and other bounded instruments |
+| Main use case | Retail, ecommerce, person-to-person, business-to-business (B2B), and micropayment-style digital cash | Vouchers, credits, benefits, allowances, compute credits, public-purpose units, and other bounded instruments |
 | Custody model | Secure chips or secure asset stores hold balances and execute transfers | Wallets hold bearer Mint Notes; mint holds keyset secrets and spent-proof state |
 | Transfer style | Direct value transfer between devices or asset stores, designed for online and offline use | Bearer proof transfer between wallets; mint needed for issuance, swaps, proof-state checks, redemption, and final retirement |
 | Privacy model | Claimed cash-like privacy without personal identification for ordinary use | Blind signatures unlink issuance from later redemption better than account-ledger credits, while still admitting network and redemption metadata risks |
-| Compliance posture | The 2016 Mint/nanoPay release emphasized regulatory compliance, including AML and KYC support | Compliance and eligibility are issuer-policy questions; Clear supplies verifiable issuance, proof validity, spent-state, and audit evidence |
+| Compliance posture | The 2016 Mint/nanoPay release emphasized regulatory compliance, including anti-money-laundering (AML) and know-your-customer (KYC) support | Compliance and eligibility are issuer-policy questions; Clear supplies verifiable issuance, proof validity, spent-state, and audit evidence |
 | Trust anchor | MintChip secure hardware, platform rules, brokers, and later commercial operator | Issuer governance, treasurer signatures, mint operator custody, Cashu signatures, CMU identity, and ledger controls |
 | Relationship to cash | Designed as digital cash for national-currency payments | Cash-like bearer notes for bounded organizational value; not legal tender and not universal money |
 
@@ -143,9 +144,9 @@ The tradeoff is important:
 - Clear moves more double-spend prevention into the mint's ledger and Cashu
   proof validation.
 
-Clear can eventually learn from offline-CBDC and secure-element work, but its
-first obligation is to make online issuance, circulation, redemption, and
-retirement reliable and understandable.
+Clear can eventually learn from offline central bank digital currency (CBDC)
+and secure-element work, but its first obligation is to make online issuance,
+circulation, redemption, and retirement reliable and understandable.
 
 ## Privacy comparison
 
@@ -170,9 +171,9 @@ privacy than ordinary named account balances for bounded issuer programs.
 ## Compliance and governance
 
 MintChip's public materials eventually emphasized that the platform could
-support regulatory compliance, including AML and KYC rules. That makes sense
-for a national-currency payment platform. If a system moves dollar-denominated
-value at retail scale, compliance cannot be an afterthought.
+support regulatory compliance, including AML and KYC rules. That makes sense for
+a national-currency payment platform. If a system moves dollar-denominated value
+at retail scale, compliance cannot be an afterthought.
 
 Clear should not copy that framing wholesale, because Clear is not one
 universal payment network. It is a protocol and mint service for many separate

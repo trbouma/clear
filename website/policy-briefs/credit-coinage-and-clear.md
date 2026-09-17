@@ -83,10 +83,10 @@ This is close to modern state-money and monetary-sovereignty arguments:
 taxation does not merely collect money that already existed in private markets.
 It can help create demand for the unit in the first place.
 
-For Clear, the parallel is not that every issuer is a state or that every CMU
-is money. The parallel is the loop. A unit becomes useful when an issuer pays,
-allocates, or distributes it, and then recognized parties accept it back under
-policy.
+For Clear, the parallel is not that every issuer is a state or that every Clear
+Mint Unit (CMU) is money. The parallel is the loop. A unit becomes useful when
+an issuer pays, allocates, or distributes it, and then recognized parties accept
+it back under policy.
 
 ## Coinage and credit were never opposites
 

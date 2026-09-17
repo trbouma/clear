@@ -27,7 +27,7 @@ distinction between governance and operation.
 For centuries and millennia, mints have turned authority, standards, marks, and
 public recognition into portable bearer instruments. This brief explains why
 Clear should be read as a continuation of that older pattern, using Mint Notes,
-keyset-bound CMUs, and explicit issuer policy.
+keyset-bound Clear Mint Units (CMUs), and explicit issuer policy.
 
 [Read the policy brief](coinage-and-clear.md){ .md-button .md-button--primary }
 
@@ -52,8 +52,9 @@ authority, and transferable claims matters for Clear's treasurer model.
 ## MintChip and Clear
 
 The Royal Canadian Mint's MintChip project explored secure, cash-like digital
-payments before today's CBDC debates became mainstream. This brief compares
-MintChip's national-currency stored-value model with Clear's minting model:
-private bearer notes for issuer-defined treasury units.
+payments before today's central bank digital currency (CBDC) debates became
+mainstream. This brief compares MintChip's national-currency stored-value model
+with Clear's minting model: private bearer notes for issuer-defined treasury
+units.
 
 [Read the policy brief](mintchip-and-clear.md){ .md-button .md-button--primary }
