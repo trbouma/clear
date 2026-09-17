@@ -97,10 +97,65 @@ The treasurer private key remains a user-side or organization-side authority
 key. QxVault may protect mint custody and service keys, but it must not cause
 Clear to centralize treasurer authority inside the mint operator's appliance.
 
+## Per-CMU keyset secrets
+
+Each treasurer-authorized CMU has its own operational keyset secret. The
+treasurer authorizes the keyset creation, but the treasurer does not receive
+the secret merely by authorizing it. The secret belongs to the operational
+custody boundary for that exact `cmu-<keyset-id>`.
+
+```text
+treasurer signs keyset/create authorization
+  -> Clear verifies grant, treasurer scope, nonce, policy, and limits
+  -> Clear creates or requests one fresh keyset secret for that CMU
+  -> Clear records the public keyset descriptor and CMU identity
+  -> future issuance uses that CMU-specific secret only through custody operations
+```
+
+This is the critical boundary for QxVault. A Clear mint may support many
+treasurers and many CMUs, but custody must remain separable by CMU:
+
+- one treasurer authorization creates or activates one keyset/CMU;
+- each CMU has its own keyset secret and custody envelope;
+- rewrapping, suspension, migration, and audit should name the exact CMU;
+- a custody operation for one CMU must not be usable for another CMU;
+- removing or rotating a treasurer changes authority, not the CMU keyset
+  secret; and
+- the mint operator should not treat QxVault as one undifferentiated master
+  secret for all treasurers and CMUs.
+
+Near term, Clear can generate the per-CMU random keyset secret and immediately
+wrap it with QxVault Transit:
+
+```json
+{
+  "cmu": "cmu-<keyset-id>",
+  "keyset_id": "<keyset-id>",
+  "treasurer_npub": "npub...",
+  "custody": {
+    "kind": "qxvault-transit-v1",
+    "key": "clear-keyset-wrap",
+    "ciphertext": "bao:v1:..."
+  }
+}
+```
+
+The target state is stronger: QxVault, or a Clear-specific signer backed by
+QxVault and its HSM, generates and uses the per-CMU secret without releasing it
+to the Clear process. Clear receives only the public keyset descriptor, keyset
+ID, CMU identifier, and audit evidence.
+
+```text
+Clear submits blinded outputs and authorization evidence
+  -> signer checks CMU, treasurer policy, keyset state, and operation id
+  -> signer signs with the CMU-specific keyset
+  -> raw keyset secret never returns to Clear
+```
+
 ## Phase 1: QxVault as OpenBao-compatible Transit
 
 The first integration phase should use QxVault as an OpenBao-compatible Transit
-backend for keyset-secret wrapping.
+backend for per-CMU keyset-secret wrapping.
 
 Current local model:
 
@@ -114,7 +169,7 @@ QxVault Transit model:
 
 ```text
 Clear authenticates to QxVault
-Clear sends random keyset secret to Transit encrypt
+Clear sends one CMU-specific random keyset secret to Transit encrypt
 SQLite stores QxVault ciphertext envelope
 Clear sends ciphertext to Transit decrypt only when policy permits use
 ```
@@ -128,6 +183,9 @@ credentials:
   "addr": "https://qxvault.example.internal",
   "mount": "transit",
   "key": "clear-keyset-wrap",
+  "cmu": "cmu-<keyset-id>",
+  "keyset_id": "<keyset-id>",
+  "treasurer_npub": "npub...",
   "ciphertext": "bao:v1:...",
   "created_at": 1789570000
 }
@@ -203,7 +261,7 @@ without changing Clear's public protocol.
 
 The strongest integration is not merely "store the keyset secret in QxVault."
 It is "perform the Cashu signing operation inside a boundary that never returns
-the keyset secret."
+the per-CMU keyset secret."
 
 Target flow:
 
@@ -211,8 +269,8 @@ Target flow:
 treasurer signs issuance authorization
   -> Clear verifies policy, grant, limits, nonce, and supply state
   -> Clear submits bounded signing request to QxVault-backed signer
-  -> signer validates keyset and request context
-  -> signer signs blinded messages
+  -> signer validates CMU, keyset, treasurer policy, and request context
+  -> signer signs blinded messages with the CMU-specific keyset
   -> signer emits independent audit evidence
 ```
 
@@ -224,6 +282,7 @@ The signer should enforce:
 
 - keyset lifecycle state;
 - exact `cmu-<keyset-id>` binding;
+- treasurer authority for that specific CMU;
 - authorized denomination vector;
 - unique operation identifier;
 - treasury authorization evidence hash;
@@ -324,7 +383,8 @@ The useful first slice is intentionally narrow:
    behavior.
 3. Implement `QxVaultTransitProvider` using OpenBao-compatible encrypt,
    decrypt, and rewrap operations.
-4. Persist `qxvault-transit-v1` custody envelopes for new random keysets.
+4. Persist `qxvault-transit-v1` custody envelopes for each new per-CMU random
+   keyset.
 5. Add a root-only rewrap command for existing local envelopes.
 6. Add tests that prove rewrapping does not change keyset ID, CMU, public
    keys, supply state, or outstanding proof validity.
@@ -346,4 +406,3 @@ application-held key material.
   logging blinded messages, proofs, or bearer secrets?
 - What latency and availability profile should Clear assume for online swaps
   and redemption when every signing operation crosses the QxVault boundary?
-
