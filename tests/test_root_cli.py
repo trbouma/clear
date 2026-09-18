@@ -1423,6 +1423,84 @@ def test_root_cli_cmu_label_calls_operator_endpoint(monkeypatch, capsys) -> None
     ]
 
 
+def test_root_cli_cmu_private_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "public_listing": payload["public_listing"],
+            "status": "active",
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "cmu",
+            "private",
+            "cmu-created",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"public_listing": false' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/cmus/cmu-created/visibility",
+            {"public_listing": False},
+            "operator-token",
+        )
+    ]
+
+
+def test_root_cli_cmu_publish_calls_operator_endpoint(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setenv("CLEAR_OPERATOR_TOKEN", "operator-token")
+
+    def fake_request_json(mint_url, method, path, payload=None, *, token=None):
+        calls.append((mint_url, method, path, payload, token))
+        return {
+            "unit": "cmu-created",
+            "keyset_id": "keyset-created",
+            "public_listing": payload["public_listing"],
+            "status": "active",
+        }
+
+    monkeypatch.setattr(root_cli, "request_json", fake_request_json)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "clear-root",
+            "--mint-url",
+            "http://127.0.0.1:3339",
+            "cmu",
+            "publish",
+            "cmu-created",
+        ],
+    )
+
+    assert root_cli.main() == 0
+    assert '"public_listing": true' in capsys.readouterr().out
+    assert calls == [
+        (
+            "http://127.0.0.1:3339",
+            "POST",
+            "/v1/operator/cmus/cmu-created/visibility",
+            {"public_listing": True},
+            "operator-token",
+        )
+    ]
+
+
 def test_root_cli_info_combines_cmu_metadata_and_circulation(
     monkeypatch,
     capsys,

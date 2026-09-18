@@ -96,6 +96,37 @@ docker compose exec clear-operator clear-root cmu label cmu-<keyset-id-or-unit> 
   --unit-alias "credits"
 ```
 
+To hide an active CMU from the public home page without disabling it, mark it
+private:
+
+```sh
+docker compose exec clear-operator clear-root cmu private cmu-<keyset-id-or-unit>
+```
+
+The authorized treasurer can also make the same signed request from the public
+treasury surface:
+
+```sh
+poetry run clear-treasury --mint https://clear.example --nsec <treasurer-nsec> \
+  cmu private --cmu-id cmu-<keyset-id>
+```
+
+Private CMUs remain available through their exact CMU id or keyset id. They
+are still returned by direct keyset endpoints and can still be issued,
+accepted, redeemed, and inspected by software that already knows the id. To
+list the CMU on the public home page again:
+
+```sh
+docker compose exec clear-operator clear-root cmu publish cmu-<keyset-id-or-unit>
+```
+
+Treasurers use the matching signed command:
+
+```sh
+poetry run clear-treasury --mint https://clear.example --nsec <treasurer-nsec> \
+  cmu publish --cmu-id cmu-<keyset-id>
+```
+
 Wallets resolve the live label from `/v1/keysets`, `/v1/keys`, or
 `/v1/keys/{keyset_id}` and continue to bind balances to the canonical mint,
 CMU, and keyset identity.

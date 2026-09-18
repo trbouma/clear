@@ -141,7 +141,31 @@ This is a signed read-only request. The mint returns the requested active CMU
 only if that treasurer key controls the named unit. `--keyset-id <keyset-id>` is
 also accepted when the treasurer wants to name the underlying keyset directly.
 
-## 8. Operator Verifies the CMU
+## 8. Choose Public Listing
+
+By default, an active CMU appears on the mint home page. To hide it from the
+home page without disabling direct use by CMU id:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  cmu private \
+  --cmu-id <cmu-id>
+```
+
+To show it again:
+
+```bash
+clear-treasury --mint https://clear.safebox.dev \
+  --nsec nsec1... \
+  cmu publish \
+  --cmu-id <cmu-id>
+```
+
+The mint operator can also list or unlist any hosted CMU through `clear-root`.
+A treasurer can only change visibility for CMUs controlled by their key.
+
+## 9. Operator Verifies the CMU
 
 The operator checks the consumed grant and the created CMU:
 

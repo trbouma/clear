@@ -37,6 +37,7 @@ from clear.treasury_auth import (
     build_cmu_create_envelope,
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
+    build_cmu_visibility_envelope,
     npub_from_nsec,
 )
 
@@ -341,6 +342,27 @@ def cmu_summary(args) -> int:
     return 0
 
 
+def cmu_visibility(args) -> int:
+    nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    keyset_id = _resolve_keyset_id(mint, args)
+    envelope = build_cmu_visibility_envelope(
+        mint=mint,
+        nsec=nsec,
+        keyset_id=keyset_id,
+        public_listing=args.public_listing,
+        lifetime_seconds=args.lifetime,
+    )
+    result = request_json(mint, "POST", "/v1/treasury/cmus/visibility", envelope)
+    _print_json(
+        {
+            **result,
+            "treasurer_npub": npub_from_nsec(nsec),
+        }
+    )
+    return 0
+
+
 def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
         prog=prog,
@@ -480,6 +502,36 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     cmu_summary_parser.set_defaults(handler=cmu_summary)
+    cmu_private_parser = cmu_subcommands.add_parser(
+        "private",
+        help="Hide a treasurer-controlled CMU from the public homepage.",
+    )
+    _add_cmu_selector(cmu_private_parser, action="hide")
+    cmu_private_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    cmu_private_parser.set_defaults(
+        handler=cmu_visibility,
+        public_listing=False,
+    )
+    cmu_publish_parser = cmu_subcommands.add_parser(
+        "publish",
+        help="Show a treasurer-controlled CMU on the public homepage.",
+    )
+    _add_cmu_selector(cmu_publish_parser, action="publish")
+    cmu_publish_parser.add_argument(
+        "--lifetime",
+        type=int,
+        default=300,
+        help="Signed request lifetime in seconds.",
+    )
+    cmu_publish_parser.set_defaults(
+        handler=cmu_visibility,
+        public_listing=True,
+    )
 
     wallet_parser = subcommands.add_parser(
         "wallet",

@@ -127,6 +127,45 @@ for the unit they are authorized to create. Changing friendly labels does not
 change the keyset, CMU, ledger, treasurer authority, existing Mint Notes, or
 holder balances.
 
+## Public Listing Visibility
+
+Public listing is a discovery and presentation control, not a lifecycle state.
+A private CMU is hidden from the mint home page but remains available to
+software that already knows its exact CMU id or keyset ID. It remains visible
+through direct keyset endpoints, can still issue, swap, redeem, retire, and be
+inspected, and it keeps the same keyset, ledger, treasurer authority, existing
+Mint Notes, and holder balances.
+
+Both the mint operator and the CMU treasurer may change public listing, but
+they do so through different authority paths:
+
+- the mint operator may unilaterally list or unlist any CMU hosted by the mint
+  through the privileged local `clear-root` operator surface; and
+- a treasurer may list or unlist only the CMUs currently bound to their
+  treasurer key through a signed `clear-treasury` request.
+
+Operator commands:
+
+```text
+clear-root cmu private cmu-<keyset-id>
+clear-root cmu publish cmu-<keyset-id>
+```
+
+Treasurer commands:
+
+```text
+clear-treasury --mint <mint-url> --nsec <treasurer-nsec> \
+  cmu private --cmu-id cmu-<keyset-id>
+
+clear-treasury --mint <mint-url> --nsec <treasurer-nsec> \
+  cmu publish --cmu-id cmu-<keyset-id>
+```
+
+This is intentionally separate from friendly label changes. Label changes are
+operator-mediated because they affect the public wording the mint advertises.
+Public listing lets the operator or authorized treasurer decide whether an
+otherwise active CMU should appear in public home-page discovery.
+
 In the `clear-root` command model, `add` and `grant` have distinct meanings:
 
 - `clear-root treasurer keygen` generates a local `npub`/`nsec` pair and

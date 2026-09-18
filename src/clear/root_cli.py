@@ -579,6 +579,18 @@ def cmu_label(args) -> int:
     return 0
 
 
+def cmu_visibility(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        f"/v1/operator/cmus/{args.cmu}/visibility",
+        {"public_listing": args.public_listing},
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
 def info(args) -> int:
     api_url = _api_url(args)
     mint_info = _mint_info(api_url)
@@ -1068,6 +1080,24 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         help="Friendly unit label, for example credits, passes, or meals.",
     )
     cmu_label_parser.set_defaults(handler=cmu_label)
+    cmu_private_parser = cmu_subcommands.add_parser(
+        "private",
+        help="Hide a CMU from the public homepage while keeping it usable by ID.",
+    )
+    cmu_private_parser.add_argument("cmu", help="CMU unit or keyset ID.")
+    cmu_private_parser.set_defaults(
+        handler=cmu_visibility,
+        public_listing=False,
+    )
+    cmu_publish_parser = cmu_subcommands.add_parser(
+        "publish",
+        help="Show a CMU on the public homepage.",
+    )
+    cmu_publish_parser.add_argument("cmu", help="CMU unit or keyset ID.")
+    cmu_publish_parser.set_defaults(
+        handler=cmu_visibility,
+        public_listing=True,
+    )
 
     wallet_parser = subcommands.add_parser("wallet", help="Manage local root wallet.")
     wallet_subcommands = wallet_parser.add_subparsers(

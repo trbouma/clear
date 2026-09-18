@@ -17,6 +17,7 @@ from clear.treasury_auth import (
     build_cmu_create_envelope,
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
+    build_cmu_visibility_envelope,
     build_quote_authorize_envelope,
     sign_payload,
 )
@@ -560,8 +561,14 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert "CMU metrics" in metrics_page.text
     assert "Gym Guest Passes" in metrics_page.text
     assert "Policy-aware supply metrics" in metrics_page.text
-    assert "<span>Issued</span><strong><bdi dir=\"auto\">8</bdi></strong>" in metrics_page.text
-    assert "<span>Outstanding</span><strong><bdi dir=\"auto\">8</bdi></strong>" in metrics_page.text
+    assert (
+        "<span>Issued</span><strong><bdi dir=\"auto\">8</bdi></strong>"
+        in metrics_page.text
+    )
+    assert (
+        "<span>Outstanding</span><strong><bdi dir=\"auto\">8</bdi></strong>"
+        in metrics_page.text
+    )
     assert "Quote pipeline" in metrics_page.text
     assert "Proof-state diagnostics" in metrics_page.text
     assert "Signed outputs by operation" in metrics_page.text
@@ -570,6 +577,7 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
         "operator",
         "authorized-treasury",
     }
+    assert all(item["public_listing"] is True for item in keysets)
     assert next(
         item for item in keysets if item["authority"] == "authorized-treasury"
     )["treasurer_npub"] == npub
@@ -610,6 +618,99 @@ def test_public_nostr_profile_endpoint_returns_kind_0_profile(
     assert calls == [(npub, ["wss://relay.example"], 3.0)]
     assert response.json()["profile"]["name"] == "Workshop Treasurer"
     assert response.json()["profile"]["nip05"] == "treasurer@example.com"
+
+
+def test_operator_can_make_cmu_private_without_disabling_direct_use(
+    tmp_path,
+) -> None:
+    configured = settings(
+        tmp_path,
+        currency_alias="Harbour Lab Credits",
+        currency_unit_alias="smiles",
+    )
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={
+                "grant_id": grant["id"],
+                "name": "Private Guest Passes",
+                "unit_alias": "passes",
+            },
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        private = client.post(
+            f"/v1/operator/cmus/{created['unit']}/visibility",
+            json={"public_listing": False},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        homepage = client.get("/", headers={"Accept": "text/html"})
+        keysets = client.get("/v1/keysets").json()["keysets"]
+        keys = client.get(f"/v1/keys/{created['keyset_id']}")
+        metrics_page = client.get(f"/cmus/{created['keyset_id']}")
+
+    assert private.status_code == 200
+    assert private.json()["public_listing"] is False
+    assert "Private Guest Passes" not in homepage.text
+    assert created["unit"] not in homepage.text
+    assert created["keyset_id"] not in homepage.text
+    assert "Harbour Lab Credits" in homepage.text
+    private_keyset = next(
+        item for item in keysets if item["id"] == created["keyset_id"]
+    )
+    assert private_keyset["public_listing"] is False
+    assert private_keyset["active"] is True
+    assert keys.status_code == 200
+    assert keys.json()["keysets"][0]["unit"] == created["unit"]
+    assert keys.json()["keysets"][0]["public_listing"] is False
+    assert metrics_page.status_code == 200
+    assert "Private Guest Passes" in metrics_page.text
+
+
+def test_operator_can_publish_private_cmu_again(tmp_path) -> None:
+    configured = settings(tmp_path)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    with TestClient(create_app(configured)) as client:
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        created = client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Workshop Passes"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        client.post(
+            f"/v1/operator/cmus/{created['keyset_id']}/visibility",
+            json={"public_listing": False},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        published = client.post(
+            f"/v1/operator/cmus/{created['unit']}/visibility",
+            json={"public_listing": True},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        homepage = client.get("/", headers={"Accept": "text/html"})
+
+    assert published.status_code == 200
+    assert published.json()["public_listing"] is True
+    assert "Workshop Passes" in homepage.text
 
 
 def test_browser_homepage_uses_configured_mint_title(tmp_path) -> None:
@@ -1591,6 +1692,106 @@ def test_treasurer_can_inspect_bound_cmu_supply_summary(tmp_path) -> None:
     }
     assert replay.status_code == 400
     assert "nonce has already been used" in replay.json()["detail"]
+
+
+def test_treasurer_can_make_bound_cmu_private_and_publish_again(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Treasurer Private Credits",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
+        private_envelope = build_cmu_visibility_envelope(
+            mint="https://clear.example",
+            nsec=treasurer.private_key_bech32(),
+            keyset_id=cmu["keyset_id"],
+            public_listing=False,
+        )
+        private = client.post("/v1/treasury/cmus/visibility", json=private_envelope)
+        replay = client.post("/v1/treasury/cmus/visibility", json=private_envelope)
+        private_homepage = client.get("/", headers={"Accept": "text/html"})
+        keysets = client.get("/v1/keysets").json()["keysets"]
+        published = client.post(
+            "/v1/treasury/cmus/visibility",
+            json=build_cmu_visibility_envelope(
+                mint="https://clear.example",
+                nsec=treasurer.private_key_bech32(),
+                keyset_id=cmu["keyset_id"],
+                public_listing=True,
+            ),
+        )
+        public_homepage = client.get("/", headers={"Accept": "text/html"})
+
+    assert private.status_code == 200
+    assert private.json()["public_listing"] is False
+    assert private.json()["treasurer_npub"] == npub
+    assert private.json()["treasurer_pubkey"] == treasurer.public_key_hex()
+    assert replay.status_code == 400
+    assert "nonce has already been used" in replay.json()["detail"]
+    assert "Treasurer Private Credits" not in private_homepage.text
+    private_keyset = next(item for item in keysets if item["id"] == cmu["keyset_id"])
+    assert private_keyset["public_listing"] is False
+    assert private_keyset["active"] is True
+    assert published.status_code == 200
+    assert published.json()["public_listing"] is True
+    assert "Treasurer Private Credits" in public_homepage.text
+
+
+def test_treasury_cmu_visibility_rejects_unbound_treasurer(tmp_path) -> None:
+    configured = settings(tmp_path)
+    authorized = Keys(priv_k="1".zfill(64))
+    outsider = Keys(priv_k="2".zfill(64))
+    with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": authorized.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": authorized.public_key_bech32()},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Protected Credits",
+                nsec=authorized.private_key_bech32(),
+            ),
+        ).json()
+        response = client.post(
+            "/v1/treasury/cmus/visibility",
+            json=build_cmu_visibility_envelope(
+                mint="https://clear.example",
+                nsec=outsider.private_key_bech32(),
+                keyset_id=cmu["keyset_id"],
+                public_listing=False,
+            ),
+    )
+
+    assert response.status_code == 400
+    assert "treasurer does not control requested CMU" in response.json()["detail"]
 
 
 def test_treasury_cmu_info_rejects_unbound_treasurer(tmp_path) -> None:

@@ -63,6 +63,8 @@ nav:
       - API: api.md
       - Security: security.md
       - Release Roadmap: release-roadmap.md
+  - Workshops:
+      - Clear Intro Workshop: presentations/clear-intro/index.html
   - Project Status: project-status.md
 
 markdown_extensions:

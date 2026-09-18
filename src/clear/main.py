@@ -23,6 +23,7 @@ from clear.models import (
     CheckStateRequest,
     CMUCreateRequest,
     CMULabelRequest,
+    CMUVisibilityRequest,
     MintQuoteRequest,
     MintRequest,
     RetireRequest,
@@ -259,6 +260,8 @@ def create_app(
         if "text/html" in accept:
             active_keysets = []
             for item in store.keyset_responses(include_keys=False):
+                if item.get("public_listing") is False:
+                    continue
                 active_keyset = dict(item)
                 try:
                     supply = store.summary_for_keyset(str(item["id"]))
@@ -829,6 +832,23 @@ def create_app(
         except ClearError as exc:
             return _protocol_error(str(exc), 15004)
 
+    @app.post("/v1/operator/cmus/{unit_or_keyset_id}/visibility")
+    async def set_cmu_visibility(
+        unit_or_keyset_id: str,
+        body: CMUVisibilityRequest,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.set_cmu_public_listing(
+                unit_or_keyset_id,
+                public_listing=body.public_listing,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15005)
+
     @app.post("/v1/treasury/cmus")
     async def create_cmu_from_treasury(body: TreasuryEnvelopeRequest):
         try:
@@ -859,6 +879,16 @@ def create_app(
             )
         except ClearError as exc:
             return _protocol_error(str(exc), 15005)
+
+    @app.post("/v1/treasury/cmus/visibility")
+    async def cmu_visibility_from_treasury(body: TreasuryEnvelopeRequest):
+        try:
+            return store.cmu_visibility_from_treasury_envelope(
+                body.model_dump(),
+                mint_url=configured.mint_url,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15006)
 
     @app.post("/v1/treasury/quotes/{quote_id}/authorize")
     async def authorize_quote_from_treasury(

@@ -123,6 +123,11 @@ operator grants one keyset creation to treasurer
 
 - Show the complete CMU, keyset ID, friendly name, and active status.
 - Provide supply summaries per CMU.
+- Support public listing controls that hide an active CMU from the mint home
+  page without disabling direct CMU/keyset lookup or treasury operations.
+- Allow the mint operator to list or unlist any hosted CMU through
+  `clear-root`, and allow a treasurer to list or unlist only CMUs they control
+  through signed `clear-treasury` requests.
 - Put whole-unit lifecycle operations under `clear-root cmu`, including
   `suspend`, `resume`, `redemption-only`, and `retire`.
 - Keep top-level `clear-root retire` scoped to presented Mint Notes, amounts,

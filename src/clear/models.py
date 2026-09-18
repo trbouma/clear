@@ -81,6 +81,10 @@ class CMULabelRequest(BaseModel):
     unit_alias: str | None = Field(default=None, min_length=1, max_length=40)
 
 
+class CMUVisibilityRequest(BaseModel):
+    public_listing: bool
+
+
 class TreasuryEnvelopeRequest(BaseModel):
     payload: dict = Field()
     event: dict = Field()

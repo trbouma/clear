@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Clear workshop concept map</title>
+  <desc id="desc">Issuer policy, treasurer authorization, Clear minting, and private Mint Notes circulating to holders.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}.card{fill:#fff;stroke:#d5e3e3;stroke-width:3}.mint{fill:#eaf6f7;stroke:#247c93;stroke-width:4}.text{font-family:Inter,Arial,sans-serif;fill:#17313a}.label{font-size:27px;font-weight:830}.small{font-size:18px}.muted{fill:#63777d}.line{stroke:#247c93;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}.coral{fill:#d9674b}.teal{fill:#247c93}.deep{fill:#143d52}
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1l10 5-10 5z" fill="#247c93"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1200" height="420" rx="18"/>
+  <rect class="card" x="70" y="142" width="215" height="136" rx="10"/>
+  <circle class="deep" cx="112" cy="188" r="20"/>
+  <text class="text label" x="145" y="196">Issuer</text>
+  <text class="text small muted" x="105" y="235">defines meaning</text>
+
+  <rect class="card" x="350" y="142" width="215" height="136" rx="10"/>
+  <circle class="coral" cx="392" cy="188" r="20"/>
+  <text class="text label" x="425" y="196">Treasurer</text>
+  <text class="text small muted" x="385" y="235">signs authority</text>
+
+  <rect class="mint" x="635" y="122" width="235" height="176" rx="14"/>
+  <circle class="teal" cx="685" cy="182" r="24"/>
+  <text class="text label" x="725" y="190">Clear mint</text>
+  <text class="text small muted" x="674" y="236">issues Mint Notes</text>
+
+  <rect class="card" x="940" y="142" width="215" height="136" rx="10"/>
+  <circle class="coral" cx="982" cy="188" r="20"/>
+  <text class="text label" x="1015" y="196">Holders</text>
+  <text class="text small muted" x="975" y="235">circulate privately</text>
+
+  <path class="line" marker-end="url(#arrow)" d="M285 210h55"/>
+  <path class="line" marker-end="url(#arrow)" d="M565 210h60"/>
+  <path class="line" marker-end="url(#arrow)" d="M870 210h60"/>
+  <path class="line" marker-end="url(#arrow)" d="M1048 278c-85 82-286 102-408 39"/>
+  <text class="text small muted" x="782" y="362">redemption and retirement return supply evidence to the mint</text>
+</svg>

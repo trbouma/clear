@@ -22,7 +22,7 @@ class ClearError(ValueError):
     pass
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 COMMISSIONING_PROFILE_VERSION = 1
 
 
@@ -124,6 +124,7 @@ class Store:
                     unit TEXT NOT NULL UNIQUE,
                     fingerprint TEXT NOT NULL,
                     status TEXT NOT NULL,
+                    public_listing INTEGER NOT NULL DEFAULT 1,
                     friendly_name TEXT,
                     friendly_unit_alias TEXT,
                     treasurer_npub TEXT,
@@ -181,7 +182,7 @@ class Store:
             )
             self._bind_mint_identity(connection)
             self._bind_mint_service_identity(connection)
-            self._ensure_cmu_display_columns(connection)
+            self._ensure_cmu_columns(connection)
             self._ensure_legacy_cmu(connection)
             self._ensure_legacy_cmu_display_metadata(connection)
             self._load_persisted_keysets(connection)
@@ -526,20 +527,25 @@ class Store:
         return response
 
     @staticmethod
-    def _ensure_cmu_display_columns(connection) -> None:
+    def _ensure_cmu_columns(connection) -> None:
         columns = {
             row["name"]
             for row in connection.execute("PRAGMA table_info(cmus)").fetchall()
         }
         if "friendly_unit_alias" not in columns:
             connection.execute("ALTER TABLE cmus ADD COLUMN friendly_unit_alias TEXT")
+        if "public_listing" not in columns:
+            connection.execute(
+                "ALTER TABLE cmus ADD COLUMN public_listing INTEGER "
+                "NOT NULL DEFAULT 1"
+            )
 
     def _cmu_keyset_metadata(self, keyset_id: str) -> dict:
         with self._connection() as connection:
             row = connection.execute(
                 """
                 SELECT friendly_name, friendly_unit_alias, treasurer_npub,
-                    material_kind
+                    material_kind, public_listing
                 FROM cmus WHERE keyset_id = ?
                 """,
                 (keyset_id,),
@@ -551,6 +557,7 @@ class Store:
                 "friendly_unit_alias": None,
                 "authority": "operator",
                 "treasurer_npub": None,
+                "public_listing": True,
             }
         authority = (
             "authorized-treasury"
@@ -564,6 +571,7 @@ class Store:
             "friendly_unit_alias": row["friendly_unit_alias"],
             "authority": authority,
             "treasurer_npub": row["treasurer_npub"],
+            "public_listing": bool(row["public_listing"]),
         }
 
     def _cmu_status(self, keyset_id: str) -> str:
@@ -1599,6 +1607,64 @@ class Store:
             "treasurer_pubkey": event["pubkey"],
         }
 
+    def cmu_visibility_from_treasury_envelope(
+        self,
+        envelope: dict,
+        *,
+        mint_url: str,
+    ) -> dict:
+        try:
+            payload, event = verify_envelope(
+                envelope,
+                expected_action="cmu:visibility",
+                expected_mint=mint_url,
+            )
+        except TreasuryAuthError as exc:
+            raise ClearError(str(exc)) from exc
+        now = self._now()
+        with self._transaction() as connection:
+            self._record_treasury_nonce(
+                connection,
+                nonce=payload["nonce"],
+                pubkey=event["pubkey"],
+                action=payload["action"],
+                now=now,
+            )
+            keyset_id = payload.get("keyset_id")
+            if not isinstance(keyset_id, str) or not keyset_id:
+                raise ClearError("treasury request keyset_id is required")
+            public_listing = payload.get("public_listing")
+            if not isinstance(public_listing, bool):
+                raise ClearError("treasury request public_listing is required")
+            cmu = self._active_cmu_for_treasury_pubkey(
+                connection,
+                event["pubkey"],
+                keyset_id,
+            )
+            connection.execute(
+                "UPDATE cmus SET public_listing = ? WHERE keyset_id = ?",
+                (1 if public_listing else 0, cmu["keyset_id"]),
+            )
+            action = (
+                "cmu:publish:treasury"
+                if public_listing
+                else "cmu:private:treasury"
+            )
+            self._audit(
+                connection,
+                action,
+                0,
+                payload["action"],
+                cmu["keyset_id"],
+            )
+            updated = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ?", (cmu["keyset_id"],)
+            ).fetchone()
+        return {
+            **self._cmu_response(updated),
+            "treasurer_pubkey": event["pubkey"],
+        }
+
     def authorize_quote_from_treasury_envelope(
         self,
         envelope: dict,
@@ -1722,6 +1788,7 @@ class Store:
                 "friendly_unit_alias": friendly_unit_alias,
                 "treasurer_npub": grant["npub"],
                 "material_kind": "random-encrypted-v1",
+                "public_listing": 1,
                 "created_at": now,
                 "activated_at": now,
             }
@@ -1780,6 +1847,33 @@ class Store:
             )
         return self.get_cmu(unit_or_keyset_id)
 
+    def set_cmu_public_listing(
+        self,
+        unit_or_keyset_id: str,
+        *,
+        public_listing: bool,
+    ) -> dict:
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ? OR unit = ?",
+                (unit_or_keyset_id, unit_or_keyset_id),
+            ).fetchone()
+            if existing is None:
+                raise ClearError("CMU not found")
+            connection.execute(
+                "UPDATE cmus SET public_listing = ? WHERE keyset_id = ?",
+                (1 if public_listing else 0, existing["keyset_id"]),
+            )
+            action = "cmu:publish" if public_listing else "cmu:private"
+            self._audit(
+                connection,
+                action,
+                0,
+                unit_or_keyset_id,
+                existing["keyset_id"],
+            )
+        return self.get_cmu(unit_or_keyset_id)
+
     def list_cmus(self) -> dict:
         with self._connection() as connection:
             rows = connection.execute(
@@ -1819,6 +1913,7 @@ class Store:
             "keyset_id": row["keyset_id"],
             "keyset_fingerprint": row["fingerprint"],
             "status": row["status"],
+            "public_listing": bool(row["public_listing"]),
             "friendly_name": row["friendly_name"],
             "friendly_alias": row["friendly_name"],
             "friendly_unit_alias": row["friendly_unit_alias"],

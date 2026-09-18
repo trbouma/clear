@@ -1,0 +1,337 @@
+![Clear logo](../../assets/clear-logo.svg)
+
+# Clear
+
+Digital minting infrastructure for issuer-defined treasury units.
+
+Introductory workshop
+
+![Clear workshop map](../../assets/presentations/clear-intro/title-workshop-map.svg)
+
+---
+
+## Workshop arc
+
+- Why Clear exists
+- The older treasury pattern it updates
+- Mint Notes, CMUs, and private bearer value
+- The three roles: operator, treasurer, holder
+- How issuance, circulation, and redemption work
+- What we have running today
+- Where governance and custody get serious
+
+---
+
+## The problem
+
+Many organizations already create limited-purpose value.
+
+- meal credits
+- member benefits
+- event allowances
+- service credits
+- community vouchers
+- compute or agent credits
+
+The hard part is making that value portable without turning every holder into
+an account inside one application.
+
+---
+
+## Clear in one sentence
+
+Clear lets an issuer define a treasury unit, authorize a treasurer to issue it,
+and let holders circulate private bearer Mint Notes under a published policy.
+
+---
+
+## Not primarily a payment rail
+
+Payment rails move value that already has a settlement unit.
+
+Clear starts one layer earlier:
+
+- What is this unit?
+- Who is allowed to issue it?
+- Where is it recognized?
+- What does redemption or retirement mean?
+- Who operates the mint?
+
+---
+
+## Older pattern, new tools
+
+Community and institutional treasuries have long issued recognized instruments:
+
+- vouchers
+- scrip
+- meal tickets
+- internal credits
+- redeemable certificates
+- local program allowances
+
+Clear gives that pattern a private digital bearer form.
+
+---
+
+## The instrument
+
+Mint Note
+
+- holder-facing term
+- private bearer instrument
+- issued by one mint keyset
+- transferable between compatible wallets
+- technically represented as Cashu proofs
+
+---
+
+## The unit
+
+Clear Mint Unit, or CMU
+
+```text
+cmu-<keyset-id>
+```
+
+A friendly name can change.
+
+The canonical identity does not.
+
+![CMU identity stack](../../assets/presentations/clear-intro/cmu-identity-stack.svg)
+
+---
+
+## The rule that keeps Clear clear
+
+Every CMU stands alone.
+
+- one exact mint route
+- one exact keyset
+- one exact ledger boundary
+- one supply accounting context
+- one issuer or policy meaning
+
+Do not add balances from different CMUs as though they are one currency.
+
+---
+
+## Three roles
+
+```text
+issuer / community policy
+  -> defines meaning, limits, redemption terms
+
+treasurer
+  -> authorizes creation, issuance, and treasury actions
+
+mint operator
+  -> runs the service, protects key material, enforces spent state
+```
+
+One person may fill several roles, but Clear keeps the roles distinct.
+
+![Clear authority roles](../../assets/presentations/clear-intro/roles-and-authority.svg)
+
+---
+
+## Operator versus treasurer
+
+Mint operator
+
+- controls privileged local operator surface
+- hosts the mint
+- safeguards keyset custody
+- can list or unlist hosted CMUs
+
+Treasurer
+
+- keeps their own `nsec`
+- signs bounded public treasury requests
+- controls only CMUs bound to their key
+- never receives the CMU keyset secret
+
+---
+
+## Creation flow
+
+```text
+operator records treasurer npub
+  -> operator grants one CMU creation
+  -> treasurer signs CMU creation request
+  -> mint verifies grant and signature
+  -> mint generates random keyset secret
+  -> mint creates cmu-<keyset-id>
+```
+
+The grant is consumed. Another CMU requires another grant.
+
+---
+
+## Issuance flow
+
+```text
+treasurer chooses CMU and amount
+  -> clear-treasury signs request
+  -> mint creates blinded signatures
+  -> proofs enter treasurer wallet
+  -> treasurer can send Mint Notes
+```
+
+The local treasury wallet is scoped by mint and treasurer key.
+
+---
+
+## Circulation flow
+
+```text
+sender wallet
+  -> encrypted Clear transfer
+  -> recipient inbox relay
+  -> recipient wallet accepts
+  -> mint swaps proofs into spendable balance
+```
+
+The mint prevents double spending without seeing a full account ledger of
+holder-to-holder movement.
+
+![Mint Note lifecycle](../../assets/presentations/clear-intro/mint-note-flow.svg)
+
+---
+
+## Redemption and retirement
+
+Redemption is policy.
+
+Retirement is the mint-side accounting outcome.
+
+```text
+holder presents Mint Notes
+  -> recognized party accepts under policy
+  -> mint marks proofs spent
+  -> retired supply increases
+```
+
+Clear does not assume a Lightning payout or cash conversion.
+
+---
+
+## Discovery and privacy
+
+A CMU can be public-listed or private-listed.
+
+Public-listed:
+
+- appears on the mint home page
+
+Private-listed:
+
+- hidden from the home page
+- still usable by exact CMU id
+- still available through direct keyset endpoints
+
+This is discovery control, not lifecycle.
+
+![Public and private CMU listing](../../assets/presentations/clear-intro/discovery-visibility.svg)
+
+---
+
+## What works now
+
+- operator grant to treasurer
+- treasurer-created CMUs
+- multiple CMUs per treasurer
+- explicit `--cmu-id` selection
+- issuance into treasury wallet
+- send to NIP-05 address
+- Acorn receive and accept
+- Safebox Web visibility
+- homepage keyset and supply display
+- operator and treasurer CMU visibility controls
+
+---
+
+## Why private bearer notes matter
+
+Account systems are easy to observe and easy to centralize.
+
+Private bearer notes let holders move value without making the operator the
+application account system for every transfer.
+
+Clear still leaves policy visible where it belongs:
+
+- issuer meaning
+- treasurer authority
+- mint route
+- CMU identity
+- supply totals
+
+---
+
+## Governance questions
+
+Before a real program launches:
+
+- Who is the issuer?
+- Who is the treasurer?
+- What does redemption mean?
+- What are the issuance limits?
+- Who can suspend or retire the CMU?
+- Should the CMU be public-listed?
+- What happens if a treasurer key is compromised?
+
+---
+
+## Custody questions
+
+The most sensitive mint secrets must move behind stronger boundaries.
+
+Near term:
+
+- dedicated key-encryption material
+- OpenBao Transit for wrapping and signing operations
+
+Longer term:
+
+- remote signer
+- HSM-backed key custody
+- policy-enforcing signing boundary
+
+---
+
+## Demo path
+
+1. Operator checks mint status
+2. Operator grants treasurer
+3. Treasurer creates CMU
+4. Treasurer issues units
+5. Treasurer sends to a NIP-05 address
+6. Recipient accepts in wallet
+7. Home page shows or hides the CMU
+
+---
+
+## The mental model
+
+Clear is electronic coinage machinery for issuer-defined units.
+
+It combines:
+
+- treasury authority
+- Cashu private bearer notes
+- exact CMU identity
+- mint-operated spent-state protection
+- policy-aware supply evidence
+
+---
+
+## Discussion
+
+Where would this pattern be useful?
+
+- community benefits
+- event credits
+- local exchange
+- internal service credits
+- public-purpose allowances
+- agent and compute budgets

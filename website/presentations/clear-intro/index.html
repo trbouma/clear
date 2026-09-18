@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clear Intro Workshop</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f6faf9;
+      --surface: #ffffff;
+      --ink: #17313a;
+      --muted: #63777d;
+      --line: #d4e4e4;
+      --teal: #247c93;
+      --teal-dark: #143d52;
+      --coral: #c9543b;
+      --code: #eef7f8;
+      --shadow: 0 20px 55px rgba(20, 61, 82, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+        BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .deck {
+      display: grid;
+      min-height: 100vh;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--teal-dark);
+      text-transform: uppercase;
+    }
+
+    .brand img {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .stage {
+      display: grid;
+      min-height: 0;
+      place-items: center;
+      padding: 0.2rem 1.25rem 0.65rem;
+    }
+
+    .slide {
+      display: none;
+      width: min(74rem, calc(100vw - 2.5rem));
+      height: min(42rem, calc(100vh - 7.1rem));
+      min-height: 0;
+      padding: clamp(1.45rem, 3.8vw, 3.5rem);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .slide h1,
+    .slide h2 {
+      max-width: 58rem;
+      margin: 0 0 0.8rem;
+      color: var(--teal-dark);
+      font-weight: 850;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .slide h1 {
+      font-size: clamp(3.1rem, 7vw, 6.4rem);
+    }
+
+    .slide h2 {
+      font-size: clamp(2.05rem, 4.5vw, 4.3rem);
+    }
+
+    .slide p {
+      max-width: 58rem;
+      margin: 0.45rem 0;
+      color: var(--ink);
+      font-size: clamp(1.08rem, 1.85vw, 1.62rem);
+      line-height: 1.28;
+    }
+
+    .slide ul {
+      display: grid;
+      gap: 0.5rem;
+      max-width: 58rem;
+      margin: 0.75rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .slide li {
+      position: relative;
+      padding-left: 1.35rem;
+      font-size: clamp(1.02rem, 1.68vw, 1.42rem);
+      line-height: 1.22;
+    }
+
+    .slide li::before {
+      position: absolute;
+      left: 0;
+      color: var(--coral);
+      content: "";
+      width: 0.48rem;
+      height: 0.48rem;
+      border-radius: 50%;
+      margin-top: 0.55em;
+      background: currentColor;
+    }
+
+    .slide pre {
+      max-width: 62rem;
+      margin: 0.9rem 0 0;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--code);
+      overflow: auto;
+      color: var(--teal-dark);
+      font-size: clamp(0.92rem, 1.4vw, 1.24rem);
+      line-height: 1.26;
+    }
+
+    .slide code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .slide strong {
+      color: var(--teal-dark);
+    }
+
+    .slide-visual {
+      display: block;
+      width: min(100%, 57rem);
+      max-height: min(34vh, 17.5rem);
+      margin: 0.85rem auto 0;
+      object-fit: contain;
+    }
+
+    .slide:first-child {
+      align-items: center;
+      text-align: center;
+    }
+
+    .slide:first-child {
+      background:
+        linear-gradient(135deg, rgba(36, 124, 147, 0.1), transparent 48%),
+        var(--surface);
+    }
+
+    .slide:first-child h1,
+    .slide:first-child p {
+      max-width: 48rem;
+    }
+
+    .slide:first-child .slide-visual:first-child {
+      width: clamp(4.6rem, 9vw, 6.2rem);
+      max-height: 6.2rem;
+      margin: 0 auto 0.65rem;
+    }
+
+    .slide:first-child .slide-visual:last-child {
+      width: min(100%, 50rem);
+      max-height: min(30vh, 16rem);
+      margin-top: 1rem;
+    }
+
+    .slide:first-child p {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.65rem 1.25rem 1.15rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      min-width: 2.45rem;
+      min-height: 2.45rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--teal-dark);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    button:hover,
+    button:focus-visible {
+      border-color: var(--teal);
+      outline: 2px solid color-mix(in srgb, var(--teal) 28%, transparent);
+      outline-offset: 2px;
+    }
+
+    .progress {
+      position: fixed;
+      inset: auto 0 0;
+      height: 0.28rem;
+      background: color-mix(in srgb, var(--teal) 14%, transparent);
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--coral);
+      transition: width 160ms ease-out;
+    }
+
+    .help {
+      color: var(--muted);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --page: #101719;
+        --surface: #182225;
+        --ink: #edf7f7;
+        --muted: #adc0c1;
+        --line: #34484c;
+        --teal-dark: #8ecbd3;
+        --code: #203135;
+        --shadow: none;
+      }
+    }
+
+    @media print {
+      body {
+        overflow: visible;
+        background: #ffffff;
+      }
+
+      .chrome,
+      .controls,
+      .progress {
+        display: none;
+      }
+
+      .deck,
+      .stage {
+        display: block;
+      }
+
+      .slide,
+      .slide.active {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        min-height: 100vh;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+        break-after: page;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <header class="chrome">
+      <div class="brand">
+        <img src="../../assets/clear-logo.svg" alt="">
+        <span>Clear Intro Workshop</span>
+      </div>
+      <div id="counter">Loading</div>
+    </header>
+
+    <section id="stage" class="stage" aria-live="polite"></section>
+
+    <footer class="controls">
+      <span class="help">Use arrow keys, space, Home/End. Press F for fullscreen.</span>
+      <div class="buttons">
+        <button id="prev" type="button" aria-label="Previous slide">‹</button>
+        <button id="next" type="button" aria-label="Next slide">›</button>
+      </div>
+    </footer>
+  </main>
+  <div class="progress" aria-hidden="true"><div id="progress" class="progress-bar"></div></div>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    const previous = document.getElementById("prev");
+    const next = document.getElementById("next");
+    let slides = [];
+    let current = 0;
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function inlineMarkdown(value) {
+      return escapeHtml(value)
+        .replaceAll(/`([^`]+)`/g, "<code>$1</code>")
+        .replaceAll(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    }
+
+    function imageMarkdown(value) {
+      const match = value.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      if (!match) return null;
+      return `<img class="slide-visual" src="${escapeHtml(match[2])}" alt="${escapeHtml(match[1])}">`;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.trim().split(/\r?\n/);
+      const html = [];
+      let listOpen = false;
+      let codeOpen = false;
+      let codeLines = [];
+
+      function closeList() {
+        if (listOpen) {
+          html.push("</ul>");
+          listOpen = false;
+        }
+      }
+
+      function closeCode() {
+        if (codeOpen) {
+          html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+          codeLines = [];
+          codeOpen = false;
+        }
+      }
+
+      for (const line of lines) {
+        if (line.startsWith("```")) {
+          if (codeOpen) {
+            closeCode();
+          } else {
+            closeList();
+            codeOpen = true;
+          }
+          continue;
+        }
+        if (codeOpen) {
+          codeLines.push(line);
+          continue;
+        }
+        if (line.startsWith("# ")) {
+          closeList();
+          html.push(`<h1>${inlineMarkdown(line.slice(2))}</h1>`);
+        } else if (line.startsWith("## ")) {
+          closeList();
+          html.push(`<h2>${inlineMarkdown(line.slice(3))}</h2>`);
+        } else if (line.startsWith("- ")) {
+          if (!listOpen) {
+            html.push("<ul>");
+            listOpen = true;
+          }
+          html.push(`<li>${inlineMarkdown(line.slice(2))}</li>`);
+        } else if (line.trim()) {
+          closeList();
+          html.push(imageMarkdown(line) || `<p>${inlineMarkdown(line)}</p>`);
+        } else {
+          closeList();
+        }
+      }
+      closeCode();
+      closeList();
+      return html.join("\n");
+    }
+
+    function showSlide(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      document.querySelectorAll(".slide").forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === current);
+      });
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      const hash = `#${current + 1}`;
+      if (window.location.hash !== hash) {
+        history.replaceState(null, "", hash);
+      }
+    }
+
+    function renderDeck(markdown) {
+      slides = markdown
+        .split(/\n---\n/g)
+        .map((slide) => slide.trim())
+        .filter(Boolean);
+      stage.innerHTML = slides
+        .map((slide, index) => (
+          `<article class="slide" aria-label="Slide ${index + 1}">${renderMarkdown(slide)}</article>`
+        ))
+        .join("");
+      const hashIndex = Number(window.location.hash.slice(1));
+      showSlide(Number.isInteger(hashIndex) && hashIndex > 0 ? hashIndex - 1 : 0);
+    }
+
+    function move(delta) {
+      showSlide(current + delta);
+    }
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        document.documentElement.requestFullscreen();
+      }
+    }
+
+    previous.addEventListener("click", () => move(-1));
+    next.addEventListener("click", () => move(1));
+    document.addEventListener("keydown", (event) => {
+      if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+        event.preventDefault();
+        move(1);
+      } else if (["ArrowLeft", "PageUp"].includes(event.key)) {
+        event.preventDefault();
+        move(-1);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        showSlide(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        showSlide(slides.length - 1);
+      } else if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        toggleFullscreen();
+      }
+    });
+
+    fetch("slides.deck")
+      .then((response) => {
+        if (!response.ok) throw new Error("slides.deck could not be loaded");
+        return response.text();
+      })
+      .then(renderDeck)
+      .catch((error) => {
+        stage.innerHTML = `
+          <article class="slide active">
+            <h1>Clear Intro Workshop</h1>
+            <p>${escapeHtml(error.message)}</p>
+            <p>Serve the docs with <code>poetry run mkdocs serve</code>, then open this page from the local site.</p>
+          </article>
+        `;
+        counter.textContent = "1 / 1";
+        progress.style.width = "100%";
+      });
+  </script>
+</body>
+</html>
