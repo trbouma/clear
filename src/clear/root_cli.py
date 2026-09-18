@@ -269,6 +269,20 @@ def summary(args) -> int:
     return 0
 
 
+def metrics(args) -> int:
+    path = "/v1/operator/metrics"
+    if args.keyset_id:
+        path = f"{path}?keyset_id={args.keyset_id}"
+    result = request_json(
+        _api_url(args),
+        "GET",
+        path,
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
 def verify(args) -> int:
     result = request_json(
         _api_url(args),
@@ -867,6 +881,17 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
 
     summary_parser = subcommands.add_parser("summary", help="Show mint supply totals.")
     summary_parser.set_defaults(handler=summary)
+
+    metrics_parser = subcommands.add_parser(
+        "metrics",
+        help="Show policy-aware CMU metrics and proof-state diagnostics.",
+    )
+    metrics_parser.add_argument(
+        "--keyset-id",
+        default=None,
+        help="Limit metrics to one CMU keyset ID.",
+    )
+    metrics_parser.set_defaults(handler=metrics)
 
     verify_parser = subcommands.add_parser(
         "verify",

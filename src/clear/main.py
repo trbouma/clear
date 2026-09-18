@@ -17,7 +17,7 @@ from clear import __version__
 from clear.commissioning import configuration_fingerprint, run_verification
 from clear.config import Settings
 from clear.crypto import Keyset
-from clear.homepage import render_homepage
+from clear.homepage import render_cmu_metrics_page, render_homepage
 from clear.localization import resolve_language
 from clear.models import (
     CheckStateRequest,
@@ -353,6 +353,29 @@ def create_app(
             },
         }
 
+    @app.get("/cmus/{keyset_id}", response_model=None)
+    async def cmu_metrics_page(keyset_id: str, request: Request):
+        try:
+            metrics = store.metrics(keyset_id)
+        except ClearError:
+            return _protocol_error("CMU not found", 18000)
+        language = resolve_language(
+            request.query_params.get("lang"),
+            request.headers.get("accept-language"),
+        )
+        return HTMLResponse(
+            render_cmu_metrics_page(
+                mint_title=configured.mint_title,
+                mint_url=configured.mint_url,
+                metrics=metrics,
+                language=language,
+            ),
+            headers={
+                "Content-Language": language,
+                "Vary": "Accept-Language",
+            },
+        )
+
     @app.get("/v1/service-identity")
     async def service_identity_evidence():
         commissioning = store.service_commissioning_status()
@@ -528,6 +551,19 @@ def create_app(
         if error := operator_access_error(request, authorization):
             return error
         return store.summary()
+
+    @app.get("/v1/operator/metrics")
+    async def operator_metrics(
+        request: Request,
+        authorization: str | None = Header(default=None),
+        keyset_id: str | None = None,
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.metrics(keyset_id)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 18000)
 
     @app.get("/v1/operator/service")
     async def operator_service_identity(

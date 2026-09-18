@@ -39,6 +39,7 @@ or another trusted local mint environment.
 | `POST` | `/v1/operator/quotes/{id}/authorize` | Authorize the full requested amount |
 | `POST` | `/v1/operator/retire` | Validate and permanently retire proofs |
 | `GET` | `/v1/operator/summary` | Read issued, retired, and outstanding supply |
+| `GET` | `/v1/operator/metrics` | Read policy-aware CMU metrics and proof-state diagnostics |
 
 `retire` is deliberately the generalized API term. It consumes presented Mint
 Notes, marks their proofs spent, and records the amount as permanently removed
@@ -50,6 +51,13 @@ automatic expiration, or revocation of unpresented bearer notes.
 
 Any current expiry date belongs to the issuer's external redemption policy. It
 is not a proof attribute and is not enforced by the Clear API.
+
+`metrics` reports per-CMU supply, quote pipeline, audit action, signed-output,
+and spent-proof figures. Issued, retired, and outstanding supply are the
+policy-aware totals. Proof-state figures are operational diagnostics: swaps
+spend existing proofs and create replacement outputs without increasing issued
+supply, so signed-output totals are not the same as economic issuance volume.
+Pass `?keyset_id=<id>` to inspect one CMU.
 
 The interactive OpenAPI description is available at `/docs` while the service
 is running.

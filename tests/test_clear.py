@@ -264,6 +264,87 @@ def test_root_verification_uses_isolated_keyset_and_records_evidence(tmp_path) -
     assert "not active" in rejected_quote.json()["detail"]
 
 
+def test_operator_metrics_distinguish_supply_from_proof_state(tmp_path) -> None:
+    configured = settings(tmp_path)
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    app = create_app(configured)
+    keyset = app.state.keyset
+    with TestClient(app) as client:
+        proof = issue_proof(client, keyset, amount=8, secret="metric-source")
+        first_output, first_r = blinded_output(keyset, 4, "metric-swap-a", 31)
+        second_output, _second_r = blinded_output(keyset, 4, "metric-swap-b", 37)
+        swapped = client.post(
+            "/v1/swap",
+            json={
+                "inputs": [proof],
+                "outputs": [first_output, second_output],
+            },
+        )
+        assert swapped.status_code == 200, swapped.json()
+        first_swapped = unblind(
+            keyset,
+            4,
+            "metric-swap-a",
+            first_r,
+            swapped.json()["signatures"][0],
+        )
+        retired = client.post(
+            "/v1/operator/retire",
+            json={"inputs": [first_swapped], "memo": "redeemed for test"},
+            headers=headers,
+        )
+        assert retired.status_code == 200, retired.json()
+        unauthorized = client.get("/v1/operator/metrics")
+        metrics = client.get("/v1/operator/metrics", headers=headers)
+        filtered = client.get(
+            "/v1/operator/metrics",
+            params={"keyset_id": keyset.id},
+            headers=headers,
+        )
+
+    assert unauthorized.status_code == 401
+    assert metrics.status_code == 200, metrics.json()
+    assert filtered.status_code == 200, filtered.json()
+    assert metrics.json() == filtered.json()
+    aggregate = metrics.json()["aggregate"]
+    assert aggregate["issued"] == 8
+    assert aggregate["retired"] == 4
+    assert aggregate["outstanding"] == 4
+    assert aggregate["signed_outputs_amount"] == 16
+    assert aggregate["spent_proofs_amount"] == 12
+    assert aggregate["unspent_signed_outputs_estimate"] == 4
+    cmu = metrics.json()["cmus"][0]
+    assert cmu["unit"] == keyset.unit
+    assert cmu["supply"] == {"issued": 8, "retired": 4, "outstanding": 4}
+    assert cmu["quotes"] == {
+        "count": 1,
+        "requested": 8,
+        "authorized": 8,
+        "issued": 8,
+        "authorized_unissued": 0,
+        "requested_unauthorized": 0,
+    }
+    assert cmu["activity"]["audit_actions"]["issue"] == {"amount": 8, "count": 1}
+    assert cmu["activity"]["audit_actions"]["swap"] == {"amount": 8, "count": 1}
+    assert cmu["activity"]["audit_actions"]["retire"] == {"amount": 4, "count": 1}
+    assert cmu["proof_state"]["signed_outputs_by_operation"]["issue"] == {
+        "amount": 8,
+        "count": 1,
+    }
+    assert cmu["proof_state"]["signed_outputs_by_operation"]["swap"] == {
+        "amount": 8,
+        "count": 2,
+    }
+    assert cmu["proof_state"]["spent_proofs_by_reason"]["swap"] == {
+        "amount": 8,
+        "count": 1,
+    }
+    assert cmu["proof_state"]["spent_proofs_by_reason"]["retire"] == {
+        "amount": 4,
+        "count": 1,
+    }
+
+
 def test_treasury_enablement_survives_restart_and_can_be_disabled(tmp_path) -> None:
     configured = settings(tmp_path)
     headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
@@ -457,6 +538,7 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
             secret="homepage-created-cmu-proof",
         )
         homepage = client.get("/", headers={"Accept": "text/html"})
+        metrics_page = client.get(f"/cmus/{created['keyset_id']}")
         keysets = client.get("/v1/keysets").json()["keysets"]
 
     assert homepage.status_code == 200
@@ -470,9 +552,20 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert "Gym Guest Passes" in homepage.text
     assert "passes" in homepage.text
     assert "Outstanding" in homepage.text
-    assert "<td><bdi dir=\"auto\">8</bdi></td>" in homepage.text
+    assert f'href="cmus/{created["keyset_id"]}"' in homepage.text
     assert created["unit"] in homepage.text
     assert created["keyset_id"] in homepage.text
+    assert metrics_page.status_code == 200
+    assert metrics_page.headers["content-language"] == "en"
+    assert "CMU metrics" in metrics_page.text
+    assert "Gym Guest Passes" in metrics_page.text
+    assert "Policy-aware supply metrics" in metrics_page.text
+    assert "<span>Issued</span><strong><bdi dir=\"auto\">8</bdi></strong>" in metrics_page.text
+    assert "<span>Outstanding</span><strong><bdi dir=\"auto\">8</bdi></strong>" in metrics_page.text
+    assert "Quote pipeline" in metrics_page.text
+    assert "Proof-state diagnostics" in metrics_page.text
+    assert "Signed outputs by operation" in metrics_page.text
+    assert "Spent proofs by reason" in metrics_page.text
     assert {item["authority"] for item in keysets} == {
         "operator",
         "authorized-treasury",

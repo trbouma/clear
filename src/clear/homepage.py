@@ -69,6 +69,13 @@ def render_homepage(
             )
         return text("Operator keyset")
 
+    def cmu_link(item: dict, label: str) -> str:
+        href = f"cmus/{quote(str(item['id']), safe='')}"
+        return (
+            f'<a class="cmu-link" href="{escape(href)}">'
+            f"{configured_value(label)}</a>"
+        )
+
     display_name = mint_title or "Clear Mint"
     display_tag_line = mint_tag_line or HOMEPAGE_LEDE
     currency_display_name = currency_alias or currency_name
@@ -97,10 +104,10 @@ def render_homepage(
         outstanding = supply.get("outstanding", supply.get("circulating", 0))
         keyset_rows.append(
             "<tr>"
-            f"<td>{configured_value(str(name))}</td>"
+            f"<td>{cmu_link(item, str(name))}</td>"
             f"<td>{authority_label(item)}</td>"
             f'<td class="unit-label">{configured_value(str(unit_label))}</td>'
-            f"<td>{configured_value(str(outstanding))}</td>"
+            f"<td>{cmu_link(item, str(outstanding))}</td>"
             "<td>"
             f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
             "</td>"
@@ -484,6 +491,13 @@ def render_homepage(
       overflow-wrap: normal;
     }}
 
+    .cmu-link {{
+      color: var(--teal-dark);
+      font-weight: 760;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18rem;
+    }}
+
     .profile-trigger {{
       width: auto;
       margin: 0;
@@ -855,5 +869,335 @@ def render_homepage(
       trigger.addEventListener("blur", hideProfile);
     }});
   </script>
+</body>
+</html>"""
+
+
+def render_cmu_metrics_page(
+    *,
+    mint_title: str,
+    mint_url: str,
+    metrics: dict,
+    language: str = "en",
+) -> str:
+    """Render a browser-facing CMU metrics page."""
+
+    language = supported_language(language)
+    direction = language_direction(language)
+    cmu = metrics["cmus"][0]
+
+    def value(content) -> str:
+        return f'<bdi dir="auto">{escape(str(content))}</bdi>'
+
+    def code(content) -> str:
+        return f'<code class="technical" dir="ltr">{escape(str(content))}</code>'
+
+    def metric_rows(items: dict) -> str:
+        if not items:
+            return '<tr><td colspan="3">None recorded</td></tr>'
+        return "".join(
+            "<tr>"
+            f"<td>{value(label)}</td>"
+            f"<td>{value(item.get('amount', 0))}</td>"
+            f"<td>{value(item.get('count', 0))}</td>"
+            "</tr>"
+            for label, item in sorted(items.items())
+        )
+
+    def definition_row(label: str, content: str) -> str:
+        return (
+            '<div class="row">'
+            f"<dt>{escape(label)}</dt>"
+            f"<dd>{content}</dd>"
+            "</div>"
+        )
+
+    display_name = cmu.get("friendly_name") or cmu["unit"]
+    supply = cmu["supply"]
+    proof_state = cmu["proof_state"]
+    quotes = cmu["quotes"]
+    methodology = metrics.get("methodology", {})
+    return f"""<!doctype html>
+<html lang="{escape(language)}" dir="{direction}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{escape(str(display_name))} | CMU Metrics</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --page: #f6faf9;
+      --surface: #ffffff;
+      --surface-soft: #eaf6f7;
+      --ink: #17313a;
+      --muted: #5c6f74;
+      --line: #d5e3e3;
+      --teal: #247c93;
+      --teal-dark: #143d52;
+      --coral: #d9674b;
+      --green: #237a4b;
+      --shadow: 0 18px 45px rgba(20, 61, 82, 0.09);
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }}
+    a {{ color: var(--teal-dark); }}
+    bdi {{ unicode-bidi: isolate; }}
+    .technical {{ direction: ltr; unicode-bidi: isolate; }}
+    .shell {{
+      width: min(100% - 2rem, 68rem);
+      margin: 0 auto;
+      padding: 1.25rem 0 3rem;
+    }}
+    .topbar {{
+      display: flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }}
+    .brand {{
+      color: var(--teal-dark);
+      font-size: 0.82rem;
+      font-weight: 760;
+      text-transform: uppercase;
+    }}
+    .hero {{
+      padding: clamp(1.5rem, 5vw, 3.2rem);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }}
+    .eyebrow {{
+      margin: 0 0 0.8rem;
+      color: var(--coral);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }}
+    h1 {{
+      max-width: 18ch;
+      margin: 0;
+      color: var(--teal-dark);
+      font-size: clamp(2rem, 6vw, 4rem);
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }}
+    .lede {{
+      max-width: 46rem;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }}
+    .panel {{
+      padding: 1.35rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }}
+    .wide {{ grid-column: 1 / -1; }}
+    .panel h2 {{
+      margin: 0 0 1rem;
+      color: var(--teal-dark);
+      font-size: 1rem;
+    }}
+    dl {{ margin: 0; }}
+    .row {{
+      display: grid;
+      grid-template-columns: minmax(9rem, 0.36fr) minmax(0, 1fr);
+      gap: 1rem;
+      padding: 0.72rem 0;
+      border-top: 1px solid var(--line);
+    }}
+    .row:first-child {{ padding-top: 0; border-top: 0; }}
+    dt {{ color: var(--muted); font-size: 0.82rem; }}
+    dd {{ margin: 0; overflow-wrap: anywhere; font-size: 0.86rem; font-weight: 650; }}
+    .metric-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }}
+    .metric {{
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface-soft);
+    }}
+    .metric span {{
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 720;
+      text-transform: uppercase;
+    }}
+    .metric strong {{
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--teal-dark);
+      font-size: 1.65rem;
+      overflow-wrap: anywhere;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }}
+    th, td {{
+      padding: 0.72rem 0.7rem;
+      border-top: 1px solid var(--line);
+      text-align: start;
+      vertical-align: top;
+    }}
+    th {{
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 720;
+    }}
+    td {{ font-weight: 650; overflow-wrap: anywhere; }}
+    .note {{
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }}
+    .links {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem 1.25rem;
+      margin-top: 1rem;
+      padding: 0 0.2rem;
+      font-size: 0.82rem;
+    }}
+    .links a {{ font-weight: 680; text-decoration-thickness: 1px; }}
+    @media (max-width: 47rem) {{
+      .shell {{ width: min(100% - 1.2rem, 68rem); }}
+      .grid, .metric-grid {{ grid-template-columns: 1fr; }}
+      .row {{ grid-template-columns: 1fr; gap: 0.35rem; }}
+    }}
+    @media (prefers-color-scheme: dark) {{
+      :root {{
+        color-scheme: dark;
+        --page: #101719;
+        --surface: #182225;
+        --surface-soft: #203135;
+        --ink: #edf7f7;
+        --muted: #adc0c1;
+        --line: #34484c;
+        --teal-dark: #8ecbd3;
+        --coral: #f08a70;
+        --green: #76c794;
+        --shadow: none;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">Clear Mint</div>
+      <a href="../">Back to mint home</a>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">CMU metrics</p>
+      <h1>{value(display_name)}</h1>
+      <p class="lede">
+        Policy-aware supply metrics and proof-state diagnostics for one exact
+        Clear Mint Unit.
+      </p>
+    </section>
+    <div class="grid">
+      <section class="panel">
+        <h2>CMU identity</h2>
+        <dl>
+          {definition_row("Mint", value(mint_title))}
+          {definition_row("Mint URL", code(mint_url))}
+          {definition_row("Protocol unit", code(cmu["unit"]))}
+          {definition_row("Keyset ID", code(cmu["keyset_id"]))}
+          {definition_row("Fingerprint", code(cmu["keyset_fingerprint"]))}
+          {definition_row("Status", value(cmu["status"]))}
+          {definition_row("Treasurer", code(cmu["treasurer_npub"]) if cmu.get("treasurer_npub") else value("Operator keyset"))}
+          {definition_row("Material", value(cmu["material_kind"]))}
+        </dl>
+      </section>
+      <section class="panel">
+        <h2>Supply</h2>
+        <div class="metric-grid">
+          <div class="metric"><span>Issued</span><strong>{value(supply["issued"])}</strong></div>
+          <div class="metric"><span>Retired</span><strong>{value(supply["retired"])}</strong></div>
+          <div class="metric"><span>Outstanding</span><strong>{value(supply["outstanding"])}</strong></div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Quote pipeline</h2>
+        <dl>
+          {definition_row("Quotes", value(quotes["count"]))}
+          {definition_row("Requested", value(quotes["requested"]))}
+          {definition_row("Authorized", value(quotes["authorized"]))}
+          {definition_row("Issued", value(quotes["issued"]))}
+          {definition_row("Authorized, unissued", value(quotes["authorized_unissued"]))}
+          {definition_row("Requested, unauthorized", value(quotes["requested_unauthorized"]))}
+        </dl>
+      </section>
+      <section class="panel">
+        <h2>Proof-state diagnostics</h2>
+        <dl>
+          {definition_row("Signed output amount", value(proof_state["signed_outputs_amount"]))}
+          {definition_row("Signed output count", value(proof_state["signed_outputs_count"]))}
+          {definition_row("Spent proof amount", value(proof_state["spent_proofs_amount"]))}
+          {definition_row("Spent proof count", value(proof_state["spent_proofs_count"]))}
+          {definition_row("Unspent signed-output estimate", value(proof_state["unspent_signed_outputs_estimate"]))}
+        </dl>
+      </section>
+      <section class="panel wide">
+        <h2>Audit actions</h2>
+        <table>
+          <thead><tr><th>Action</th><th>Amount</th><th>Count</th></tr></thead>
+          <tbody>{metric_rows(cmu["activity"]["audit_actions"])}</tbody>
+        </table>
+      </section>
+      <section class="panel">
+        <h2>Signed outputs by operation</h2>
+        <table>
+          <thead><tr><th>Operation</th><th>Amount</th><th>Count</th></tr></thead>
+          <tbody>{metric_rows(proof_state["signed_outputs_by_operation"])}</tbody>
+        </table>
+      </section>
+      <section class="panel">
+        <h2>Spent proofs by reason</h2>
+        <table>
+          <thead><tr><th>Reason</th><th>Amount</th><th>Count</th></tr></thead>
+          <tbody>{metric_rows(proof_state["spent_proofs_by_reason"])}</tbody>
+        </table>
+      </section>
+      <section class="panel wide">
+        <h2>Methodology</h2>
+        <p class="note">{escape(str(methodology.get("supply", "")))}</p>
+        <p class="note">{escape(str(methodology.get("proof_state", "")))}</p>
+        <p class="note">{escape(str(methodology.get("quotes", "")))}</p>
+      </section>
+    </div>
+    <nav class="links" aria-label="CMU resources">
+      <a href="../v1/keysets">Keysets JSON</a>
+      <a href="../v1/info">Mint information</a>
+      <a href="https://trbouma.github.io/clear/">Docs</a>
+    </nav>
+  </main>
 </body>
 </html>"""

@@ -1084,6 +1084,56 @@ class Store:
         with self._connection() as connection:
             return self._summary_for_keyset_id(connection, keyset_id)
 
+    def metrics(self, keyset_id: str | None = None) -> dict:
+        with self._connection() as connection:
+            if keyset_id is None:
+                rows = connection.execute(
+                    "SELECT * FROM cmus ORDER BY created_at, keyset_id"
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM cmus WHERE keyset_id = ?",
+                    (keyset_id,),
+                ).fetchall()
+                if not rows:
+                    raise ClearError("CMU not found")
+            cmus = [self._metrics_for_cmu(connection, row) for row in rows]
+
+        aggregate = {
+            "issued": sum(cmu["supply"]["issued"] for cmu in cmus),
+            "retired": sum(cmu["supply"]["retired"] for cmu in cmus),
+            "outstanding": sum(cmu["supply"]["outstanding"] for cmu in cmus),
+            "signed_outputs_amount": sum(
+                cmu["proof_state"]["signed_outputs_amount"] for cmu in cmus
+            ),
+            "spent_proofs_amount": sum(
+                cmu["proof_state"]["spent_proofs_amount"] for cmu in cmus
+            ),
+            "unspent_signed_outputs_estimate": sum(
+                cmu["proof_state"]["unspent_signed_outputs_estimate"]
+                for cmu in cmus
+            ),
+        }
+        return {
+            "methodology": {
+                "supply": (
+                    "Issued, retired, and outstanding amounts are policy-aware "
+                    "audit totals by exact CMU."
+                ),
+                "proof_state": (
+                    "Proof-state amounts are operational estimates from signed "
+                    "outputs and spent proofs; swaps create replacement outputs "
+                    "without increasing issued supply."
+                ),
+                "quotes": (
+                    "Quote totals describe the issuance authorization pipeline "
+                    "for this mint database."
+                ),
+            },
+            "aggregate": aggregate,
+            "cmus": cmus,
+        }
+
     @staticmethod
     def _summary_for_keyset_id(connection, keyset_id: str) -> dict:
         cmu = connection.execute(
@@ -1108,6 +1158,136 @@ class Store:
             "retired": retired,
             "circulating": circulating,
             "outstanding": circulating,
+        }
+
+    @classmethod
+    def _metrics_for_cmu(cls, connection, cmu) -> dict:
+        summary = cls._summary_for_keyset_id(connection, cmu["keyset_id"])
+        audit_totals = cls._amount_count_by(
+            connection,
+            "audit_log",
+            "action",
+            "keyset_id = ?",
+            (cmu["keyset_id"],),
+        )
+        spent_by_reason = cls._amount_count_by(
+            connection,
+            "spent_proofs",
+            "reason",
+            "keyset_id = ?",
+            (cmu["keyset_id"],),
+        )
+        signed_by_operation = cls._signed_output_metrics(
+            connection,
+            cmu["keyset_id"],
+        )
+        quote_totals = cls._quote_metrics(connection, cmu["keyset_id"])
+        signed_outputs_amount = sum(
+            item["amount"] for item in signed_by_operation.values()
+        )
+        signed_outputs_count = sum(
+            item["count"] for item in signed_by_operation.values()
+        )
+        spent_proofs_amount = sum(item["amount"] for item in spent_by_reason.values())
+        spent_proofs_count = sum(item["count"] for item in spent_by_reason.values())
+        return {
+            "unit": cmu["unit"],
+            "keyset_id": cmu["keyset_id"],
+            "keyset_fingerprint": cmu["fingerprint"],
+            "status": cmu["status"],
+            "friendly_name": cmu["friendly_name"],
+            "friendly_unit_alias": cmu["friendly_unit_alias"],
+            "treasurer_npub": cmu["treasurer_npub"],
+            "material_kind": cmu["material_kind"],
+            "created_at": cmu["created_at"],
+            "activated_at": cmu["activated_at"],
+            "supply": {
+                "issued": summary["issued"],
+                "retired": summary["retired"],
+                "outstanding": summary["outstanding"],
+            },
+            "activity": {"audit_actions": audit_totals},
+            "quotes": quote_totals,
+            "proof_state": {
+                "signed_outputs_amount": signed_outputs_amount,
+                "signed_outputs_count": signed_outputs_count,
+                "spent_proofs_amount": spent_proofs_amount,
+                "spent_proofs_count": spent_proofs_count,
+                "unspent_signed_outputs_estimate": (
+                    signed_outputs_amount - spent_proofs_amount
+                ),
+                "signed_outputs_by_operation": signed_by_operation,
+                "spent_proofs_by_reason": spent_by_reason,
+            },
+        }
+
+    @staticmethod
+    def _amount_count_by(
+        connection,
+        table: str,
+        label_column: str,
+        where_clause: str,
+        parameters: tuple,
+    ) -> dict:
+        rows = connection.execute(
+            f"SELECT {label_column} label, COALESCE(SUM(amount), 0) amount, "
+            f"COUNT(*) count FROM {table} WHERE {where_clause} GROUP BY {label_column}",
+            parameters,
+        ).fetchall()
+        return {
+            row["label"]: {"amount": row["amount"], "count": row["count"]}
+            for row in rows
+        }
+
+    @staticmethod
+    def _signed_output_metrics(connection, keyset_id: str) -> dict:
+        rows = connection.execute(
+            """
+            SELECT
+              CASE
+                WHEN operation LIKE 'issue:%' THEN 'issue'
+                ELSE operation
+              END operation_family,
+              COALESCE(SUM(amount), 0) amount,
+              COUNT(*) count
+            FROM signed_outputs
+            WHERE keyset_id = ?
+            GROUP BY operation_family
+            """,
+            (keyset_id,),
+        ).fetchall()
+        return {
+            row["operation_family"]: {
+                "amount": row["amount"],
+                "count": row["count"],
+            }
+            for row in rows
+        }
+
+    @staticmethod
+    def _quote_metrics(connection, keyset_id: str) -> dict:
+        row = connection.execute(
+            """
+            SELECT
+              COALESCE(SUM(amount_requested), 0) requested,
+              COALESCE(SUM(amount_paid), 0) authorized,
+              COALESCE(SUM(amount_issued), 0) issued,
+              COUNT(*) count
+            FROM mint_quotes
+            WHERE keyset_id = ?
+            """,
+            (keyset_id,),
+        ).fetchone()
+        requested = row["requested"] if row is not None else 0
+        authorized = row["authorized"] if row is not None else 0
+        issued = row["issued"] if row is not None else 0
+        return {
+            "count": row["count"] if row is not None else 0,
+            "requested": requested,
+            "authorized": authorized,
+            "issued": issued,
+            "authorized_unissued": authorized - issued,
+            "requested_unauthorized": requested - authorized,
         }
 
     def _active_cmu_for_treasury_pubkey(
