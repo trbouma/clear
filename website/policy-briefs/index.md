@@ -68,3 +68,23 @@ spent-proof state. This brief explains why that mechanism is different from
 stablecoin payment rails and token contracts.
 
 [Read the policy brief](chaumian-mint-vs-stablecoins.md){ .md-button .md-button--primary }
+
+## Hidden Complexity and Clear
+
+Research from the Bank for International Settlements (BIS) shows that public
+blockchain data can be technically transparent while remaining economically
+ambiguous. This brief explains why Clear should make issuer policy, exact CMU
+identity, treasurer authority, and redemption meaning explicit before Mint
+Notes circulate.
+
+[Read the policy brief](hidden-complexity-and-clear.md){ .md-button .md-button--primary }
+
+## QxVault and Clear
+
+QxVault packages OpenBao-compatible secrets management with an integrated
+Hardware Security Module (HSM). This brief explains why that matters for Clear:
+per-CMU keyset secrets, mint service keys, operator credentials, and future
+signing boundaries need production custody without replacing Clear's treasury
+authority model.
+
+[Read the policy brief](qxvault-and-clear.md){ .md-button .md-button--primary }

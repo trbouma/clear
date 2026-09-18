@@ -53,6 +53,8 @@ nav:
       - Goldsmiths and Clear: policy-briefs/goldsmiths-and-clear.md
       - MintChip and Clear: policy-briefs/mintchip-and-clear.md
       - Clear Is Not a Stablecoin: policy-briefs/chaumian-mint-vs-stablecoins.md
+      - Hidden Complexity and Clear: policy-briefs/hidden-complexity-and-clear.md
+      - QxVault and Clear: policy-briefs/qxvault-and-clear.md
   - Operate Clear:
       - Getting Started: getting-started.md
       - Standalone Deployment: deployment.md
