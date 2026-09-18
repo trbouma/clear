@@ -58,3 +58,13 @@ with Clear's minting model: private bearer notes for issuer-defined treasury
 units.
 
 [Read the policy brief](mintchip-and-clear.md){ .md-button .md-button--primary }
+
+## Clear Is Not a Stablecoin
+
+Stablecoins usually move account balances through blockchain smart contracts.
+Clear uses Chaumian Mint Notes: private bearer proofs issued for a specific
+CMU, transferred between holders, and checked against the issuing mint's
+spent-proof state. This brief explains why that mechanism is different from
+stablecoin payment rails and token contracts.
+
+[Read the policy brief](chaumian-mint-vs-stablecoins.md){ .md-button .md-button--primary }
