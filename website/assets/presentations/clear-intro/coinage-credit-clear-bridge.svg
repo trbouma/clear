@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Clear at the fork between coinage and credit</title>
+  <desc id="desc">A friendly fork-in-the-road visual showing Clear able to travel toward coinage or credit depending on the community policy.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .road{fill:none;stroke:#d5e3e3;stroke-width:36;stroke-linecap:round;stroke-linejoin:round}
+      .road-line{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;stroke-dasharray:14 18}
+      .sign{fill:#fff;stroke:#247c93;stroke-width:4}
+      .post{fill:#c9d8d8}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .label{font-size:27px;font-weight:900}
+      .small{font-size:18px;font-weight:800;fill:#63777d}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+      .white{fill:#fff}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+
+  <path class="road" d="M280 459V325c0-55-56-83-120-119"/>
+  <path class="road" d="M280 325c0-55 56-83 120-119"/>
+  <path class="road-line" d="M280 455V338"/>
+  <path class="road-line" d="M274 316c-18-38-64-61-113-89"/>
+  <path class="road-line" d="M286 316c18-38 64-61 113-89"/>
+
+  <g transform="translate(88 106)">
+    <rect class="post" x="73" y="132" width="14" height="78" rx="5"/>
+    <rect class="sign" width="160" height="132" rx="12"/>
+    <circle class="coral" cx="80" cy="47" r="25"/>
+    <path class="white" d="M80 27v40M68 40c7-10 17-10 24 0M68 54c7 10 17 10 24 0" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <text class="text label" x="80" y="105" text-anchor="middle">Coinage</text>
+  </g>
+
+  <g transform="translate(312 106)">
+    <rect class="post" x="73" y="132" width="14" height="78" rx="5"/>
+    <rect class="sign" width="160" height="132" rx="12"/>
+    <rect fill="#eaf6f7" stroke="#247c93" stroke-width="4" x="56" y="23" width="48" height="48" rx="8"/>
+    <path d="M67 39h25M67 53h25" stroke="#247c93" stroke-width="4" stroke-linecap="round"/>
+    <path d="M93 60l10 10 25-32" stroke="#d9674b" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <text class="text label" x="80" y="105" text-anchor="middle">Credit</text>
+  </g>
+
+  <g transform="translate(200 252)">
+    <g transform="scale(0.31)">
+      <circle cx="256" cy="256" r="208" fill="#247c93"/>
+      <circle cx="256" cy="256" r="122" fill="#f4fbfc"/>
+      <path fill="#143d52" d="M256 48a208 208 0 0 0 0 416v-86a122 122 0 1 1 0-244z"/>
+      <path fill="#e16f51" d="M222 224h168v64H222z"/>
+    </g>
+    <text class="text label" x="79" y="175" text-anchor="middle">Clear</text>
+  </g>
+
+  <text class="text small" x="280" y="492" text-anchor="middle">one community unit can lean toward either path</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">We accept Cash and Clear</title>
+  <desc id="desc">A square payment sign saying We Accept Cash and Clear, supporting your community.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .sign{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .header{fill:#143d52}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+      .pale{fill:#eaf6f7}
+      .warm{fill:#fff7f4}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .white{fill:#fff}
+      .eyebrow{font-size:22px;font-weight:850;letter-spacing:0}
+      .headline{font-size:54px;font-weight:900;letter-spacing:0}
+      .amp{font-size:34px;font-weight:900;letter-spacing:0;fill:#63777d}
+      .label{font-size:31px;font-weight:900;letter-spacing:0}
+      .cash-mark{font-size:47px;font-weight:950;letter-spacing:0;fill:#fff}
+      .tag{font-size:25px;font-weight:800;letter-spacing:0;fill:#63777d}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="sign" x="50" y="46" width="460" height="468" rx="28"/>
+  <path class="header" d="M78 46h404a28 28 0 0 1 28 28v78H50V74a28 28 0 0 1 28-28z"/>
+  <text class="white eyebrow" x="121" y="103">LOCAL VALUE WELCOME</text>
+
+  <text class="text headline" x="134" y="224">We Accept</text>
+
+  <g transform="translate(86 268)">
+    <rect class="warm" width="170" height="92" rx="18"/>
+    <rect class="white" x="44" y="13" width="8" height="66" rx="4"/>
+    <circle class="coral" cx="48" cy="46" r="26"/>
+    <text class="text cash-mark" x="34" y="62">$</text>
+    <text class="text label" x="88" y="57">Cash</text>
+  </g>
+
+  <text class="text amp" x="274" y="325">&amp;</text>
+
+  <g transform="translate(304 268)">
+    <rect class="pale" width="170" height="92" rx="18"/>
+    <circle class="teal" cx="48" cy="46" r="26"/>
+    <path class="white" d="M48 21a25 25 0 1 0 0 50V55a9 9 0 1 1 0-18z"/>
+    <path class="coral" d="M42 40h38v13H42z"/>
+    <text class="text label" x="88" y="57">Clear</text>
+  </g>
+
+  <text class="text tag" x="113" y="429">supporting your community</text>
+</svg>

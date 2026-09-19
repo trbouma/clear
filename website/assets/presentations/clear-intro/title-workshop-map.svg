@@ -1,38 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
-  <title id="title">Clear workshop concept map</title>
-  <desc id="desc">Issuer policy, treasurer authorization, Clear minting, and private Mint Notes circulating to holders.</desc>
+  <title id="title">Clear workshop concept blocks</title>
+  <desc id="desc">Three simple blocks naming the core Clear idea: a community promise, transferable notes, and places that accept them.</desc>
   <defs>
     <style>
-      .bg{fill:#f6faf9}.card{fill:#fff;stroke:#d5e3e3;stroke-width:3}.mint{fill:#eaf6f7;stroke:#247c93;stroke-width:4}.text{font-family:Inter,Arial,sans-serif;fill:#17313a}.label{font-size:27px;font-weight:830}.small{font-size:18px}.muted{fill:#63777d}.line{stroke:#247c93;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}.coral{fill:#d9674b}.teal{fill:#247c93}.deep{fill:#143d52}
+      .bg{fill:#f6faf9}
+      .block{fill:#fff;stroke:#d5e3e3;stroke-width:3}
+      .block-mid{fill:#eaf6f7;stroke:#b7d8dc;stroke-width:3}
+      .badge{fill:#fff7f4;stroke:#f0cbc0;stroke-width:2}
+      .badge-mid{fill:#fff;stroke:#cfe1e3;stroke-width:2}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a}
+      .label{font-size:34px;font-weight:850}
+      .icon{fill:#247c93}
+      .accent{fill:#d9674b}
     </style>
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M1 1l10 5-10 5z" fill="#247c93"/>
-    </marker>
   </defs>
+
   <rect class="bg" width="1200" height="420" rx="18"/>
-  <rect class="card" x="70" y="142" width="215" height="136" rx="10"/>
-  <circle class="deep" cx="112" cy="188" r="20"/>
-  <text class="text label" x="145" y="196">Issuer</text>
-  <text class="text small muted" x="105" y="235">defines meaning</text>
 
-  <rect class="card" x="350" y="142" width="215" height="136" rx="10"/>
-  <circle class="coral" cx="392" cy="188" r="20"/>
-  <text class="text label" x="425" y="196">Treasurer</text>
-  <text class="text small muted" x="385" y="235">signs authority</text>
+  <g transform="translate(85 92)">
+    <rect class="block" width="300" height="235" rx="16"/>
+    <circle class="badge" cx="150" cy="64" r="36"/>
+    <path class="icon" d="M150 39a25 25 0 1 0 0 50V73a9 9 0 1 1 0-18z"/>
+    <path class="accent" d="M143 59h36v12h-36z"/>
+    <text class="text label" x="52" y="145">a community</text>
+    <text class="text label" x="84" y="190">promise</text>
+  </g>
 
-  <rect class="mint" x="635" y="122" width="235" height="176" rx="14"/>
-  <circle class="teal" cx="685" cy="182" r="24"/>
-  <text class="text label" x="725" y="190">Clear mint</text>
-  <text class="text small muted" x="674" y="236">issues Mint Notes</text>
+  <g transform="translate(450 92)">
+    <rect class="block-mid" width="300" height="235" rx="16"/>
+    <circle class="badge-mid" cx="150" cy="64" r="36"/>
+    <rect class="icon" x="126" y="48" width="42" height="26" rx="5"/>
+    <rect class="accent" x="138" y="57" width="50" height="26" rx="5"/>
+    <path fill="#fff" d="M148 68h30v5h-30z"/>
+    <text class="text label" x="42" y="145">transferable</text>
+    <text class="text label" x="108" y="190">notes</text>
+  </g>
 
-  <rect class="card" x="940" y="142" width="215" height="136" rx="10"/>
-  <circle class="coral" cx="982" cy="188" r="20"/>
-  <text class="text label" x="1015" y="196">Holders</text>
-  <text class="text small muted" x="975" y="235">circulate privately</text>
-
-  <path class="line" marker-end="url(#arrow)" d="M285 210h55"/>
-  <path class="line" marker-end="url(#arrow)" d="M565 210h60"/>
-  <path class="line" marker-end="url(#arrow)" d="M870 210h60"/>
-  <path class="line" marker-end="url(#arrow)" d="M1048 278c-85 82-286 102-408 39"/>
-  <text class="text small muted" x="782" y="362">redemption and retirement return supply evidence to the mint</text>
+  <g transform="translate(815 92)">
+    <rect class="block" width="300" height="235" rx="16"/>
+    <circle class="badge" cx="150" cy="64" r="36"/>
+    <path class="icon" d="M126 56h48l7 22h-62z"/>
+    <path class="accent" d="M124 78h52v34h-52z"/>
+    <path fill="#fff" d="M134 90h15v22h-15zM158 90h12v9h-12z"/>
+    <text class="text label" x="60" y="145">places that</text>
+    <text class="text label" x="98" y="190">accept</text>
+  </g>
 </svg>

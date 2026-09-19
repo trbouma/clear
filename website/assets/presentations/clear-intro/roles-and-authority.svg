@@ -1,48 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-  <title id="title">Clear authority roles</title>
-  <desc id="desc">Issuer policy, treasurer authority, mint operator custody, and holders connected by Clear Mint Notes.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Mint operations and treasury policy</title>
+  <desc id="desc">A square visual showing mint operations separate from treasury policy, with each Clear Mint Unit carrying its own policy boundary.</desc>
   <defs>
     <style>
-      .bg{fill:#f6faf9}.card{fill:#fff;stroke:#d5e3e3;stroke-width:3}.accent{fill:#247c93}.deep{fill:#143d52}.coral{fill:#d9674b}.muted{fill:#5c6f74}.soft{fill:#eaf6f7}.text{font-family:Inter,Arial,sans-serif;fill:#17313a}.title{font-size:39px;font-weight:800}.label{font-size:26px;font-weight:800}.small{font-size:20px}.tiny{font-size:17px}.line{stroke:#247c93;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}.dash{stroke:#d9674b;stroke-width:4;fill:none;stroke-dasharray:10 12;stroke-linecap:round}
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .panel{fill:#fff;stroke:#d5e3e3;stroke-width:4}
+      .policy{fill:#fff7f4;stroke:#d9674b;stroke-width:4}
+      .ops{fill:#eaf6f7;stroke:#247c93;stroke-width:4}
+      .divider{stroke:#d5e3e3;stroke-width:5;stroke-linecap:round}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .title{font-size:25px;font-weight:950}
+      .label{font-size:22px;font-weight:900}
+      .small{font-size:17px;font-weight:850;fill:#63777d}
+      .tiny{font-size:15px;font-weight:850;fill:#63777d}
+      .code{font-family:"SFMono-Regular",Consolas,monospace;font-size:15px;font-weight:850;fill:#63777d}
+      .teal{fill:#247c93}
+      .deep{fill:#143d52}
+      .coral{fill:#d9674b}
+      .white{fill:#fff}
     </style>
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M1 1l10 5-10 5z" fill="#247c93"/>
-    </marker>
   </defs>
-  <rect class="bg" width="1200" height="675"/>
-  <text class="text title" x="60" y="74">The Clear authority split</text>
-  <text class="text small muted" x="60" y="110">Different keys and responsibilities, one auditable minting flow.</text>
 
-  <rect class="card" x="68" y="175" width="300" height="155" rx="8"/>
-  <circle class="accent" cx="112" cy="225" r="23"/>
-  <text class="text label" x="150" y="232">Issuer policy</text>
-  <text class="text small" x="100" y="276">meaning, limits, redemption</text>
-  <text class="text tiny muted" x="100" y="304">the social promise behind the unit</text>
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
 
-  <rect class="card" x="450" y="175" width="300" height="155" rx="8"/>
-  <circle class="coral" cx="494" cy="225" r="23"/>
-  <text class="text label" x="532" y="232">Treasurer</text>
-  <text class="text small" x="482" y="276">signs bounded requests</text>
-  <text class="text tiny muted" x="482" y="304">keeps nsec outside the mint</text>
+  <text class="text title" x="280" y="91" text-anchor="middle">Separate responsibilities</text>
 
-  <rect class="card" x="832" y="175" width="300" height="155" rx="8"/>
-  <circle class="deep" cx="876" cy="225" r="23"/>
-  <text class="text label" x="914" y="232">Mint operator</text>
-  <text class="text small" x="864" y="276">runs service and custody</text>
-  <text class="text tiny muted" x="864" y="304">protects keysets and spent state</text>
+  <g transform="translate(82 125)">
+    <rect class="ops" width="185" height="244" rx="18"/>
+    <circle class="teal" cx="92" cy="50" r="30"/>
+    <path class="white" d="M80 51l10 10 20-25 9 8-29 35-20-20z"/>
+    <text class="text label" x="92" y="105" text-anchor="middle">Mint ops</text>
+    <text class="text small" x="92" y="142" text-anchor="middle">Runs service</text>
+    <text class="text small" x="92" y="172" text-anchor="middle">Protects keys</text>
+    <text class="text small" x="92" y="202" text-anchor="middle">Tracks spent state</text>
+  </g>
 
-  <rect class="card" x="323" y="440" width="554" height="135" rx="8"/>
-  <rect class="soft" x="355" y="468" width="164" height="79" rx="8"/>
-  <text class="text label" x="555" y="496">Holders</text>
-  <text class="text small" x="555" y="535">carry private bearer Mint Notes</text>
-  <text class="text tiny muted" x="555" y="561">without becoming accounts in one application</text>
-  <text class="text tiny" x="386" y="500">Mint</text>
-  <text class="text tiny" x="384" y="525">Notes</text>
+  <path class="divider" d="M280 136v275"/>
 
-  <path class="line" marker-end="url(#arrow)" d="M368 252h73"/>
-  <path class="line" marker-end="url(#arrow)" d="M750 252h73"/>
-  <path class="line" marker-end="url(#arrow)" d="M982 330c-35 95-120 154-230 183"/>
-  <path class="line" marker-end="url(#arrow)" d="M450 505c-105-28-182-87-220-175"/>
-  <path class="dash" d="M600 331v88"/>
-  <text class="text tiny muted" x="503" y="386">signed authorization</text>
+  <g transform="translate(293 125)">
+    <rect class="policy" width="185" height="244" rx="18"/>
+    <circle class="coral" cx="92" cy="50" r="30"/>
+    <path class="white" d="M76 45h32v12H76zM91 29h12v44H91z"/>
+    <text class="text label" x="92" y="105" text-anchor="middle">Treasury</text>
+    <text class="text small" x="92" y="142" text-anchor="middle">Sets policy</text>
+    <text class="text small" x="92" y="172" text-anchor="middle">Signs issuance</text>
+    <text class="text small" x="92" y="202" text-anchor="middle">Controls CMUs</text>
+  </g>
+
+  <g transform="translate(106 398)">
+    <rect class="panel" width="348" height="74" rx="16"/>
+    <circle class="deep" cx="39" cy="37" r="20"/>
+    <text class="white" x="39" y="44" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="950">CMU</text>
+    <text class="text small" x="76" y="31">Each CMU has its own policy</text>
+    <text class="code" x="76" y="55">cmu-...  -> policy boundary</text>
+  </g>
 </svg>

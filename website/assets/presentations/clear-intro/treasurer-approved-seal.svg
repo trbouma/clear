@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Treasurer-approved transferable unit</title>
+  <desc id="desc">A friendly seal suggesting a transferable unit issued under a published policy and approved by a treasurer.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .coin{fill:#eaf6f7;stroke:#247c93;stroke-width:10}
+      .ring{fill:none;stroke:#d9674b;stroke-width:7}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .small{font-size:22px;font-weight:850;fill:#63777d}
+      .seal{font-size:39px;font-weight:950}
+      .unit{font-size:25px;font-weight:900;fill:#247c93}
+      .policy{font-size:22px;font-weight:850;fill:#63777d}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+      .white{fill:#fff}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+
+  <circle class="coin" cx="280" cy="236" r="142"/>
+  <circle class="ring" cx="280" cy="236" r="110"/>
+  <circle class="white" cx="280" cy="236" r="72"/>
+
+  <path class="teal" d="M280 179a57 57 0 1 0 0 114v-34a23 23 0 1 1 0-46z"/>
+  <path class="coral" d="M265 225h78v27h-78z"/>
+
+  <g transform="translate(356 127) rotate(13)">
+    <rect class="coral" width="92" height="48" rx="10"/>
+    <path class="white" d="M24 26l14 13 31-33 9 9-40 43-23-22z"/>
+  </g>
+
+  <text class="text small" x="171" y="72">TRANSFERABLE UNIT</text>
+  <text class="text seal" x="115" y="424">treasurer-approved</text>
+  <text class="text unit" x="169" y="461">issued under policy</text>
+  <text class="text policy" x="142" y="492">private bearer notes can circulate</text>
+</svg>

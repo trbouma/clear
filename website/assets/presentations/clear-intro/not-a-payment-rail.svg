@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Not a payment rail</title>
+  <desc id="desc">A sign-style visual showing a payment rail heading from the foreground toward a destination marked Not Our Policy.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .rail{fill:none;stroke:#143d52;stroke-width:12;stroke-linecap:round}
+      .tie{stroke:#d5e3e3;stroke-width:8;stroke-linecap:round}
+      .sign{fill:#fff;stroke:#247c93;stroke-width:4}
+      .warning{fill:#fff7f4;stroke:#d9674b;stroke-width:4}
+      .post{fill:#c9d8d8}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .label{font-size:28px;font-weight:900}
+      .small{font-size:18px;font-weight:850;fill:#63777d}
+      .tiny{font-size:17px;font-weight:850;fill:#63777d}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+      .white{fill:#fff}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+
+  <g transform="translate(82 88)">
+    <rect class="post" x="91" y="122" width="14" height="88" rx="5"/>
+    <rect class="sign" width="196" height="122" rx="12"/>
+    <circle class="teal" cx="98" cy="38" r="22"/>
+    <path class="white" d="M98 20a18 18 0 1 0 0 36V45a7 7 0 1 1 0-14z"/>
+    <path class="coral" d="M93 35h26v10H93z"/>
+    <text class="text label" x="98" y="86" text-anchor="middle">Community</text>
+  </g>
+
+  <g transform="translate(292 88)">
+    <rect class="post" x="91" y="122" width="14" height="88" rx="5"/>
+    <rect class="warning" width="196" height="122" rx="12"/>
+    <text class="text label" x="98" y="44" text-anchor="middle">Not Our</text>
+    <text class="text label" x="98" y="78" text-anchor="middle">Policy</text>
+    <text class="text tiny" x="98" y="104" text-anchor="middle">wrong destination</text>
+  </g>
+
+  <g>
+    <path class="rail" d="M150 420c51-96 112-148 184-181"/>
+    <path class="rail" d="M380 420c-22-96-14-148 15-181"/>
+    <path class="tie" d="M166 391h200"/>
+    <path class="tie" d="M193 349h176"/>
+    <path class="tie" d="M224 313h145"/>
+    <path class="tie" d="M257 282h112"/>
+    <path class="tie" d="M292 255h86"/>
+  </g>
+
+  <text class="text small" x="280" y="462" text-anchor="middle">A rail moves value between approved destinations</text>
+  <text class="text small" x="280" y="492" text-anchor="middle">Clear starts with the community's unit and policy</text>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Classic bill of exchange</title>
+  <desc id="desc">A friendly visual of an old recognized instrument resembling a bill of exchange, with a seal, signature, and endorsement marks.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .paper{fill:#fffaf2;stroke:#d8c3a3;stroke-width:5}
+      .fold{fill:#f5ead8}
+      .line{stroke:#c8ad86;stroke-width:5;stroke-linecap:round}
+      .fine{stroke:#c8ad86;stroke-width:3;stroke-linecap:round}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .script{font-family:Georgia,serif;fill:#143d52}
+      .title{font-size:31px;font-weight:900}
+      .small{font-size:18px;font-weight:850;fill:#63777d}
+      .tiny{font-size:15px;font-weight:850;fill:#63777d}
+      .seal{fill:#d9674b}
+      .seal-dark{fill:#b8442e}
+      .teal{fill:#247c93}
+      .white{fill:#fff}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+
+  <g transform="translate(95 92) rotate(-3 185 190)">
+    <rect class="paper" width="370" height="365" rx="18"/>
+    <path class="fold" d="M278 0h74a18 18 0 0 1 18 18v74z"/>
+    <path class="fine" d="M279 0v74h74"/>
+
+    <text class="text title" x="185" y="65" text-anchor="middle">Bill of Exchange</text>
+    <path class="line" d="M70 93h230"/>
+    <text class="text tiny" x="185" y="122" text-anchor="middle">Recognized instrument • endorsed by trust</text>
+
+    <path class="fine" d="M62 164h246"/>
+    <path class="fine" d="M62 202h246"/>
+    <path class="fine" d="M62 240h168"/>
+    <text class="script" x="66" y="154" font-size="25">Pay to bearer or order</text>
+    <text class="script" x="66" y="192" font-size="23">against the accepted promise</text>
+    <text class="script" x="66" y="230" font-size="23">of the treasury</text>
+
+    <g transform="translate(248 246)">
+      <circle class="seal" cx="42" cy="42" r="40"/>
+      <circle class="seal-dark" cx="42" cy="42" r="26"/>
+      <path class="white" d="M42 19l7 15 17 2-12 12 3 17-15-8-15 8 3-17-12-12 17-2z"/>
+    </g>
+
+    <path class="line" d="M64 306h130"/>
+    <text class="text tiny" x="64" y="334">signature</text>
+    <path class="fine" d="M226 315c32-30 78 28 110-2"/>
+    <text class="text tiny" x="226" y="334">accepted</text>
+  </g>
+
+  <text class="text small" x="280" y="499" text-anchor="middle">Old instruments made promises portable.</text>
+</svg>

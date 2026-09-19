@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Different CMUs do not add together</title>
+  <desc id="desc">A friendly apples and oranges visual showing that balances from different Clear Mint Units should not be added as one currency.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .basket{fill:#fff;stroke:#d5e3e3;stroke-width:4}
+      .apple-box{fill:#fff7f4;stroke:#d9674b;stroke-width:4}
+      .orange-box{fill:#eaf6f7;stroke:#247c93;stroke-width:4}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .title{font-size:28px;font-weight:950}
+      .label{font-size:22px;font-weight:900}
+      .small{font-size:16px;font-weight:850;fill:#63777d}
+      .code{font-family:"SFMono-Regular",Consolas,monospace;font-size:15px;font-weight:850;fill:#63777d}
+      .apple{fill:#d9674b}
+      .orange{fill:#f0a23b}
+      .leaf{fill:#247c93}
+      .stem{stroke:#143d52;stroke-width:5;stroke-linecap:round}
+      .no{stroke:#d9674b;stroke-width:10;stroke-linecap:round}
+      .teal{fill:#247c93}
+      .deep{fill:#143d52}
+      .white{fill:#fff}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+
+  <text class="text title" x="280" y="92" text-anchor="middle">Keep CMUs separate</text>
+
+  <g transform="translate(92 132)">
+    <rect class="apple-box" width="168" height="214" rx="18"/>
+    <circle class="apple" cx="84" cy="76" r="39"/>
+    <path class="stem" d="M86 38c-3-18 6-27 21-31"/>
+    <path class="leaf" d="M101 32c22-14 40-9 51 10-23 10-39 8-51-10z"/>
+    <text class="text label" x="84" y="151" text-anchor="middle">Apples</text>
+    <text class="code" x="84" y="183" text-anchor="middle">cmu-apple</text>
+  </g>
+
+  <text class="text title" x="280" y="252" text-anchor="middle">+</text>
+
+  <g transform="translate(300 132)">
+    <rect class="orange-box" width="168" height="214" rx="18"/>
+    <circle class="orange" cx="84" cy="76" r="40"/>
+    <path fill="none" stroke="#fff7f4" stroke-width="5" stroke-linecap="round" d="M57 76h54M84 49v54M65 57c24 18 31 38 38 59M103 57c-24 18-31 38-38 59"/>
+    <text class="text label" x="84" y="151" text-anchor="middle">Oranges</text>
+    <text class="code" x="84" y="183" text-anchor="middle">cmu-orange</text>
+  </g>
+
+  <g transform="translate(112 366)">
+    <rect class="basket" width="336" height="94" rx="18"/>
+    <path class="no" d="M29 31l30 30M59 31l-30 30"/>
+    <text class="text label" x="194" y="34" text-anchor="middle">Not one balance</text>
+    <text class="text small" x="194" y="61" text-anchor="middle">Different policy and ledger.</text>
+    <text class="text small" x="194" y="82" text-anchor="middle">Different redemption meaning.</text>
+  </g>
+
+  <text class="text small" x="280" y="499" text-anchor="middle">Add within a CMU. Do not collapse across CMUs.</text>
+</svg>

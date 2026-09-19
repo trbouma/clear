@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Clear workshop arc</title>
+  <desc id="desc">A friendly workshop journey from why Clear exists, through the instrument and roles, to live use and governance.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .path{fill:none;stroke:#d5e3e3;stroke-width:18;stroke-linecap:round}
+      .step{fill:#fff;stroke:#bfd8db;stroke-width:3}
+      .step-mid{fill:#eaf6f7;stroke:#a9cfd5;stroke-width:3}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a}
+      .label{font-size:26px;font-weight:850}
+      .small{font-size:17px;fill:#63777d}
+      .num{font-size:24px;font-weight:900;fill:#fff}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="360" rx="18"/>
+  <path class="path" d="M115 214c150-142 295-142 435 0s284 142 435 0"/>
+
+  <g transform="translate(70 77)">
+    <rect class="step" width="190" height="150" rx="16"/>
+    <circle class="teal" cx="56" cy="48" r="24"/>
+    <text class="text num" x="49" y="57">1</text>
+    <text class="text label" x="32" y="96">Why Clear</text>
+    <text class="text small" x="32" y="125">the need it meets</text>
+  </g>
+
+  <g transform="translate(300 145)">
+    <rect class="step-mid" width="190" height="150" rx="16"/>
+    <circle class="coral" cx="56" cy="48" r="24"/>
+    <text class="text num" x="49" y="57">2</text>
+    <text class="text label" x="32" y="96">The note</text>
+    <text class="text small" x="32" y="125">private bearer value</text>
+  </g>
+
+  <g transform="translate(535 77)">
+    <rect class="step" width="190" height="150" rx="16"/>
+    <circle class="teal" cx="56" cy="48" r="24"/>
+    <text class="text num" x="49" y="57">3</text>
+    <text class="text label" x="32" y="96">The roles</text>
+    <text class="text small" x="32" y="125">operator, treasurer, holder</text>
+  </g>
+
+  <g transform="translate(770 145)">
+    <rect class="step-mid" width="190" height="150" rx="16"/>
+    <circle class="coral" cx="56" cy="48" r="24"/>
+    <text class="text num" x="49" y="57">4</text>
+    <text class="text label" x="32" y="96">Live use</text>
+    <text class="text small" x="32" y="125">issue, send, redeem</text>
+  </g>
+
+  <g transform="translate(1000 77)">
+    <rect class="step" width="130" height="150" rx="16"/>
+    <circle class="teal" cx="48" cy="48" r="24"/>
+    <text class="text num" x="41" y="57">5</text>
+    <text class="text label" x="27" y="96">Care</text>
+    <text class="text small" x="27" y="125">governance</text>
+  </g>
+</svg>

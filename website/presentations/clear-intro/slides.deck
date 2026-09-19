@@ -20,6 +20,8 @@ Introductory workshop
 - What we have running today
 - Where governance and custody get serious
 
+![Workshop arc](../../assets/presentations/clear-intro/workshop-arc.svg)
+
 ---
 
 ## The problem
@@ -36,26 +38,45 @@ Many organizations already create limited-purpose value.
 The hard part is making that value portable without turning every holder into
 an account inside one application.
 
+![We accept Cash and Clear](../../assets/presentations/clear-intro/cash-and-clear-sign.svg)
+
 ---
 
 ## Clear in one sentence
 
-Clear lets an issuer define a treasury unit, authorize a treasurer to issue it,
-and let holders circulate private bearer Mint Notes under a published policy.
+Clear lets a community treasury define a transferable unit, issue it under a
+published policy, and let users privately transact with bearer notes.
+
+![Treasurer-approved unit](../../assets/presentations/clear-intro/treasurer-approved-seal.svg)
 
 ---
 
-## Not primarily a payment rail
+## An old pattern in a new form
+
+Clear is not inventing a new model of value.
+
+Systems of value have always combined coinage, credit, promises, and recognized
+places of exchange.
+
+Clear embraces that older pattern and gives it a private digital bearer form.
+
+![Clear between coinage and credit](../../assets/presentations/clear-intro/coinage-credit-clear-bridge.svg)
+
+---
+
+## Not a payment rail
 
 Payment rails move value that already has a settlement unit.
 
-Clear starts one layer earlier:
+Clear is minting infrastructure. It starts one layer earlier:
 
 - What is this unit?
 - Who is allowed to issue it?
 - Where is it recognized?
 - What does redemption or retirement mean?
 - Who operates the mint?
+
+![Not a payment rail](../../assets/presentations/clear-intro/not-a-payment-rail.svg)
 
 ---
 
@@ -72,6 +93,8 @@ Community and institutional treasuries have long issued recognized instruments:
 
 Clear gives that pattern a private digital bearer form.
 
+![Classic bill of exchange](../../assets/presentations/clear-intro/bill-of-exchange.svg)
+
 ---
 
 ## The instrument
@@ -83,6 +106,8 @@ Mint Note
 - issued by one mint keyset
 - transferable between compatible wallets
 - technically represented as Cashu proofs
+
+![Mint Note signed secret](../../assets/presentations/clear-intro/mint-note-secret.svg)
 
 ---
 
@@ -114,22 +139,23 @@ Every CMU stands alone.
 
 Do not add balances from different CMUs as though they are one currency.
 
+![Different CMUs do not add together](../../assets/presentations/clear-intro/cmu-apples-oranges.svg)
+
 ---
 
-## Three roles
+## Operator and treasurer
 
-```text
-issuer / community policy
-  -> defines meaning, limits, redemption terms
+Mint operations
 
-treasurer
-  -> authorizes creation, issuance, and treasury actions
+- run the service
+- protect mint key material
+- maintain keysets and spent-proof state
 
-mint operator
-  -> runs the service, protects key material, enforces spent state
-```
+Treasury policy
 
-One person may fill several roles, but Clear keeps the roles distinct.
+- belongs to each CMU
+- authorizes issuance and treasury actions
+- is signed by the treasurer authority
 
 ![Clear authority roles](../../assets/presentations/clear-intro/roles-and-authority.svg)
 
