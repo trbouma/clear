@@ -35,8 +35,7 @@ Many organizations already create limited-purpose value.
 - community vouchers
 - compute or agent credits
 
-The hard part is making that value portable without turning every holder into
-an account inside one application.
+The hard part is making that value portable without turning every holder into an account inside one application.
 
 ![We accept Cash and Clear](../../assets/presentations/clear-intro/cash-and-clear-sign.svg)
 
@@ -44,8 +43,7 @@ an account inside one application.
 
 ## Clear in one sentence
 
-Clear lets a community treasury define a transferable unit, issue it under a
-published policy, and let users privately transact with bearer notes.
+Clear lets a community treasury define a transferable unit, issue it under a published policy, and let users privately transact with bearer notes.
 
 ![Treasurer-approved unit](../../assets/presentations/clear-intro/treasurer-approved-seal.svg)
 
@@ -55,8 +53,7 @@ published policy, and let users privately transact with bearer notes.
 
 Clear is not inventing a new model of value.
 
-Systems of value have always combined coinage, credit, promises, and recognized
-places of exchange.
+Systems of value have always combined coinage, credit, promises, and recognized places of exchange.
 
 Clear embraces that older pattern and gives it a private digital bearer form.
 
@@ -218,8 +215,7 @@ sender wallet
   -> mint swaps proofs into spendable balance
 ```
 
-The mint prevents double spending without seeing a full account ledger of
-holder-to-holder movement.
+The mint prevents double spending without seeing a full account ledger of holder-to-holder movement.
 
 ![Mint Note lifecycle](../../assets/presentations/clear-intro/mint-note-flow.svg)
 
@@ -281,8 +277,7 @@ This is discovery control, not lifecycle.
 
 Account systems are easy to observe and easy to centralize.
 
-Private bearer notes let holders move value without making the operator the
-application account system for every transfer.
+Private bearer notes let holders move value without making the operator the application account system for every transfer.
 
 Clear still leaves policy visible where it belongs:
 
