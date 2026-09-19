@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Mint operator and treasurer characters</title>
+  <desc id="desc">A soft mascot-style skunk mechanic representing mint operations beside a friendly beaver treasurer representing treasury authority.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6faf9}
+      .card{fill:#fff;stroke:#d5e3e3;stroke-width:5}
+      .ops-panel{fill:#eaf6f7;stroke:#247c93;stroke-width:4}
+      .treasury-panel{fill:#fff7f4;stroke:#d9674b;stroke-width:4}
+      .text{font-family:Inter,Arial,sans-serif;fill:#17313a;letter-spacing:0}
+      .title{font-size:25px;font-weight:950}
+      .label{font-size:23px;font-weight:900}
+      .small{font-size:15px;font-weight:850;fill:#63777d}
+      .tiny{font-size:14px;font-weight:850;fill:#63777d}
+      .ink{fill:#17313a}
+      .skunk{fill:#34484c}
+      .stripe{fill:#f4fbfc}
+      .fur{fill:#a96f4d}
+      .fur-light{fill:#f0caa9}
+      .tail{fill:#8d5638}
+      .teal{fill:#247c93}
+      .coral{fill:#d9674b}
+      .white{fill:#fff}
+      .cream{fill:#fffaf2}
+      .blush{fill:#f0cbc0}
+      .metal{fill:#c9d8d8}
+      .line{stroke:#17313a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none}
+      .thin{stroke:#17313a;stroke-width:3;stroke-linecap:round;fill:none}
+    </style>
+  </defs>
+
+  <rect class="bg" width="560" height="560" rx="26"/>
+  <rect class="card" x="52" y="46" width="456" height="468" rx="30"/>
+  <text class="text title" x="280" y="88" text-anchor="middle">Different jobs, different keys</text>
+
+  <g transform="translate(82 122)">
+    <rect class="ops-panel" width="185" height="282" rx="22"/>
+    <path class="skunk" d="M35 197c-18-50 8-110 57-124 49 14 75 74 57 124z"/>
+    <path class="stripe" d="M85 70c11 32 10 78-4 124h31c-14-46-15-92-4-124z"/>
+    <ellipse class="skunk" cx="92" cy="85" rx="46" ry="42"/>
+    <path class="stripe" d="M77 47c8-8 22-8 30 0-5 22-5 50 0 76H77c6-26 6-54 0-76z"/>
+    <circle class="skunk" cx="58" cy="59" r="16"/>
+    <circle class="skunk" cx="126" cy="59" r="16"/>
+    <rect class="teal" x="48" y="44" width="88" height="19" rx="8"/>
+    <circle class="white" cx="76" cy="84" r="12"/>
+    <circle class="white" cx="109" cy="84" r="12"/>
+    <circle class="ink" cx="78" cy="86" r="4"/>
+    <circle class="ink" cx="107" cy="86" r="4"/>
+    <circle class="blush" cx="65" cy="103" r="7"/>
+    <circle class="blush" cx="120" cy="103" r="7"/>
+    <path class="thin" d="M80 106c8 9 19 9 27 0"/>
+    <path class="teal" d="M33 158h119a18 18 0 0 1 18 18v43H15v-43a18 18 0 0 1 18-18z"/>
+    <rect class="stripe" x="69" y="158" width="46" height="61" rx="8"/>
+    <path class="line" d="M136 148l22-22"/>
+    <circle class="metal" cx="163" cy="121" r="12"/>
+    <path class="line" d="M154 130l-15 15"/>
+    <text class="text label" x="92" y="248" text-anchor="middle">Operator</text>
+    <text class="text small" x="92" y="273" text-anchor="middle">keeps the mint running</text>
+  </g>
+
+  <g transform="translate(293 122)">
+    <rect class="treasury-panel" width="185" height="282" rx="22"/>
+    <path class="tail" d="M27 167c-27-18-24-54 8-67 25 18 23 50-8 67z"/>
+    <ellipse class="fur" cx="92" cy="86" rx="45" ry="42"/>
+    <circle class="fur" cx="58" cy="64" r="17"/>
+    <circle class="fur" cx="126" cy="64" r="17"/>
+    <ellipse class="fur-light" cx="92" cy="102" rx="29" ry="22"/>
+    <circle class="cream" cx="76" cy="84" r="12"/>
+    <circle class="cream" cx="109" cy="84" r="12"/>
+    <circle class="ink" cx="78" cy="85" r="4"/>
+    <circle class="ink" cx="107" cy="85" r="4"/>
+    <circle class="blush" cx="64" cy="104" r="7"/>
+    <circle class="blush" cx="121" cy="104" r="7"/>
+    <rect class="white" x="84" y="106" width="8" height="15" rx="2"/>
+    <rect class="white" x="94" y="106" width="8" height="15" rx="2"/>
+    <path class="thin" d="M79 103c8 8 19 8 27 0"/>
+    <path class="ink" d="M33 158h119a18 18 0 0 1 18 18v43H15v-43a18 18 0 0 1 18-18z"/>
+    <path class="white" d="M64 158h56l-28 42z"/>
+    <path class="coral" d="M87 168h10l7 44-12 13-12-13z"/>
+    <rect class="white" x="117" y="162" width="38" height="45" rx="8"/>
+    <path class="thin" d="M126 178h19M126 190h15"/>
+    <circle class="coral" cx="151" cy="204" r="11"/>
+    <path class="white" d="M146 204l4 4 9-11 4 3-13 16-9-9z"/>
+    <text class="text label" x="92" y="248" text-anchor="middle">Treasurer</text>
+    <text class="text small" x="92" y="273" text-anchor="middle">signs CMU actions</text>
+  </g>
+
+  <text class="text tiny" x="280" y="462" text-anchor="middle">Mint operations safeguard service and custody.</text>
+  <text class="text tiny" x="280" y="488" text-anchor="middle">Treasury authority signs policy-bound actions.</text>
+</svg>

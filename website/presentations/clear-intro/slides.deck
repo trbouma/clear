@@ -2,11 +2,23 @@
 
 # Clear
 
-Privately issued Mint Notes for community value.
+Privately issued bearer notes for community value.
 
 Introductory workshop
 
 ![Clear workshop map](../../assets/presentations/clear-intro/title-workshop-map.svg)
+
+---
+
+## Beyond accounts
+
+Account systems are easy to observe and easy to centralize.
+
+Bearer notes let value move without making every holder an account in one application.
+
+The mint still enforces the important policy: a note can only be spent once.
+
+![Beyond accounts](../../assets/presentations/clear-intro/beyond-accounts.svg)
 
 ---
 
@@ -174,6 +186,8 @@ Treasurer
 - controls only CMUs bound to their key
 - never receives the CMU keyset secret
 
+![Operator and treasurer characters](../../assets/presentations/clear-intro/operator-treasurer-characters.svg)
+
 ---
 
 ## Creation flow
@@ -270,24 +284,6 @@ This is discovery control, not lifecycle.
 - Safebox Web visibility
 - homepage keyset and supply display
 - operator and treasurer CMU visibility controls
-
----
-
-## Why private bearer notes matter
-
-Account systems are easy to observe and easy to centralize.
-
-Private bearer notes let holders move value without making the operator the application account system for every transfer.
-
-Clear still leaves policy visible where it belongs:
-
-- issuer meaning
-- treasurer authority
-- mint route
-- CMU identity
-- supply totals
-
----
 
 ## Governance questions
 

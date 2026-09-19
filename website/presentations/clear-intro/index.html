@@ -208,25 +208,27 @@
       font-weight: 700;
     }
 
-    .slide:nth-child(n+3):nth-child(-n+10),
-    .slide:nth-child(11) {
+    .slide:nth-child(n+4):nth-child(-n+13) {
       position: relative;
       padding-right: clamp(22rem, 42vw, 31rem);
     }
 
-    .slide:nth-child(n+3):nth-child(-n+10) h2,
-    .slide:nth-child(n+3):nth-child(-n+10) p,
-    .slide:nth-child(n+3):nth-child(-n+10) ul,
-    .slide:nth-child(n+3):nth-child(-n+10) pre,
-    .slide:nth-child(11) h2,
-    .slide:nth-child(11) p,
-    .slide:nth-child(11) ul,
-    .slide:nth-child(11) pre {
+    .slide:nth-child(2) {
+      position: relative;
+      padding-right: clamp(22rem, 42vw, 31rem);
+    }
+
+    .slide:nth-child(2) h2,
+    .slide:nth-child(2) p,
+    .slide:nth-child(n+4):nth-child(-n+13) h2,
+    .slide:nth-child(n+4):nth-child(-n+13) p,
+    .slide:nth-child(n+4):nth-child(-n+13) ul,
+    .slide:nth-child(n+4):nth-child(-n+13) pre {
       max-width: 36rem;
     }
 
-    .slide:nth-child(n+3):nth-child(-n+10) .slide-visual,
-    .slide:nth-child(11) .slide-visual {
+    .slide:nth-child(2) .slide-visual,
+    .slide:nth-child(n+4):nth-child(-n+13) .slide-visual {
       position: absolute;
       top: 50%;
       right: clamp(2rem, 4vw, 3.5rem);
@@ -236,22 +238,23 @@
       transform: translateY(-50%);
     }
 
-    .slide:nth-child(8) p {
+    .slide:nth-child(9) p {
       font-weight: 800;
     }
 
-    .slide:nth-child(5) p {
+    .slide:nth-child(6) p {
       max-width: 39rem;
       font-size: clamp(1.02rem, 1.62vw, 1.42rem);
     }
 
-    .slide:nth-child(11) p {
+    .slide:nth-child(12) p {
       color: var(--teal-dark);
       font-weight: 850;
       margin-top: 0.7rem;
     }
 
-    .slide:nth-child(11) li {
+    .slide:nth-child(12) li,
+    .slide:nth-child(13) li {
       font-size: clamp(0.98rem, 1.5vw, 1.24rem);
     }
 
@@ -321,6 +324,117 @@
       }
     }
 
+    @media (max-width: 760px) {
+      body {
+        overflow: hidden;
+      }
+
+      .deck {
+        min-height: 100dvh;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+
+      .chrome {
+        padding: 0.55rem 0.8rem;
+        font-size: 0.72rem;
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      .brand span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .brand img {
+        width: 1.65rem;
+        height: 1.65rem;
+        flex: 0 0 auto;
+      }
+
+      .stage {
+        padding: 0.2rem 0.7rem 0.45rem;
+      }
+
+      .slide {
+        width: calc(100vw - 1.4rem);
+        height: calc(100dvh - 6.6rem);
+        padding: 1rem;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .slide.active {
+        justify-content: flex-start;
+      }
+
+      .slide h1 {
+        font-size: clamp(2.5rem, 15vw, 4.2rem);
+      }
+
+      .slide h2 {
+        font-size: clamp(1.85rem, 10vw, 3rem);
+      }
+
+      .slide p {
+        font-size: clamp(1rem, 4.9vw, 1.28rem);
+      }
+
+      .slide li {
+        font-size: clamp(0.96rem, 4.5vw, 1.14rem);
+      }
+
+      .slide pre {
+        font-size: clamp(0.78rem, 3.55vw, 0.96rem);
+      }
+
+      .slide:nth-child(2),
+      .slide:nth-child(n+4):nth-child(-n+13) {
+        padding-right: 1rem;
+      }
+
+      .slide:nth-child(2) h2,
+      .slide:nth-child(2) p,
+      .slide:nth-child(n+4):nth-child(-n+13) h2,
+      .slide:nth-child(n+4):nth-child(-n+13) p,
+      .slide:nth-child(n+4):nth-child(-n+13) ul,
+      .slide:nth-child(n+4):nth-child(-n+13) pre {
+        max-width: 100%;
+      }
+
+      .slide:nth-child(2) .slide-visual,
+      .slide:nth-child(n+4):nth-child(-n+13) .slide-visual,
+      .slide-visual {
+        position: static;
+        width: min(100%, 21rem);
+        max-height: 32vh;
+        margin: 0.85rem auto 0;
+        transform: none;
+      }
+
+      .slide:first-child .slide-visual:last-child {
+        max-height: 28vh;
+      }
+
+      .controls {
+        padding: 0.5rem 0.75rem 0.85rem;
+      }
+
+      .help {
+        max-width: 55vw;
+        font-size: 0.72rem;
+      }
+
+      button {
+        min-width: 2.8rem;
+        min-height: 2.8rem;
+        font-size: 1.25rem;
+      }
+    }
+
     @media print {
       body {
         overflow: visible;
@@ -382,6 +496,9 @@
     const next = document.getElementById("next");
     let slides = [];
     let current = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartedAt = 0;
 
     function escapeHtml(value) {
       return value
@@ -503,6 +620,23 @@
 
     previous.addEventListener("click", () => move(-1));
     next.addEventListener("click", () => move(1));
+    stage.addEventListener("touchstart", (event) => {
+      if (event.touches.length !== 1) return;
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+      touchStartedAt = Date.now();
+    }, { passive: true });
+    stage.addEventListener("touchend", (event) => {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const elapsed = Date.now() - touchStartedAt;
+      if (elapsed > 800 || Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) {
+        return;
+      }
+      move(deltaX < 0 ? 1 : -1);
+    }, { passive: true });
     document.addEventListener("keydown", (event) => {
       if (["ArrowRight", "PageDown", " "].includes(event.key)) {
         event.preventDefault();
