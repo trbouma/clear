@@ -917,6 +917,11 @@ def render_cmu_metrics_page(
     proof_state = cmu["proof_state"]
     quotes = cmu["quotes"]
     methodology = metrics.get("methodology", {})
+    treasurer_npub = cmu.get("treasurer_npub") or ""
+    treasurer_profile_url = (
+        f"../v1/nostr/profiles/{quote(treasurer_npub, safe='')}"
+        if treasurer_npub else ""
+    )
     return f"""<!doctype html>
 <html lang="{escape(language)}" dir="{direction}">
 <head>
@@ -1112,7 +1117,7 @@ def render_cmu_metrics_page(
   <main class="shell">
     <header class="topbar">
       <div class="brand">Clear Mint</div>
-      <a href="../">Back to mint home</a>
+      <a href="../">Mint Home</a>
     </header>
     <section class="hero">
       <p class="eyebrow">CMU metrics</p>
@@ -1123,6 +1128,18 @@ def render_cmu_metrics_page(
       </p>
     </section>
     <div class="grid">
+      <section class="panel">
+        <h2>Supply</h2>
+        <div class="metric-grid">
+          <div class="metric"><span>Issued</span><strong>{value(supply["issued"])}</strong></div>
+          <div class="metric"><span>Retired</span><strong>{value(supply["retired"])}</strong></div>
+          <div class="metric"><span>Outstanding</span><strong>{value(supply["outstanding"])}</strong></div>
+        </div>
+        <h3>Treasurer</h3>
+        <div id="treasurer-profile" data-profile-url="{escape(treasurer_profile_url)}" aria-live="polite" style="overflow-wrap: anywhere">
+          <p class="note">No Social Profile</p>
+        </div>
+      </section>
       <section class="panel">
         <h2>CMU identity</h2>
         <dl>
@@ -1135,14 +1152,6 @@ def render_cmu_metrics_page(
           {definition_row("Treasurer", code(cmu["treasurer_npub"]) if cmu.get("treasurer_npub") else value("Operator keyset"))}
           {definition_row("Material", value(cmu["material_kind"]))}
         </dl>
-      </section>
-      <section class="panel">
-        <h2>Supply</h2>
-        <div class="metric-grid">
-          <div class="metric"><span>Issued</span><strong>{value(supply["issued"])}</strong></div>
-          <div class="metric"><span>Retired</span><strong>{value(supply["retired"])}</strong></div>
-          <div class="metric"><span>Outstanding</span><strong>{value(supply["outstanding"])}</strong></div>
-        </div>
       </section>
       <section class="panel">
         <h2>Quote pipeline</h2>
@@ -1199,5 +1208,51 @@ def render_cmu_metrics_page(
       <a href="https://trbouma.github.io/clear/">Docs</a>
     </nav>
   </main>
+  <script>
+    const treasurerProfile = document.getElementById("treasurer-profile");
+    const profileUrl = treasurerProfile.dataset.profileUrl;
+    if (profileUrl) {{
+      treasurerProfile.textContent = "Loading profile...";
+      fetch(profileUrl, {{ headers: {{ Accept: "application/json" }} }})
+        .then(response => {{
+          if (!response.ok) throw new Error("Profile lookup failed");
+          return response.json();
+        }})
+        .then(payload => {{
+          const profile = payload && payload.profile;
+          const fields = profile && [
+            profile.display_name || profile.displayName || profile.name,
+            profile.nip05,
+            profile.about,
+          ].filter(field => typeof field === "string" && field.trim());
+          treasurerProfile.replaceChildren();
+          const picture = profile && (profile.picture || profile.image);
+          if (typeof picture === "string" &&
+              ["https://", "http://"].some(prefix => picture.toLowerCase().startsWith(prefix))) {{
+            const image = document.createElement("img");
+            image.src = picture;
+            image.alt = "Treasurer profile picture";
+            image.referrerPolicy = "no-referrer";
+            image.width = 64;
+            image.height = 64;
+            image.style.objectFit = "cover";
+            image.addEventListener("error", () => {{
+              image.remove();
+              if (!fields || !fields.length) treasurerProfile.textContent = "No Social Profile";
+            }});
+            treasurerProfile.append(image);
+          }}
+          for (const field of fields || []) {{
+            const line = document.createElement("p");
+            line.textContent = field;
+            treasurerProfile.append(line);
+          }}
+          if (!treasurerProfile.childElementCount) {{
+            treasurerProfile.textContent = "No Social Profile";
+          }}
+        }})
+        .catch(() => {{ treasurerProfile.textContent = "No Social Profile"; }});
+    }}
+  </script>
 </body>
 </html>"""

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 540" role="img" aria-labelledby="title">
+  <title id="title">Circulation stays at 100</title>
+  <style>text{font-family:Inter,Arial,sans-serif;fill:#17313a;text-anchor:middle;letter-spacing:0}.label{font-size:25px;font-weight:750}.small{font-size:21px;fill:#526a70}</style>
+  <rect width="540" height="540" fill="#f6faf9"/>
+  <rect x="45" y="130" width="210" height="200" rx="8" fill="#eaf6f7" stroke="#247c93" stroke-width="4"/><rect x="285" y="130" width="210" height="200" rx="8" fill="#fff7f4" stroke="#d9674b" stroke-width="4"/><text x="150" y="182" class="label">Treasury</text><text x="390" y="182" class="label">Participant</text><text x="150" y="278" font-size="76" font-weight="800">90</text><text x="390" y="278" font-size="76" font-weight="800">10</text><path d="M65 355v25h410v-25" fill="none" stroke="#247c93" stroke-width="4"/><text x="270" y="437" class="label">100 meal credits</text><text x="270" y="475" class="small">Same total. Different holders.</text>
+</svg>

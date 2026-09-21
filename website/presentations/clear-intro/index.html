@@ -208,27 +208,27 @@
       font-weight: 700;
     }
 
-    .slide:nth-child(n+4):nth-child(-n+13) {
+    .slide:nth-child(n+4):nth-child(-n+24) {
       position: relative;
       padding-right: clamp(22rem, 42vw, 31rem);
     }
 
-    .slide:nth-child(2) {
+    .slide:nth-child(3) {
       position: relative;
       padding-right: clamp(22rem, 42vw, 31rem);
     }
 
-    .slide:nth-child(2) h2,
-    .slide:nth-child(2) p,
-    .slide:nth-child(n+4):nth-child(-n+13) h2,
-    .slide:nth-child(n+4):nth-child(-n+13) p,
-    .slide:nth-child(n+4):nth-child(-n+13) ul,
-    .slide:nth-child(n+4):nth-child(-n+13) pre {
+    .slide:nth-child(3) h2,
+    .slide:nth-child(3) p,
+    .slide:nth-child(n+4):nth-child(-n+24) h2,
+    .slide:nth-child(n+4):nth-child(-n+24) p,
+    .slide:nth-child(n+4):nth-child(-n+24) ul,
+    .slide:nth-child(n+4):nth-child(-n+24) pre {
       max-width: 36rem;
     }
 
-    .slide:nth-child(2) .slide-visual,
-    .slide:nth-child(n+4):nth-child(-n+13) .slide-visual {
+    .slide:nth-child(3) .slide-visual,
+    .slide:nth-child(n+4):nth-child(-n+24) .slide-visual {
       position: absolute;
       top: 50%;
       right: clamp(2rem, 4vw, 3.5rem);
@@ -236,6 +236,25 @@
       max-height: min(72%, 23rem);
       margin: 0;
       transform: translateY(-50%);
+    }
+
+    .slide:nth-child(n+14) h2 {
+      font-size: 2.6rem;
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+
+    .slide:nth-child(n+14) p {
+      font-size: 1.3rem;
+    }
+
+    .slide:nth-child(n+14) li {
+      font-size: 1.2rem;
+      line-height: 1.3;
+    }
+
+    .slide:nth-child(n+14) ul + p {
+      margin-top: 1.1rem;
     }
 
     .slide:nth-child(9) p {
@@ -391,22 +410,35 @@
         font-size: clamp(0.78rem, 3.55vw, 0.96rem);
       }
 
-      .slide:nth-child(2),
-      .slide:nth-child(n+4):nth-child(-n+13) {
+      .slide:nth-child(n+14) h2 {
+        font-size: 1.85rem;
+      }
+
+      .slide:nth-child(n+14) p,
+      .slide:nth-child(n+14) li {
+        font-size: 1.08rem;
+      }
+
+      .slide:nth-child(n+14) .slide-visual {
+        flex-shrink: 0;
+      }
+
+      .slide:nth-child(3),
+      .slide:nth-child(n+4):nth-child(-n+24) {
         padding-right: 1rem;
       }
 
-      .slide:nth-child(2) h2,
-      .slide:nth-child(2) p,
-      .slide:nth-child(n+4):nth-child(-n+13) h2,
-      .slide:nth-child(n+4):nth-child(-n+13) p,
-      .slide:nth-child(n+4):nth-child(-n+13) ul,
-      .slide:nth-child(n+4):nth-child(-n+13) pre {
+      .slide:nth-child(3) h2,
+      .slide:nth-child(3) p,
+      .slide:nth-child(n+4):nth-child(-n+24) h2,
+      .slide:nth-child(n+4):nth-child(-n+24) p,
+      .slide:nth-child(n+4):nth-child(-n+24) ul,
+      .slide:nth-child(n+4):nth-child(-n+24) pre {
         max-width: 100%;
       }
 
-      .slide:nth-child(2) .slide-visual,
-      .slide:nth-child(n+4):nth-child(-n+13) .slide-visual,
+      .slide:nth-child(3) .slide-visual,
+      .slide:nth-child(n+4):nth-child(-n+24) .slide-visual,
       .slide-visual {
         position: static;
         width: min(100%, 21rem);

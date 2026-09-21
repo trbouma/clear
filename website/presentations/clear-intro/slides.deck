@@ -2,7 +2,7 @@
 
 # Clear
 
-Privately issued bearer notes for community value.
+Private bearer notes for community-issued value.
 
 Introductory workshop
 
@@ -10,11 +10,24 @@ Introductory workshop
 
 ---
 
+## Workshop arc
+
+- Why communities issue their own value
+- What a bearer note is
+- How units, treasury policy, and mint operations fit together
+- How notes are issued, transferred, and retired
+- A working demonstration
+- Decisions before launching a community program
+
+![Workshop arc](../../assets/presentations/clear-intro/workshop-arc.svg)
+
+---
+
 ## Beyond accounts
 
-Account systems are easy to observe and easy to centralize.
+In an account system, a service keeps each user's balance.
 
-Bearer notes let value move without making every holder an account in one application.
+A bearer note is held in a wallet. Control of the note lets its holder spend it, without an account at the mint.
 
 The mint still enforces the important policy: a note can only be spent once.
 
@@ -22,32 +35,16 @@ The mint still enforces the important policy: a note can only be spent once.
 
 ---
 
-## Workshop arc
-
-- Why Clear exists
-- The older treasury pattern it updates
-- Mint Notes, CMUs, and private bearer value
-- The three roles: operator, treasurer, holder
-- How issuance, circulation, and redemption work
-- What we have running today
-- Where governance and custody get serious
-
-![Workshop arc](../../assets/presentations/clear-intro/workshop-arc.svg)
-
----
-
-## The problem
+## Value alongside cash
 
 Many organizations already create limited-purpose value.
 
-- meal credits
-- member benefits
-- event allowances
-- service credits
-- community vouchers
-- compute or agent credits
+- Meal credits
+- Member benefits
+- Event allowances
+- Service credits
 
-The hard part is making that value portable without turning every holder into an account inside one application.
+Clear lets this value move between compatible wallets and places that accept it, alongside cash.
 
 ![We accept Cash and Clear](../../assets/presentations/clear-intro/cash-and-clear-sign.svg)
 
@@ -65,7 +62,7 @@ Clear lets a community treasury define a transferable unit, issue it under a pub
 
 Clear is not inventing a new model of value.
 
-Systems of value have always combined coinage, credit, promises, and recognized places of exchange.
+Systems of value have long combined coinage, credit, promises, and recognized places of exchange.
 
 Clear embraces that older pattern and gives it a private digital bearer form.
 
@@ -75,46 +72,42 @@ Clear embraces that older pattern and gives it a private digital bearer form.
 
 ## Not a payment rail
 
-Payment rails move value that already has a settlement unit.
+Payment rails move value between destinations using an agreed unit.
 
-Clear is minting infrastructure. It starts one layer earlier:
+Clear starts with the community's unit and policy:
 
 - What is this unit?
 - Who is allowed to issue it?
-- Where is it recognized?
-- What does redemption or retirement mean?
-- Who operates the mint?
+- Where is it accepted?
+- What can a holder receive in exchange?
 
 ![Not a payment rail](../../assets/presentations/clear-intro/not-a-payment-rail.svg)
 
 ---
 
-## Older pattern, new tools
+## A promise people can use
 
-Community and institutional treasuries have long issued recognized instruments:
+A meal voucher makes the idea tangible:
 
-- vouchers
-- scrip
-- meal tickets
-- internal credits
-- redeemable certificates
-- local program allowances
+- An issuer defines what it promises
+- A holder presents the voucher
+- A participating place honors it under that policy
 
-Clear gives that pattern a private digital bearer form.
+Clear gives such instruments a digital form. Their meaning still comes from the issuer's promise and the places that accept them.
 
 ![Classic bill of exchange](../../assets/presentations/clear-intro/bill-of-exchange.svg)
 
 ---
 
-## The instrument
+## The note in your wallet
 
-Mint Note
+A Mint Note is a secret with a cryptographic signature from the mint.
 
-- holder-facing term
-- private bearer instrument
-- issued by one mint keyset
-- transferable between compatible wallets
-- technically represented as Cashu proofs
+- The signature makes the note verifiable
+- The holder keeps the secret in a wallet
+- The mint rejects notes that have already been spent
+
+Clear uses Cashu, a protocol for private digital cash. Its technical name for these notes is proofs.
 
 ![Mint Note signed secret](../../assets/presentations/clear-intro/mint-note-secret.svg)
 
@@ -122,15 +115,13 @@ Mint Note
 
 ## The unit
 
-Clear Mint Unit, or CMU
+A Clear Mint Unit (CMU) identifies which unit a note carries, such as a community's meal credits.
 
-```text
-cmu-<keyset-id>
-```
+A keyset is the mint's set of signing keys for that unit.
 
-A friendly name can change.
+The mint returns a canonical `cmu-...` identifier. Wallets use it together with the mint URL and keyset ID.
 
-The canonical identity does not.
+A friendly name can change. The canonical identity does not.
 
 ![CMU identity stack](../../assets/presentations/clear-intro/cmu-identity-stack.svg)
 
@@ -140,13 +131,11 @@ The canonical identity does not.
 
 Every CMU stands alone.
 
-- one exact mint route
-- one exact keyset
-- one exact ledger boundary
-- one supply accounting context
-- one issuer or policy meaning
+- Its own issuer policy
+- Its own mint and keyset
+- Its own balance and circulation total
 
-Do not add balances from different CMUs as though they are one currency.
+Ten meal credits and ten event credits are two balances, not twenty interchangeable credits.
 
 ![Different CMUs do not add together](../../assets/presentations/clear-intro/cmu-apples-oranges.svg)
 
@@ -156,199 +145,185 @@ Do not add balances from different CMUs as though they are one currency.
 
 Mint operations
 
-- run the service
-- protect mint key material
-- maintain keysets and spent-proof state
+- Run the service
+- Protect the signing keys
+- Record which notes have been spent
 
 Treasury policy
 
-- belongs to each CMU
-- authorizes issuance and treasury actions
-- is signed by the treasurer authority
+- Each CMU has its own policy
+- Its treasurer authorizes issuance and treasury actions
+- Holders use notes under that policy
 
 ![Clear authority roles](../../assets/presentations/clear-intro/roles-and-authority.svg)
 
 ---
 
-## Operator versus treasurer
+## Separate keys, separate authority
 
 Mint operator
 
-- controls privileged local operator surface
-- hosts the mint
-- safeguards keyset custody
-- can list or unlist hosted CMUs
+- Hosts the mint and safeguards its signing keys
+- Authorizes treasurers to create CMUs
+- Can list or unlist any hosted CMU
 
 Treasurer
 
-- keeps their own `nsec`
-- signs bounded public treasury requests
-- controls only CMUs bound to their key
-- never receives the CMU keyset secret
+- Uses a public identity key (`npub`)
+- Keeps a secret key (`nsec`) to sign requests
+- Controls only CMUs assigned to that identity
+- Does not receive the mint's signing keys
 
 ![Operator and treasurer characters](../../assets/presentations/clear-intro/operator-treasurer-characters.svg)
 
 ---
 
-## Creation flow
+## Start with a community promise
 
-```text
-operator records treasurer npub
-  -> operator grants one CMU creation
-  -> treasurer signs CMU creation request
-  -> mint verifies grant and signature
-  -> mint generates random keyset secret
-  -> mint creates cmu-<keyset-id>
-```
+Imagine a community kitchen creating meal credits.
 
-The grant is consumed. Another CMU requires another grant.
+- The operator grants the treasurer permission to create one CMU
+- The treasurer creates it under a published policy
+- The mint returns its unique identity
 
----
+**What would one meal credit promise?**
 
-## Issuance flow
-
-```text
-treasurer chooses CMU and amount
-  -> clear-treasury signs request
-  -> mint creates blinded signatures
-  -> proofs enter treasurer wallet
-  -> treasurer can send Mint Notes
-```
-
-The local treasury wallet is scoped by mint and treasurer key.
+![Treasurer-approved community unit](../../assets/presentations/clear-intro/treasurer-approved-seal.svg)
 
 ---
 
-## Circulation flow
+## Issue the first notes
 
-```text
-sender wallet
-  -> encrypted Clear transfer
-  -> recipient inbox relay
-  -> recipient wallet accepts
-  -> mint swaps proofs into spendable balance
-```
+The treasurer chooses the meal-credit CMU and issues 100 units.
 
-The mint prevents double spending without seeing a full account ledger of holder-to-holder movement.
+- The treasurer signs the request
+- The mint signs the notes
+- The notes arrive in the treasury wallet, ready to send
 
-![Mint Note lifecycle](../../assets/presentations/clear-intro/mint-note-flow.svg)
+**There are now 100 meal credits in circulation.**
+
+![One hundred meal credits issued](../../assets/presentations/clear-intro/workshop-issue.svg)
 
 ---
 
-## Redemption and retirement
+## Send, then accept
 
-Redemption is policy.
+The treasury sends 10 meal credits to a participant.
 
-Retirement is the mint-side accounting outcome.
+- The wallet sends an encrypted transfer
+- The recipient accepts it in their wallet
+- The mint replaces the received notes with fresh ones and marks the old ones spent
 
-```text
-holder presents Mint Notes
-  -> recognized party accepts under policy
-  -> mint marks proofs spent
-  -> retired supply increases
-```
+**The holder changes. Total circulation stays at 100.**
 
-Clear does not assume a Lightning payout or cash conversion.
+![Ninety credits in treasury and ten with a participant](../../assets/presentations/clear-intro/workshop-transfer.svg)
 
 ---
 
-## Discovery and privacy
+## Honor the promise
 
-A CMU can be public-listed or private-listed.
+The kitchen accepts meal credits in exchange for a meal. That is redemption under its policy.
 
-Public-listed:
+- It may spend the received notes again
+- Or it may retire them, removing those units from circulation
 
-- appears on the mint home page
+**Accepting notes is not the same as retiring them.**
 
-Private-listed:
-
-- hidden from the home page
-- still usable by exact CMU id
-- still available through direct keyset endpoints
-
-This is discovery control, not lifecycle.
-
-![Public and private CMU listing](../../assets/presentations/clear-intro/discovery-visibility.svg)
+![Notes can circulate again or be retired](../../assets/presentations/clear-intro/workshop-retire.svg)
 
 ---
 
-## What works now
+## Choose what is listed
 
-- operator grant to treasurer
-- treasurer-created CMUs
-- multiple CMUs per treasurer
-- explicit `--cmu-id` selection
-- issuance into treasury wallet
-- send to NIP-05 address
-- Acorn receive and accept
-- Safebox Web visibility
-- homepage keyset and supply display
-- operator and treasurer CMU visibility controls
+Should meal credits appear on the mint home page?
 
-## Governance questions
+- Public-listed units appear on the home page
+- Private-listed units remain usable by their exact CMU ID
+- The operator or that CMU's treasurer can change the listing
 
-Before a real program launches:
+**Unlisted does not mean disabled or secret.**
 
-- Who is the issuer?
-- Who is the treasurer?
-- What does redemption mean?
-- What are the issuance limits?
-- Who can suspend or retire the CMU?
-- Should the CMU be public-listed?
-- What happens if a treasurer key is compromised?
+![Listed and unlisted units remain usable](../../assets/presentations/clear-intro/workshop-listing.svg)
 
 ---
 
-## Custody questions
+## Find the receiving wallet
 
-The most sensitive mint secrets must move behind stronger boundaries.
+A recipient can share an address such as `name@example.org`.
 
-Near term:
+- This is a NIP-05 identity address, not an email transfer
+- A compatible wallet uses it to discover the recipient
+- Acorn can accept the notes; Safebox Web displays the balance
 
-- dedicated key-encryption material
-- OpenBao Transit for wrapping and signing operations
+**Check the recipient and the CMU before sending.**
 
-Longer term:
-
-- remote signer
-- HSM-backed key custody
-- policy-enforcing signing boundary
+![A note held in a compatible wallet](../../assets/presentations/clear-intro/mint-note-secret.svg)
 
 ---
 
-## Demo path
+## Try it together
 
-1. Operator checks mint status
-2. Operator grants treasurer
-3. Treasurer creates CMU
-4. Treasurer issues units
-5. Treasurer sends to a NIP-05 address
-6. Recipient accepts in wallet
-7. Home page shows or hides the CMU
+- Create a CMU and issue 100 units
+- Send 10 to a participant, then accept them
+- Compare both wallet balances with total circulation
+- Hide the home page listing, then restore it
 
----
+**What changed? What stayed the same?**
 
-## The mental model
-
-Clear is electronic coinage machinery for issuer-defined units.
-
-It combines:
-
-- treasury authority
-- Cashu private bearer notes
-- exact CMU identity
-- mint-operated spent-state protection
-- policy-aware supply evidence
+![Compare ninety plus ten with one hundred in circulation](../../assets/presentations/clear-intro/workshop-transfer.svg)
 
 ---
 
-## Discussion
+## Agree on the policy
 
-Where would this pattern be useful?
+Before launching the kitchen's meal credits:
 
-- community benefits
-- event credits
-- local exchange
-- internal service credits
-- public-purpose allowances
-- agent and compute budgets
+- Who promises the meals, and where are credits accepted?
+- Who may issue credits, and how many?
+- How are notes retired or the program ended?
+- Who responds if a key is lost or compromised?
+
+**Who needs to agree before the first note is issued?**
+
+![Mint operations and treasury policy](../../assets/presentations/clear-intro/roles-and-authority.svg)
+
+---
+
+## Protect the keys
+
+Treasurer keys authorize actions. Mint keys sign valid notes.
+
+- Both need protection and a recovery plan
+- Planned: OpenBao, a service for protecting secrets
+- Longer term: protected signing inside a hardware security module (HSM)
+
+**Who can recover the service if a key is lost?**
+
+![Separate treasury and mint key responsibilities](../../assets/presentations/clear-intro/operator-treasurer-characters.svg)
+
+---
+
+## Bring it back to the community
+
+- A community promise: each CMU has its own meaning and policy
+- Transferable notes: holders keep and exchange them in wallets
+- Places that accept: participating organizations give the notes practical use
+
+**The technology carries the notes. The community gives them meaning.**
+
+![A promise, notes, and places that accept](../../assets/presentations/clear-intro/workshop-promise.svg)
+
+---
+
+## Design your own example
+
+Choose a community, event, or service you know.
+
+- What would one unit mean?
+- Who would issue it?
+- Where would people use it?
+- What would a holder receive in exchange?
+
+**Describe your community promise in one sentence.**
+
+![Define a promise, a note, and a place to use it](../../assets/presentations/clear-intro/workshop-promise.svg)

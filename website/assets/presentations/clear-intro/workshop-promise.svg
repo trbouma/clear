@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 540" role="img" aria-labelledby="title">
+  <title id="title">A community promise carried in notes</title>
+  <style>text{font-family:Inter,Arial,sans-serif;fill:#17313a;text-anchor:middle;letter-spacing:0}.label{font-size:25px;font-weight:750}.small{font-size:21px;fill:#526a70}</style>
+  <rect width="540" height="540" fill="#f6faf9"/>
+  <rect x="80" y="85" width="380" height="100" rx="8" fill="#eaf6f7" stroke="#247c93" stroke-width="3"/><text x="270" y="145" class="label">A community promise</text><rect x="80" y="220" width="380" height="100" rx="8" fill="#fff" stroke="#247c93" stroke-width="3"/><text x="270" y="280" class="label">Transferable notes</text><rect x="80" y="355" width="380" height="100" rx="8" fill="#fff7f4" stroke="#d9674b" stroke-width="3"/><text x="270" y="415" class="label">Places that accept</text>
+</svg>

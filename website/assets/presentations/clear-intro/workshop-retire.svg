@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 540" role="img" aria-labelledby="title">
+  <title id="title">After a meal is redeemed</title>
+  <style>text{font-family:Inter,Arial,sans-serif;fill:#17313a;text-anchor:middle;letter-spacing:0}.label{font-size:25px;font-weight:750}.small{font-size:21px;fill:#526a70}</style>
+  <rect width="540" height="540" fill="#f6faf9"/>
+  <circle cx="270" cy="170" r="70" fill="#fff" stroke="#247c93" stroke-width="5"/><circle cx="270" cy="170" r="48" fill="none" stroke="#d5e3e3" stroke-width="3"/><path d="M165 115v105m-15-105v40h30v-40m200 0v105m0-105q-35 45 0 55" fill="none" stroke="#d9674b" stroke-width="5"/><text x="270" y="282" class="label">The kitchen accepts notes</text><rect x="40" y="320" width="220" height="145" rx="8" fill="#eaf6f7"/><rect x="280" y="320" width="220" height="145" rx="8" fill="#fff7f4"/><text x="150" y="368" class="label">Spend again</text><text x="150" y="410" class="small">Supply stays</text><text x="150" y="438" class="small">the same</text><text x="390" y="368" class="label">Retire</text><text x="390" y="410" class="small">Supply</text><text x="390" y="438" class="small">decreases</text>
+</svg>

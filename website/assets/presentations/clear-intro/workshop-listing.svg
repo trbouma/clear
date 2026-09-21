@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 540" role="img" aria-labelledby="title">
+  <title id="title">Choose home page visibility</title>
+  <style>text{font-family:Inter,Arial,sans-serif;fill:#17313a;text-anchor:middle;letter-spacing:0}.label{font-size:25px;font-weight:750}.small{font-size:21px;fill:#526a70}</style>
+  <rect width="540" height="540" fill="#f6faf9"/>
+  <rect x="65" y="110" width="410" height="215" rx="8" fill="#fff" stroke="#247c93" stroke-width="4"/><path d="M65 160h410" stroke="#247c93" stroke-width="4"/><circle cx="90" cy="135" r="6" fill="#d9674b"/><text x="270" y="208" class="label">Mint home page</text><rect x="95" y="232" width="350" height="60" rx="6" fill="#eaf6f7"/><text x="270" y="270" class="small">Listed: Meal credits</text><text x="270" y="382" class="label">Unlisted? Still usable.</text><text x="270" y="424" class="small">Use the exact CMU ID</text><text x="270" y="460" class="small">Listing does not change the notes</text>
+</svg>
