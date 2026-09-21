@@ -23,6 +23,7 @@ from clear.models import (
     CheckStateRequest,
     CMUCreateRequest,
     CMULabelRequest,
+    CMUDescriptionRequest,
     CMUVisibilityRequest,
     MintQuoteRequest,
     MintRequest,
@@ -832,6 +833,18 @@ def create_app(
         except ClearError as exc:
             return _protocol_error(str(exc), 15004)
 
+    @app.post("/v1/operator/cmus/{unit_or_keyset_id}/description")
+    async def describe_cmu(
+        unit_or_keyset_id: str, body: CMUDescriptionRequest, request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return store.update_cmu_description(unit_or_keyset_id, body.description)
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15004)
+
     @app.post("/v1/operator/cmus/{unit_or_keyset_id}/visibility")
     async def set_cmu_visibility(
         unit_or_keyset_id: str,
@@ -879,6 +892,15 @@ def create_app(
             )
         except ClearError as exc:
             return _protocol_error(str(exc), 15005)
+
+    @app.post("/v1/treasury/cmus/description")
+    async def describe_cmu_from_treasury(body: TreasuryEnvelopeRequest):
+        try:
+            return store.cmu_description_from_treasury_envelope(
+                body.model_dump(), mint_url=configured.mint_url,
+            )
+        except ClearError as exc:
+            return _protocol_error(str(exc), 15006)
 
     @app.post("/v1/treasury/cmus/visibility")
     async def cmu_visibility_from_treasury(body: TreasuryEnvelopeRequest):

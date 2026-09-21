@@ -534,6 +534,8 @@ class Store:
         }
         if "friendly_unit_alias" not in columns:
             connection.execute("ALTER TABLE cmus ADD COLUMN friendly_unit_alias TEXT")
+        if "description" not in columns:
+            connection.execute("ALTER TABLE cmus ADD COLUMN description TEXT NOT NULL DEFAULT ''")
         if "public_listing" not in columns:
             connection.execute(
                 "ALTER TABLE cmus ADD COLUMN public_listing INTEGER "
@@ -1205,6 +1207,7 @@ class Store:
             "status": cmu["status"],
             "friendly_name": cmu["friendly_name"],
             "friendly_unit_alias": cmu["friendly_unit_alias"],
+            "description": cmu["description"],
             "treasurer_npub": cmu["treasurer_npub"],
             "material_kind": cmu["material_kind"],
             "created_at": cmu["created_at"],
@@ -1607,6 +1610,55 @@ class Store:
             "treasurer_pubkey": event["pubkey"],
         }
 
+    @staticmethod
+    def _validate_description(description) -> str:
+        if not isinstance(description, str) or len(description) > 10000:
+            raise ClearError("description must be text of at most 10000 characters")
+        return description.strip()
+
+    def update_cmu_description(self, unit_or_keyset_id: str, description: str) -> dict:
+        description = self._validate_description(description)
+        with self._transaction() as connection:
+            cmu = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ? OR unit = ?",
+                (unit_or_keyset_id, unit_or_keyset_id),
+            ).fetchone()
+            if cmu is None:
+                raise ClearError("CMU not found")
+            connection.execute(
+                "UPDATE cmus SET description = ? WHERE keyset_id = ?",
+                (description, cmu["keyset_id"]),
+            )
+            self._audit(connection, "cmu:description", 0, unit_or_keyset_id, cmu["keyset_id"])
+        return self.get_cmu(unit_or_keyset_id)
+
+    def cmu_description_from_treasury_envelope(self, envelope: dict, *, mint_url: str) -> dict:
+        try:
+            payload, event = verify_envelope(
+                envelope, expected_action="cmu:description", expected_mint=mint_url,
+            )
+        except TreasuryAuthError as exc:
+            raise ClearError(str(exc)) from exc
+        description = self._validate_description(payload.get("description"))
+        keyset_id = payload.get("keyset_id")
+        if not isinstance(keyset_id, str) or not keyset_id:
+            raise ClearError("treasury request keyset_id is required")
+        with self._transaction() as connection:
+            self._record_treasury_nonce(
+                connection, nonce=payload["nonce"], pubkey=event["pubkey"],
+                action=payload["action"], now=self._now(),
+            )
+            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"], keyset_id)
+            connection.execute(
+                "UPDATE cmus SET description = ? WHERE keyset_id = ?",
+                (description, cmu["keyset_id"]),
+            )
+            self._audit(connection, "cmu:description:treasury", 0, payload["action"], keyset_id)
+            updated = connection.execute(
+                "SELECT * FROM cmus WHERE keyset_id = ?", (keyset_id,),
+            ).fetchone()
+        return self._cmu_response(updated)
+
     def cmu_visibility_from_treasury_envelope(
         self,
         envelope: dict,
@@ -1916,6 +1968,7 @@ class Store:
             "public_listing": bool(row["public_listing"]),
             "friendly_name": row["friendly_name"],
             "friendly_alias": row["friendly_name"],
+            "description": row["description"] if "description" in row.keys() else "",
             "friendly_unit_alias": row["friendly_unit_alias"],
             "treasurer_npub": row["treasurer_npub"],
             "material_kind": row["material_kind"],

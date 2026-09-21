@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from dotenv import load_dotenv
 from stroma import Event, Keys, RelayClient, RelayError, RelayPool
 
+from clear.cmu_description import add_description_arguments, read_description
 from clear.nostr_profiles import (
     DEFAULT_PROFILE_RELAYS,
     ProfileLookupError,
@@ -579,6 +580,15 @@ def cmu_label(args) -> int:
     return 0
 
 
+def cmu_description(args) -> int:
+    result = request_json(
+        _api_url(args), "POST", f"/v1/operator/cmus/{args.cmu}/description",
+        {"description": read_description(args)}, token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
 def cmu_visibility(args) -> int:
     result = request_json(
         _api_url(args),
@@ -1080,6 +1090,12 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         help="Friendly unit label, for example credits, passes, or meals.",
     )
     cmu_label_parser.set_defaults(handler=cmu_label)
+    cmu_description_parser = cmu_subcommands.add_parser(
+        "describe", help="Set or clear a CMU's public description.",
+    )
+    cmu_description_parser.add_argument("cmu", help="CMU unit or keyset ID.")
+    add_description_arguments(cmu_description_parser)
+    cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
         "private",
         help="Hide a CMU from the public homepage while keeping it usable by ID.",

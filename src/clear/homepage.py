@@ -918,6 +918,13 @@ def render_cmu_metrics_page(
     quotes = cmu["quotes"]
     methodology = metrics.get("methodology", {})
     treasurer_npub = cmu.get("treasurer_npub") or ""
+    description = cmu.get("description") or ""
+    description_markup = (
+        '<p class="lede" id="cmu-description" dir="auto" '
+        'style="white-space: pre-wrap; overflow-wrap: anywhere">'
+        f'{escape(description)}</p>'
+        if description else ""
+    )
     treasurer_profile_url = (
         f"../v1/nostr/profiles/{quote(treasurer_npub, safe='')}"
         if treasurer_npub else ""
@@ -1122,10 +1129,7 @@ def render_cmu_metrics_page(
     <section class="hero">
       <p class="eyebrow">CMU metrics</p>
       <h1>{value(display_name)}</h1>
-      <p class="lede">
-        Policy-aware supply metrics and proof-state diagnostics for one exact
-        Clear Mint Unit.
-      </p>
+      {description_markup}
     </section>
     <div class="grid">
       <section class="panel">

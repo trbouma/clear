@@ -305,3 +305,33 @@ routes, or other context-local home relays as the recipient's public Clear
 delivery route.
 
 Remote treasurer retirement is follow-on work.
+
+## Describe a CMU
+
+After creating a CMU, its owning treasurer can set the public description
+beneath the title on the individual CMU page. Describe its purpose, where it is accepted,
+and what holders can expect. Use the usual configured treasurer credentials:
+
+```sh
+poetry run clear-treasury --mint https://clear.safebox.dev cmu describe \
+  --cmu-id cmu-YOUR-ID \
+  --description "Community meal credits, accepted at participating kitchens."
+```
+
+For longer text, replace `--description` with `--description-file description.txt`.
+Files are UTF-8. Plain text and paragraph breaks are supported, up to 10,000
+characters; HTML and Markdown are not rendered. Use `--clear` to remove the text.
+Treasury commands require an explicit `--cmu-id` or `--keyset-id`.
+
+The operator can independently update any hosted CMU:
+
+```sh
+docker compose exec clear-operator clear-root cmu describe cmu-YOUR-ID \
+  --description "Community meal credits, accepted at participating kitchens."
+```
+
+When using `--description-file` inside Docker, the file must be available inside
+the container. Both update paths are audited. Existing CMUs start with an empty
+description after the automatic database migration. Description changes do not
+alter identity, supply, or listing visibility. An unlisted CMU's description is
+still visible on its direct page; do not put secrets in it.

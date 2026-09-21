@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
+from clear.cmu_description import add_description_arguments, read_description
 from clear.root_delivery import (
     DeliveryError,
     deliver_clear_token,
@@ -38,6 +39,7 @@ from clear.treasury_auth import (
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
     build_cmu_visibility_envelope,
+    build_cmu_description_envelope,
     npub_from_nsec,
 )
 
@@ -342,6 +344,18 @@ def cmu_summary(args) -> int:
     return 0
 
 
+def cmu_description(args) -> int:
+    nsec = _treasurer_nsec(args)
+    mint = args.mint.rstrip("/")
+    keyset_id = _resolve_keyset_id(mint, args)
+    envelope = build_cmu_description_envelope(
+        mint=mint, nsec=nsec, keyset_id=keyset_id,
+        description=read_description(args), lifetime_seconds=args.lifetime,
+    )
+    _print_json(request_json(mint, "POST", "/v1/treasury/cmus/description", envelope))
+    return 0
+
+
 def cmu_visibility(args) -> int:
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
@@ -502,6 +516,13 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         help="Signed request lifetime in seconds.",
     )
     cmu_summary_parser.set_defaults(handler=cmu_summary)
+    cmu_description_parser = cmu_subcommands.add_parser(
+        "describe", help="Set or clear a description for your CMU.",
+    )
+    _add_cmu_selector(cmu_description_parser, action="describe")
+    add_description_arguments(cmu_description_parser)
+    cmu_description_parser.add_argument("--lifetime", type=int, default=300)
+    cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
         "private",
         help="Hide a treasurer-controlled CMU from the public homepage.",

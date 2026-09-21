@@ -81,6 +81,10 @@ class CMULabelRequest(BaseModel):
     unit_alias: str | None = Field(default=None, min_length=1, max_length=40)
 
 
+class CMUDescriptionRequest(BaseModel):
+    description: str = Field(max_length=10000)
+
+
 class CMUVisibilityRequest(BaseModel):
     public_listing: bool
 

@@ -15,6 +15,7 @@ from clear.main import create_app
 from clear.store import ClearError
 from clear.treasury_auth import (
     build_cmu_create_envelope,
+    build_cmu_description_envelope,
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
     build_cmu_visibility_envelope,
@@ -560,7 +561,7 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert metrics_page.headers["content-language"] == "en"
     assert "CMU metrics" in metrics_page.text
     assert "Gym Guest Passes" in metrics_page.text
-    assert "Policy-aware supply metrics" in metrics_page.text
+    assert "Policy-aware supply metrics" not in metrics_page.text
     assert (
         "<span>Issued</span><strong><bdi dir=\"auto\">8</bdi></strong>"
         in metrics_page.text
@@ -1753,6 +1754,80 @@ def test_treasurer_can_make_bound_cmu_private_and_publish_again(tmp_path) -> Non
     assert published.status_code == 200
     assert published.json()["public_listing"] is True
     assert "Treasurer Private Credits" in public_homepage.text
+
+
+def test_description_migrates_existing_database(tmp_path) -> None:
+    configured = settings(tmp_path)
+    with TestClient(create_app(configured)) as client:
+        keyset_id = client.get("/v1/keysets").json()["keysets"][0]["id"]
+    with sqlite3.connect(configured.database_path) as connection:
+        connection.execute("ALTER TABLE cmus DROP COLUMN description")
+    with TestClient(create_app(configured)) as client:
+        page = client.get(f"/cmus/{keyset_id}")
+        assert page.status_code == 200
+        assert 'id="cmu-description"' not in page.text
+        response = client.post(
+            f"/v1/operator/cmus/{keyset_id}/description",
+            json={"description": "An existing CMU"},
+            headers={"Authorization": f"Bearer {OPERATOR_TOKEN}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["description"] == "An existing CMU"
+
+
+def test_cmu_description_authority_rendering_and_persistence(tmp_path) -> None:
+    configured = settings(tmp_path)
+    treasurer = Keys(priv_k="1".zfill(64))
+    outsider = Keys(priv_k="2".zfill(64))
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    description = "Meal credits for our community.\n\n<script>alert('x')</script>"
+    with TestClient(create_app(configured)) as client:
+        commission_and_enable(client)
+        client.post("/v1/operator/treasurers", json={"npub": treasurer.public_key_bech32()}, headers=headers)
+        grant = client.post("/v1/operator/treasurer-grants", json={"npub": treasurer.public_key_bech32()}, headers=headers).json()
+        cmu = client.post("/v1/treasury/cmus", json=build_cmu_create_envelope(
+            mint="https://clear.example", grant_id=grant["id"],
+            name="Meals", nsec=treasurer.private_key_bech32(),
+        )).json()
+        assert cmu["description"] == ""
+        route = "/v1/treasury/cmus/description"
+
+        def envelope(text, signer=treasurer):
+            return build_cmu_description_envelope(
+                mint="https://clear.example", nsec=signer.private_key_bech32(),
+                keyset_id=cmu["keyset_id"], description=text,
+            )
+
+        assert client.post(route, json=envelope("unauthorized", outsider)).status_code == 400
+        assert client.post(route, json=envelope("x" * 10001)).status_code == 400
+        tampered = envelope("original")
+        tampered["payload"]["description"] = "changed"
+        assert client.post(route, json=tampered).status_code == 400
+        signed = envelope(description)
+        result = client.post(route, json=signed)
+        assert result.status_code == 200
+        assert result.json()["description"] == description
+        assert result.json()["unit"] == cmu["unit"]
+        assert client.post(route, json=signed).status_code == 400
+        page = client.get(f'/cmus/{cmu["keyset_id"]}').text
+        assert 'id="cmu-description"' in page
+        assert page.index('id="cmu-description"') < page.index('<h2>Supply</h2>')
+        assert page.count("Meal credits for our community.") == 1
+        assert "Policy-aware supply metrics" not in page
+        assert "&lt;script&gt;" in page
+        assert "<script>alert('x')</script>" not in page
+        operator_route = f'/v1/operator/cmus/{cmu["unit"]}/description'
+        assert client.post(operator_route, json={"description": "override"}).status_code != 200
+        assert client.post(operator_route, json={"description": "x" * 10001}, headers=headers).status_code == 422
+        assert client.post(operator_route, json={"description": "Operator description"}, headers=headers).status_code == 200
+
+    with TestClient(create_app(configured)) as client:
+        page = client.get(f'/cmus/{cmu["keyset_id"]}').text
+        assert "Operator description" in page
+        result = client.post(route, json=envelope(""))
+        assert result.status_code == 200
+        assert result.json()["description"] == ""
+        assert 'id="cmu-description"' not in client.get(f'/cmus/{cmu["keyset_id"]}').text
 
 
 def test_treasury_cmu_visibility_rejects_unbound_treasurer(tmp_path) -> None:
