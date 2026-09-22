@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-  <title id="title">Public and private CMU listing</title>
-  <desc id="desc">A public-listed CMU appears on the home page; a private-listed CMU remains usable by exact id.</desc>
+  <title id="title">Listed and unlisted CMUs</title>
+  <desc id="desc">A listed CMU appears on the home page; a unlisted CMU remains usable by exact id.</desc>
   <defs>
     <style>
       .bg{fill:#f6faf9}.panel{fill:#fff;stroke:#d5e3e3;stroke-width:3}.screen{fill:#eaf6f7;stroke:#247c93;stroke-width:4}.private{fill:#fff7f4;stroke:#d9674b;stroke-width:4}.text{font-family:Inter,Arial,sans-serif;fill:#17313a}.title{font-size:40px;font-weight:850}.label{font-size:27px;font-weight:820}.small{font-size:19px}.muted{fill:#63777d}.line{stroke:#247c93;stroke-width:5;fill:none;stroke-linecap:round}.dash{stroke:#d9674b;stroke-width:5;fill:none;stroke-dasharray:12 12;stroke-linecap:round}
     </style>
   </defs>
   <rect class="bg" width="1200" height="675"/>
-  <text class="text title" x="64" y="78">Private means unlisted, not disabled</text>
+  <text class="text title" x="64" y="78">Unlisted does not mean disabled</text>
   <text class="text small muted" x="64" y="112">Visibility controls discovery on the home page. Exact CMU identity still works.</text>
 
   <rect class="screen" x="90" y="180" width="420" height="325" rx="12"/>
@@ -16,10 +16,10 @@
   <text class="text small" x="158" y="314">Food Share Credits</text>
   <rect class="panel" x="130" y="360" width="340" height="64" rx="7"/>
   <text class="text small" x="158" y="399">Workshop Credits</text>
-  <text class="text small muted" x="130" y="462">Only public-listed CMUs appear here.</text>
+  <text class="text small muted" x="130" y="462">Only listed CMUs appear here.</text>
 
   <rect class="private" x="690" y="180" width="420" height="325" rx="12"/>
-  <text class="text label" x="730" y="235">Private CMU</text>
+  <text class="text label" x="730" y="235">Unlisted CMU</text>
   <text class="text small" x="730" y="293">Hidden from home-page discovery</text>
   <text class="text small" x="730" y="340">Still usable by exact id</text>
   <text class="text small" x="730" y="387">Still issued, accepted, redeemed</text>
@@ -27,8 +27,8 @@
 
   <path class="line" d="M512 298h142"/>
   <path class="dash" d="M512 392h142"/>
-  <text class="text small muted" x="535" y="278">publish</text>
-  <text class="text small muted" x="540" y="374">private</text>
+  <text class="text small muted" x="535" y="278">list</text>
+  <text class="text small muted" x="540" y="374">unlist</text>
 
   <rect class="panel" x="225" y="560" width="750" height="58" rx="8"/>
   <text class="text small" x="260" y="596">Operator can change any hosted CMU. Treasurer can change only their own.</text>

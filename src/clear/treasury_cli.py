@@ -524,8 +524,8 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     cmu_description_parser.add_argument("--lifetime", type=int, default=300)
     cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
-        "private",
-        help="Hide a treasurer-controlled CMU from the public homepage.",
+        "unlist", aliases=["private"],
+        help="Unlist a treasurer-controlled CMU from the mint home page.",
     )
     _add_cmu_selector(cmu_private_parser, action="hide")
     cmu_private_parser.add_argument(
@@ -539,10 +539,10 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         public_listing=False,
     )
     cmu_publish_parser = cmu_subcommands.add_parser(
-        "publish",
-        help="Show a treasurer-controlled CMU on the public homepage.",
+        "list", aliases=["publish"],
+        help="List a treasurer-controlled CMU on the mint home page.",
     )
-    _add_cmu_selector(cmu_publish_parser, action="publish")
+    _add_cmu_selector(cmu_publish_parser, action="list")
     cmu_publish_parser.add_argument(
         "--lifetime",
         type=int,

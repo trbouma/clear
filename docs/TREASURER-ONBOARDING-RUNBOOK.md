@@ -235,18 +235,18 @@ This is different from `wallet balance`: `cmu summary` reports mint-side issued,
 retired, circulating, and outstanding totals for the whole CMU; `wallet balance`
 reports only proofs held in the treasurer's local wallet file.
 
-## Step 8: Choose Public Listing
+## Step 8: Choose Home Page Listing
 
 By default, an active CMU is listed on the mint home page. Public listing is
-only a discovery and presentation control. Making a CMU private hides it from
+only a discovery and presentation control. Unlisting a CMU hides it from
 the home page but does not disable issuance, swaps, redemption, retirement,
 direct `/v1/keysets` lookup, metrics pages, or wallet use by exact CMU id.
 
 The mint operator may unilaterally change listing for any hosted CMU:
 
 ```bash
-docker compose exec clear-operator clear-root cmu private <cmu-id>
-docker compose exec clear-operator clear-root cmu publish <cmu-id>
+docker compose exec clear-operator clear-root cmu unlist <cmu-id>
+docker compose exec clear-operator clear-root cmu list <cmu-id>
 ```
 
 The authorized treasurer may also change listing for CMUs they control:
@@ -254,12 +254,12 @@ The authorized treasurer may also change listing for CMUs they control:
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu private \
+  cmu unlist \
   --cmu-id <cmu-id>
 
 clear-treasury --mint https://clear.safebox.dev \
   --nsec nsec1... \
-  cmu publish \
+  cmu list \
   --cmu-id <cmu-id>
 ```
 

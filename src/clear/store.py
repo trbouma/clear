@@ -1207,6 +1207,7 @@ class Store:
             "status": cmu["status"],
             "friendly_name": cmu["friendly_name"],
             "friendly_unit_alias": cmu["friendly_unit_alias"],
+            "public_listing": bool(cmu["public_listing"]),
             "description": cmu["description"],
             "treasurer_npub": cmu["treasurer_npub"],
             "material_kind": cmu["material_kind"],

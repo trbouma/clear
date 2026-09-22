@@ -541,6 +541,11 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
         )
         homepage = client.get("/", headers={"Accept": "text/html"})
         metrics_page = client.get(f"/cmus/{created['keyset_id']}")
+
+        unit_page = client.get(f"/cmus/{created['unit']}")
+        assert unit_page.status_code == 200
+        assert unit_page.text == metrics_page.text
+        assert "Listed" in unit_page.text
         keysets = client.get("/v1/keysets").json()["keysets"]
 
     assert homepage.status_code == 200
@@ -659,6 +664,10 @@ def test_operator_can_make_cmu_private_without_disabling_direct_use(
         keysets = client.get("/v1/keysets").json()["keysets"]
         keys = client.get(f"/v1/keys/{created['keyset_id']}")
         metrics_page = client.get(f"/cmus/{created['keyset_id']}")
+        unit_page = client.get(f"/cmus/{created['unit']}")
+        assert unit_page.status_code == 200
+        assert unit_page.text == metrics_page.text
+        assert "Unlisted" in unit_page.text
 
     assert private.status_code == 200
     assert private.json()["public_listing"] is False

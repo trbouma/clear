@@ -130,7 +130,7 @@ holder balances.
 ## Public Listing Visibility
 
 Public listing is a discovery and presentation control, not a lifecycle state.
-A private CMU is hidden from the mint home page but remains available to
+An unlisted CMU is hidden from the mint home page but remains available to
 software that already knows its exact CMU id or keyset ID. It remains visible
 through direct keyset endpoints, can still issue, swap, redeem, retire, and be
 inspected, and it keeps the same keyset, ledger, treasurer authority, existing
@@ -147,18 +147,18 @@ they do so through different authority paths:
 Operator commands:
 
 ```text
-clear-root cmu private cmu-<keyset-id>
-clear-root cmu publish cmu-<keyset-id>
+clear-root cmu unlist cmu-<keyset-id>
+clear-root cmu list cmu-<keyset-id>
 ```
 
 Treasurer commands:
 
 ```text
 clear-treasury --mint <mint-url> --nsec <treasurer-nsec> \
-  cmu private --cmu-id cmu-<keyset-id>
+  cmu unlist --cmu-id cmu-<keyset-id>
 
 clear-treasury --mint <mint-url> --nsec <treasurer-nsec> \
-  cmu publish --cmu-id cmu-<keyset-id>
+  cmu list --cmu-id cmu-<keyset-id>
 ```
 
 This is intentionally separate from friendly label changes. Label changes are

@@ -553,6 +553,8 @@ def cmu_create(args) -> int:
 
 
 def cmu_list(args) -> int:
+    if getattr(args, "cmu", None):
+        return cmu_visibility(args)
     result = request_json(
         _api_url(args),
         "GET",
@@ -1075,9 +1077,10 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     cmu_create_parser.set_defaults(handler=cmu_create)
     cmu_list_parser = cmu_subcommands.add_parser(
         "list",
-        help="List CMU records.",
+        help="List CMU records, or list a specified CMU on the mint home page.",
     )
-    cmu_list_parser.set_defaults(handler=cmu_list)
+    cmu_list_parser.add_argument("cmu", nargs="?", help="CMU unit or keyset ID to list on the home page.")
+    cmu_list_parser.set_defaults(handler=cmu_list, public_listing=True)
     cmu_label_parser = cmu_subcommands.add_parser(
         "label",
         help="Update wallet-facing CMU display labels.",
@@ -1097,8 +1100,8 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     add_description_arguments(cmu_description_parser)
     cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
-        "private",
-        help="Hide a CMU from the public homepage while keeping it usable by ID.",
+        "unlist", aliases=["private"],
+        help="Unlist a CMU from the home page while keeping it accessible by ID.",
     )
     cmu_private_parser.add_argument("cmu", help="CMU unit or keyset ID.")
     cmu_private_parser.set_defaults(
@@ -1107,7 +1110,7 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     )
     cmu_publish_parser = cmu_subcommands.add_parser(
         "publish",
-        help="Show a CMU on the public homepage.",
+        help="Compatibility command for cmu list <cmu-id>.",
     )
     cmu_publish_parser.add_argument("cmu", help="CMU unit or keyset ID.")
     cmu_publish_parser.set_defaults(

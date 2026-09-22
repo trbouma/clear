@@ -360,7 +360,8 @@ def create_app(
     @app.get("/cmus/{keyset_id}", response_model=None)
     async def cmu_metrics_page(keyset_id: str, request: Request):
         try:
-            metrics = store.metrics(keyset_id)
+            cmu = store.get_cmu(keyset_id)
+            metrics = store.metrics(cmu["keyset_id"])
         except ClearError:
             return _protocol_error("CMU not found", 18000)
         language = resolve_language(

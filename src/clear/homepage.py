@@ -1153,6 +1153,7 @@ def render_cmu_metrics_page(
           {definition_row("Keyset ID", code(cmu["keyset_id"]))}
           {definition_row("Fingerprint", code(cmu["keyset_fingerprint"]))}
           {definition_row("Status", value(cmu["status"]))}
+          {definition_row("Home page listing", value("Listed" if cmu.get("public_listing", True) else "Unlisted"))}
           {definition_row("Treasurer", code(cmu["treasurer_npub"]) if cmu.get("treasurer_npub") else value("Operator keyset"))}
           {definition_row("Material", value(cmu["material_kind"]))}
         </dl>

@@ -237,8 +237,8 @@ The kitchen accepts meal credits in exchange for a meal. That is redemption unde
 
 Should meal credits appear on the mint home page?
 
-- Public-listed units appear on the home page
-- Private-listed units remain usable by their exact CMU ID
+- Listed units appear on the home page
+- Unlisted units remain usable by their exact CMU ID
 - The operator or that CMU's treasurer can change the listing
 
 **Unlisted does not mean disabled or secret.**
