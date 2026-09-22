@@ -775,7 +775,14 @@ def create_app(
     ):
         if error := operator_access_error(request, authorization):
             return error
-        return store.list_treasurer_grants()
+        result = store.list_treasurer_grants()
+        return {
+            **result,
+            "grants": [
+                {**grant, "mint_url": configured.mint_url.rstrip("/")}
+                for grant in result["grants"]
+            ],
+        }
 
     @app.post("/v1/operator/treasurer-grants")
     async def grant_treasurer(
@@ -786,7 +793,26 @@ def create_app(
         if error := operator_access_error(request, authorization):
             return error
         try:
-            return store.grant_treasurer(body.npub)
+            return {
+                **store.grant_treasurer(body.npub),
+                "mint_url": configured.mint_url.rstrip("/"),
+            }
+        except ClearError as exc:
+            return _protocol_error(str(exc), 14001)
+
+    @app.post("/v1/operator/treasurer-grants/{grant_id}/revoke")
+    async def revoke_treasurer_grant(
+        grant_id: str,
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ):
+        if error := operator_access_error(request, authorization):
+            return error
+        try:
+            return {
+                **store.revoke_treasurer_grant(grant_id),
+                "mint_url": configured.mint_url.rstrip("/"),
+            }
         except ClearError as exc:
             return _protocol_error(str(exc), 14001)
 

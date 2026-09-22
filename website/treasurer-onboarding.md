@@ -62,11 +62,24 @@ docker compose exec clear-operator clear-root treasurer grant npub1...
 docker compose exec clear-operator clear-root treasurer grants
 ```
 
-Copy the returned grant ID. A first-release grant is single-use and intended to
+The response includes the grant `id` and public `mint_url`, ready to share with
+the treasurer. Both fields are also returned by `treasurer grants`.
+A first-release grant is single-use and intended to
 produce one keyset and one CMU. After it is consumed, the same treasurer may
 receive another grant for another CMU.
 
 ## 5. Send the Grant Out of Band
+
+To replace an unused grant, first revoke it as the operator:
+
+```bash
+docker compose exec clear-operator clear-root treasurer revoke-grant <grant-id>
+docker compose exec clear-operator clear-root treasurer grant npub1...
+```
+
+Only pending grants can be revoked. The grant remains in `treasurer grants`
+with status `revoked` and an audit record; it can no longer create a CMU.
+Consumed grants cannot be revoked. Existing CMUs and notes are unaffected.
 
 Give the treasurer:
 

@@ -1424,6 +1424,22 @@ class Store:
             self._audit(connection, "treasurer:grant", 0, grant_id)
         return self.get_treasurer_grant(grant_id)
 
+    def revoke_treasurer_grant(self, grant_id: str) -> dict:
+        with self._transaction() as connection:
+            grant = connection.execute(
+                "SELECT * FROM treasurer_grants WHERE id = ?", (grant_id,)
+            ).fetchone()
+            if grant is None:
+                raise ClearError("treasurer grant not found")
+            if grant["status"] != "pending":
+                raise ClearError("only pending treasurer grants can be revoked")
+            connection.execute(
+                "UPDATE treasurer_grants SET status = 'revoked', updated_at = ? WHERE id = ?",
+                (self._now(grant["updated_at"]), grant_id),
+            )
+            self._audit(connection, "treasurer:grant-revoke", 0, grant_id)
+        return self.get_treasurer_grant(grant_id)
+
     def get_treasurer_grant(self, grant_id: str) -> dict:
         with self._connection() as connection:
             row = connection.execute(

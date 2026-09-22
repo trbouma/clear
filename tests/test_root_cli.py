@@ -13,6 +13,22 @@ def test_root_cli_is_the_primary_parser_name() -> None:
     assert root_cli.parser().prog == "clear-root"
 
 
+def test_root_cli_revoke_grant(monkeypatch, capsys) -> None:
+    calls = []
+    monkeypatch.setattr(root_cli, "_api_url", lambda args: "http://localhost:3339")
+    monkeypatch.setattr(root_cli, "_operator_token", lambda: "test-token")
+
+    def request(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {"id": "grant-id", "status": "revoked"}
+
+    monkeypatch.setattr(root_cli, "request_json", request)
+    args = root_cli.parser().parse_args(["treasurer", "revoke-grant", "grant-id"])
+    assert args.handler(args) == 0
+    assert calls == [(("http://localhost:3339", "POST", "/v1/operator/treasurer-grants/grant-id/revoke"), {"token": "test-token"})]
+    assert json.loads(capsys.readouterr().out)["status"] == "revoked"
+
+
 def test_root_cli_error_uses_invoked_program_name(monkeypatch, capsys) -> None:
     monkeypatch.setattr("sys.argv", ["clear-root", "config"])
 

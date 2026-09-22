@@ -469,6 +469,17 @@ def treasurer_grant(args) -> int:
     return 0
 
 
+def treasurer_revoke_grant(args) -> int:
+    result = request_json(
+        _api_url(args),
+        "POST",
+        f"/v1/operator/treasurer-grants/{args.grant_id}/revoke",
+        token=_operator_token(),
+    )
+    _print_json(result)
+    return 0
+
+
 def treasurer_grant_list(args) -> int:
     result = request_json(
         _api_url(args),
@@ -1024,6 +1035,11 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     )
     treasurer_grant_parser.add_argument("npub")
     treasurer_grant_parser.set_defaults(handler=treasurer_grant)
+    treasurer_revoke_parser = treasurer_subcommands.add_parser(
+        "revoke-grant", help="Revoke a pending CMU creation grant without deleting its history.",
+    )
+    treasurer_revoke_parser.add_argument("grant_id")
+    treasurer_revoke_parser.set_defaults(handler=treasurer_revoke_grant)
     treasurer_grants_parser = treasurer_subcommands.add_parser(
         "grants",
         help="List treasurer keyset/CMU creation grants.",

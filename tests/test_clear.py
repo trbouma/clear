@@ -1246,6 +1246,7 @@ def test_operator_grant_requires_active_treasurer_and_is_single_use(tmp_path) ->
     assert "must be active" in missing.json()["detail"]
     assert granted.status_code == 200
     assert granted.json()["npub"] == npub
+    assert granted.json()["mint_url"] == configured.mint_url.rstrip("/")
     assert granted.json()["scope"] == "keyset:create"
     assert granted.json()["max_uses"] == 1
     assert granted.json()["uses"] == 0
@@ -1254,6 +1255,55 @@ def test_operator_grant_requires_active_treasurer_and_is_single_use(tmp_path) ->
     assert duplicate_pending.status_code == 400
     assert "unused grant" in duplicate_pending.json()["detail"]
     assert listed.json()["grants"] == [granted.json()]
+
+
+def test_operator_revokes_pending_grant_and_can_replace_it(tmp_path) -> None:
+    configured = settings(tmp_path)
+    app = create_app(configured)
+    treasurer = Keys(priv_k="1".zfill(64))
+    npub = treasurer.public_key_bech32()
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+    with TestClient(app) as client:
+        commission_and_enable(client)
+        store = app.state.store
+        store.add_treasurer(npub)
+        grant = store.grant_treasurer(npub)
+        route = f'/v1/operator/treasurer-grants/{grant["id"]}/revoke'
+        assert client.post(route).status_code != 200
+        assert store.get_treasurer_grant(grant["id"])["status"] == "pending"
+        revoked = client.post(route, headers=headers)
+        assert revoked.status_code == 200
+        assert revoked.json()["status"] == "revoked"
+        assert revoked.json()["mint_url"] == configured.mint_url.rstrip("/")
+        assert revoked.json()["updated_at"] > grant["updated_at"]
+        assert revoked.json()["uses"] == 0
+        assert revoked.json()["keyset_id"] is None
+        assert revoked.json()["consumed_at"] is None
+        assert client.post(route, headers=headers).status_code == 400
+        assert client.post('/v1/operator/treasurer-grants/missing/revoke', headers=headers).status_code == 400
+        operator_create = client.post('/v1/operator/cmus', json={"grant_id": grant["id"]}, headers=headers)
+        assert operator_create.status_code == 400
+        treasury_create = client.post('/v1/treasury/cmus', json=build_cmu_create_envelope(
+            mint=configured.mint_url, grant_id=grant["id"],
+            nsec=treasurer.private_key_bech32(), name="Revoked",
+        ))
+        assert treasury_create.status_code == 400
+        replacement = client.post('/v1/operator/treasurer-grants', json={"npub": npub}, headers=headers).json()
+        assert replacement["id"] != grant["id"]
+        assert replacement["status"] == "pending"
+        created = client.post('/v1/operator/cmus', json={"grant_id": replacement["id"]}, headers=headers)
+        assert created.status_code == 200
+        assert client.post(f'/v1/operator/treasurer-grants/{replacement["id"]}/revoke', headers=headers).status_code == 400
+        assert store.get_cmu(created.json()["unit"])["status"] == "active"
+    with TestClient(create_app(configured)) as client:
+        grants = client.get('/v1/operator/treasurer-grants', headers=headers).json()["grants"]
+        assert next(g for g in grants if g["id"] == grant["id"])["status"] == "revoked"
+    with sqlite3.connect(configured.database_path) as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM audit_log WHERE action = 'treasurer:grant-revoke' AND reference = ?",
+            (grant["id"],),
+        ).fetchone()[0]
+    assert count == 1
 
 
 def test_store_allows_new_grant_after_treasurer_created_cmu(tmp_path) -> None:
