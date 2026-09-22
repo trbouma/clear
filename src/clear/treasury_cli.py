@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import hashlib
 import json
 import os
 import sys
+import warnings
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -108,7 +110,69 @@ def _add_cmu_selector(command_parser: argparse.ArgumentParser, *, action: str) -
     )
 
 
+def _prompt_grant_details(args) -> None:
+    grant_file = getattr(args, "grant_file", None)
+    source = str(grant_file) if grant_file else "stdin"
+    try:
+        if grant_file:
+            with grant_file.expanduser().open(encoding="utf-8") as stream:
+                grant = json.load(stream)
+        else:
+            grant = json.load(sys.stdin)
+    except (ValueError, OSError) as exc:
+        raise TreasuryError(f"could not read a single grant JSON object from {source}") from exc
+    if not isinstance(grant, dict):
+        raise TreasuryError(f"{source} must contain a single grant JSON object")
+    for field in ("id", "mint_url", "npub"):
+        if not isinstance(grant.get(field), str) or not grant[field].strip():
+            raise TreasuryError(f"grant JSON is missing {field}")
+    if grant.get("status") != "pending" or grant.get("scope") != "keyset:create":
+        raise TreasuryError("grant must be pending with scope keyset:create")
+    mint = grant["mint_url"].rstrip("/")
+    parsed = urlparse(mint)
+    if parsed.scheme not in ("https", "http") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise TreasuryError("grant mint_url must be an HTTP(S) mint URL without credentials, query, or fragment")
+    if args.mint and args.mint.rstrip("/") != mint:
+        raise TreasuryError("--mint does not match the grant mint_url")
+    args.mint = mint
+    args.grant_id = grant["id"]
+    # stdin contains the grant; use the controlling terminal for all prompts.
+    try:
+        with (
+            open("/dev/tty", "r", encoding="utf-8") as terminal_input,
+            open("/dev/tty", "w", encoding="utf-8") as terminal,
+        ):
+            terminal.write(f"Mint: {mint}\nGrant: {args.grant_id}\nTreasurer: {grant['npub']}\n")
+            terminal.flush()
+            nsec = args.nsec or os.getenv("CLEAR_TREASURER_NSEC")
+            if not nsec:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", getpass.GetPassWarning)
+                    nsec = getpass.getpass("Treasurer nsec (hidden): ", stream=terminal)
+            if npub_from_nsec(nsec) != grant["npub"]:
+                raise TreasuryError("treasurer key does not match the grant npub")
+            args.nsec = nsec
+            for field, label, limit in (("name", "CMU name", 120), ("unit_alias", "Unit label (e.g. credits)", 40)):
+                if getattr(args, field) is not None:
+                    continue
+                while True:
+                    terminal.write(f"{label}: ")
+                    terminal.flush()
+                    line = terminal_input.readline()
+                    if not line:
+                        raise TreasuryError("CMU creation cancelled: terminal input ended")
+                    value = line.strip()
+                    if value and len(value) <= limit:
+                        setattr(args, field, value)
+                        break
+                    terminal.write(f"Enter between 1 and {limit} characters.\n")
+    except (OSError, getpass.GetPassWarning) as exc:
+        raise TreasuryError("interactive grant creation requires a terminal with hidden secret input; use the explicit cmu create command for scripts") from exc
+
+
 def cmu_create(args) -> int:
+    if getattr(args, "grant_stdin", False) or getattr(args, "grant_file", None):
+        _prompt_grant_details(args)
     nsec = _treasurer_nsec(args)
     mint = args.mint.rstrip("/")
     envelope = build_cmu_create_envelope(
@@ -377,8 +441,22 @@ def cmu_visibility(args) -> int:
     return 0
 
 
+class TreasuryArgumentParser(argparse.ArgumentParser):
+    def parse_args(self, args=None, namespace=None):
+        parsed = super().parse_args(args, namespace)
+        grant_json = getattr(parsed, "grant_stdin", False) or getattr(parsed, "grant_file", None)
+        if not parsed.mint and not grant_json:
+            self.error("--mint is required unless using --grant-stdin or --grant-file")
+        if getattr(parsed, "cmu_command", None) == "create":
+            if grant_json and parsed.grant_id:
+                self.error("use either a grant ID or grant JSON, not both")
+            if not grant_json and not parsed.grant_id:
+                self.error("cmu create requires a grant ID, --grant-stdin, or --grant-file")
+        return parsed
+
+
 def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(
+    result = TreasuryArgumentParser(
         prog=prog,
         description=(
             "Clear treasurer CLI. This command signs requests with a treasurer "
@@ -387,7 +465,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     )
     result.add_argument(
         "--mint",
-        required=True,
+        default=None,
         help="Public Clear mint URL, for example https://clear.example.",
     )
     result.add_argument(
@@ -478,7 +556,16 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         "create",
         help="Consume a grant by signing a CMU creation request.",
     )
-    cmu_create_parser.add_argument("grant_id")
+    cmu_create_parser.add_argument("grant_id", nargs="?")
+    grant_source = cmu_create_parser.add_mutually_exclusive_group()
+    grant_source.add_argument(
+        "--grant-stdin", action="store_true",
+        help="Read grant JSON from stdin and prompt in the terminal for missing key and CMU details.",
+    )
+    grant_source.add_argument(
+        "--grant-file", type=Path,
+        help="Read a grant JSON file and prompt for missing key and CMU details.",
+    )
     cmu_create_parser.add_argument("--name", default=None, help="Friendly CMU name.")
     cmu_create_parser.add_argument(
         "--unit-alias",
@@ -576,6 +663,9 @@ def main() -> int:
     args = parser(prog=program).parse_args()
     try:
         return args.handler(args)
+    except (KeyboardInterrupt, EOFError):
+        print(f"{program}: cancelled", file=sys.stderr)
+        return 1
     except (DeliveryError, TreasuryAuthError, TreasuryError, ValueError) as exc:
         print(f"{program} {args.command} failed: {exc}", file=sys.stderr)
         return 1

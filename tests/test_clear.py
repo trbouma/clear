@@ -481,7 +481,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
     assert "Mint Units In Circulation" in homepage.text
-    assert "Operator keyset" in homepage.text
+    assert "Units Outstanding" in homepage.text
     assert "https://clear.example" in homepage.text
     assert "Copy mint URL" in homepage.text
     assert "Credit-Liability Ecash: Authorized and Redeemable" in homepage.text
@@ -550,10 +550,14 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
 
     assert homepage.status_code == 200
     assert "Mint Units In Circulation" in homepage.text
-    assert "Operator keyset" in homepage.text
     assert "Authorized treasury keyset" not in homepage.text
-    assert npub in homepage.text
-    assert f'data-profile-url="v1/nostr/profiles/{npub}"' in homepage.text
+    assert npub in metrics_page.text
+    assert f'data-profile-url="v1/nostr/profiles/{npub}"' not in homepage.text
+    table = homepage.text.split('<table class="keyset-table">')[1].split('</table>')[0]
+    assert table.count('<th>') == 4
+    assert '<th>Units Outstanding</th>' in table
+    assert '<th>Authority</th>' not in table
+    assert '<th>Keyset ID</th>' not in table
     assert 'id="profile-card"' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "Gym Guest Passes" in homepage.text
@@ -760,7 +764,7 @@ def test_browser_homepage_can_be_rendered_in_french(tmp_path) -> None:
     assert '<html lang="fr" dir="ltr">' in homepage.text
     assert '<option value="fr" selected>Français</option>' in homepage.text
     assert "Détails du service" in homepage.text
-    assert "Fonctionnement du service" in homepage.text
+    assert "Fonctionnement du service" not in homepage.text
     assert "Identité du service" in homepage.text
     assert "Copier l’URL du service" in homepage.text
     assert "Harbour Lab Credits" in homepage.text
@@ -809,7 +813,7 @@ def test_browser_homepage_renders_arabic_with_isolated_technical_values(
     assert '<html lang="ar" dir="rtl">' in homepage.text
     assert '<option value="ar" selected>العربية</option>' in homepage.text
     assert "تفاصيل الخدمة" in homepage.text
-    assert "كيفية عمل هذه الخدمة" in homepage.text
+    assert "كيفية عمل هذه الخدمة" not in homepage.text
     assert '<bdi dir="auto">Harbour Lab Credits</bdi>' in homepage.text
     assert (
         '<code class="technical" id="mint-url" dir="ltr">'

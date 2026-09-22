@@ -31,6 +31,7 @@ _LANGUAGE_TAG_PATTERN = re.compile(
 )
 
 _FRENCH = {
+    "Private bearer notes for community-issued value.": "Des titres au porteur privés pour une valeur émise par la communauté.",
     "Clear Mint": "Service Clear",
     "Online": "En ligne",
     HOMEPAGE_TAGLINE: (
@@ -45,13 +46,16 @@ _FRENCH = {
     "Currency": "Monnaie",
     "Friendly name": "Nom usuel",
     "Unit label": "Libellé de l’unité",
+    "Unit Label": "Libellé de l’unité",
     "Protocol unit": "Unité du protocole",
+    "Protocol Unit": "Unité du protocole",
     "Keyset": "Jeu de clés",
     "Active keysets": "Jeux de clés actifs",
     "Mint Units In Circulation": "Unités monétaires en circulation",
     "Name": "Nom",
     "Authority": "Autorité",
     "Outstanding": "En circulation",
+    "Units Outstanding": "En circulation",
     "Operator keyset": "Jeu de clés de l’exploitant",
     "Authorized treasury keyset": "Jeu de clés de trésorerie autorisé",
     "Keyset ID": "Identifiant du jeu de clés",
@@ -95,6 +99,7 @@ _FRENCH = {
 }
 
 _SPANISH = {
+    "Private bearer notes for community-issued value.": "Notas privadas al portador para valor emitido por la comunidad.",
     "Clear Mint": "Servicio Clear",
     "Online": "En línea",
     HOMEPAGE_TAGLINE: "Dinero electrónico de crédito y pasivo: autorizado y canjeable",
@@ -107,13 +112,16 @@ _SPANISH = {
     "Currency": "Moneda",
     "Friendly name": "Nombre habitual",
     "Unit label": "Etiqueta de la unidad",
+    "Unit Label": "Etiqueta de la unidad",
     "Protocol unit": "Unidad del protocolo",
+    "Protocol Unit": "Unidad del protocolo",
     "Keyset": "Conjunto de claves",
     "Active keysets": "Conjuntos de claves activos",
     "Mint Units In Circulation": "Unidades monetarias en circulación",
     "Name": "Nombre",
     "Authority": "Autoridad",
     "Outstanding": "En circulación",
+    "Units Outstanding": "En circulación",
     "Operator keyset": "Conjunto de claves del operador",
     "Authorized treasury keyset": "Conjunto de claves de tesorería autorizado",
     "Keyset ID": "ID del conjunto de claves",
@@ -157,6 +165,7 @@ _SPANISH = {
 }
 
 _PORTUGUESE = {
+    "Private bearer notes for community-issued value.": "Notas privadas ao portador para valor emitido pela comunidade.",
     "Clear Mint": "Serviço Clear",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
@@ -171,13 +180,16 @@ _PORTUGUESE = {
     "Currency": "Moeda",
     "Friendly name": "Nome usual",
     "Unit label": "Rótulo da unidade",
+    "Unit Label": "Rótulo da unidade",
     "Protocol unit": "Unidade do protocolo",
+    "Protocol Unit": "Unidade do protocolo",
     "Keyset": "Conjunto de chaves",
     "Active keysets": "Conjuntos de chaves ativos",
     "Mint Units In Circulation": "Unidades monetárias em circulação",
     "Name": "Nome",
     "Authority": "Autoridade",
     "Outstanding": "Em circulação",
+    "Units Outstanding": "Em circulação",
     "Operator keyset": "Conjunto de chaves do operador",
     "Authorized treasury keyset": "Conjunto de chaves de tesouraria autorizado",
     "Keyset ID": "ID do conjunto de chaves",
@@ -221,6 +233,7 @@ _PORTUGUESE = {
 }
 
 _GERMAN = {
+    "Private bearer notes for community-issued value.": "Private Inhabernoten für gemeinschaftlich ausgegebenen Wert.",
     "Clear Mint": "Clear-Dienst",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
@@ -236,13 +249,16 @@ _GERMAN = {
     "Currency": "Währung",
     "Friendly name": "Anzeigename",
     "Unit label": "Einheitenbezeichnung",
+    "Unit Label": "Einheitenbezeichnung",
     "Protocol unit": "Protokolleinheit",
+    "Protocol Unit": "Protokolleinheit",
     "Keyset": "Schlüsselsatz",
     "Active keysets": "Aktive Schlüsselsätze",
     "Mint Units In Circulation": "Währungseinheiten im Umlauf",
     "Name": "Name",
     "Authority": "Autorität",
     "Outstanding": "Umlaufend",
+    "Units Outstanding": "Umlaufend",
     "Operator keyset": "Betreiber-Schlüsselsatz",
     "Authorized treasury keyset": "Autorisierter Treasury-Schlüsselsatz",
     "Keyset ID": "Schlüsselsatz-ID",
@@ -286,6 +302,7 @@ _GERMAN = {
 }
 
 _ITALIAN = {
+    "Private bearer notes for community-issued value.": "Note private al portatore per valore emesso dalla comunità.",
     "Clear Mint": "Servizio Clear",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
@@ -300,13 +317,16 @@ _ITALIAN = {
     "Currency": "Valuta",
     "Friendly name": "Nome comune",
     "Unit label": "Etichetta dell’unità",
+    "Unit Label": "Etichetta dell’unità",
     "Protocol unit": "Unità del protocollo",
+    "Protocol Unit": "Unità del protocollo",
     "Keyset": "Set di chiavi",
     "Active keysets": "Set di chiavi attivi",
     "Mint Units In Circulation": "Unità monetarie in circolazione",
     "Name": "Nome",
     "Authority": "Autorità",
     "Outstanding": "In circolazione",
+    "Units Outstanding": "In circolazione",
     "Operator keyset": "Set di chiavi dell’operatore",
     "Authorized treasury keyset": "Set di chiavi di tesoreria autorizzato",
     "Keyset ID": "ID del set di chiavi",
@@ -350,6 +370,7 @@ _ITALIAN = {
 }
 
 _SIMPLIFIED_CHINESE = {
+    "Private bearer notes for community-issued value.": "承载社区发行价值的隐私型不记名票据。",
     "Clear Mint": "Clear 服务",
     "Online": "在线",
     HOMEPAGE_TAGLINE: "信用与负债电子现金：经授权且可兑付",
@@ -362,13 +383,16 @@ _SIMPLIFIED_CHINESE = {
     "Currency": "货币",
     "Friendly name": "常用名称",
     "Unit label": "单位标签",
+    "Unit Label": "单位标签",
     "Protocol unit": "协议单位",
+    "Protocol Unit": "协议单位",
     "Keyset": "密钥集",
     "Active keysets": "活动密钥集",
     "Mint Units In Circulation": "流通中的货币单位",
     "Name": "名称",
     "Authority": "授权",
     "Outstanding": "流通量",
+    "Units Outstanding": "流通量",
     "Operator keyset": "运营方密钥集",
     "Authorized treasury keyset": "已授权财务密钥集",
     "Keyset ID": "密钥集 ID",
@@ -408,6 +432,7 @@ _SIMPLIFIED_CHINESE = {
 }
 
 _ARABIC = {
+    "Private bearer notes for community-issued value.": "أوراق خاصة لحاملها تمثل قيمة يصدرها المجتمع.",
     "Clear Mint": "خدمة Clear",
     "Online": "متصل",
     HOMEPAGE_TAGLINE: (
@@ -422,13 +447,16 @@ _ARABIC = {
     "Currency": "العملة",
     "Friendly name": "الاسم الشائع",
     "Unit label": "تسمية الوحدة",
+    "Unit Label": "تسمية الوحدة",
     "Protocol unit": "وحدة البروتوكول",
+    "Protocol Unit": "وحدة البروتوكول",
     "Keyset": "مجموعة المفاتيح",
     "Active keysets": "مجموعات المفاتيح النشطة",
     "Mint Units In Circulation": "الوحدات النقدية المتداولة",
     "Name": "الاسم",
     "Authority": "السلطة",
     "Outstanding": "المتداول",
+    "Units Outstanding": "المتداول",
     "Operator keyset": "مجموعة مفاتيح المشغل",
     "Authorized treasury keyset": "مجموعة مفاتيح خزانة مصرح بها",
     "Keyset ID": "معرف مجموعة المفاتيح",

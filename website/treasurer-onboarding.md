@@ -91,6 +91,37 @@ mint database, or keyset secrets.
 
 ## 6. Treasurer Creates the CMU
 
+For an interactive handoff, save the single grant response as `grant.json` and run:
+
+```bash
+poetry run clear-treasury cmu create --grant-file grant.json
+```
+
+The file is read without modifying or deleting it. The grant is consumed at the
+mint only after successful CMU creation. Piped JSON is also supported:
+
+```bash
+cat grant.json | poetry run clear-treasury cmu create --grant-stdin
+```
+
+The CLI reads `mint_url`, `id`, and `npub` from the grant. It displays the mint
+and treasurer, prompts for the `nsec` with hidden input (unless supplied through
+`--nsec` or `CLEAR_TREASURER_NSEC`), then asks for the CMU name and unit label.
+The secret stays local; only a signed request is sent to the mint. The key must
+match the grant's `npub`. Prompts use the controlling terminal, so stdin remains
+available for the piped JSON. A terminal is required for this interactive mode.
+Optional `--name` and `--unit-alias` values skip their respective prompts.
+
+For a local operator-to-treasurer pipeline, disable the Docker TTY:
+
+```bash
+docker compose exec -T clear-operator clear-root treasurer grant "$TREASURER_NPUB" \
+  | poetry run clear-treasury cmu create --grant-stdin
+```
+
+Cancelling during the prompts leaves the grant pending; it can be reused or revoked. For automation
+without an interactive terminal, use the explicit command below.
+
 The treasurer consumes the grant with their `nsec`:
 
 ```bash

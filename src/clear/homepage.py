@@ -105,19 +105,15 @@ def render_homepage(
         keyset_rows.append(
             "<tr>"
             f"<td>{cmu_link(item, str(name))}</td>"
-            f"<td>{authority_label(item)}</td>"
             f'<td class="unit-label">{configured_value(str(unit_label))}</td>'
             f"<td>{cmu_link(item, str(outstanding))}</td>"
             "<td>"
             f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
             "</td>"
-            "<td>"
-            f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['id']))}</code>"
-            "</td>"
             "</tr>"
         )
     active_keyset_rows = "".join(keyset_rows) or (
-        f'<tr><td colspan="6">{text("No active keysets")}</td></tr>'
+        f'<tr><td colspan="4">{text("No active keysets")}</td></tr>'
     )
 
     values = {
@@ -390,7 +386,7 @@ def render_homepage(
 
     .grid {{
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 1rem;
       margin-top: 1rem;
     }}
@@ -426,7 +422,7 @@ def render_homepage(
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.7rem;
-      margin: 0;
+      margin: 1rem 0 0;
       padding: 0;
       list-style: none;
     }}
@@ -651,7 +647,7 @@ def render_homepage(
           </button>
         </div>
       </div>
-      <div class="token" aria-label="{text('Currency identity')}">
+      <div class="token">
         <svg viewBox="0 0 512 512" role="img" aria-label="{text('Clear token')}">
           <circle cx="256" cy="256" r="208" fill="#247c93"/>
           <circle cx="256" cy="256" r="122" fill="#f4fbfc"/>
@@ -660,8 +656,7 @@ def render_homepage(
           <path fill="#e16f51" d="M222 224h168v64H222z"/>
         </svg>
         <div>
-          <strong>{values['display_unit_markup']}</strong>
-          <span>{text('Clear Mint Unit')}</span>
+          <strong>{text('Private bearer notes for community-issued value.')}</strong>
         </div>
       </div>
     </section>
@@ -670,26 +665,6 @@ def render_homepage(
       <section class="panel">
         <h2>{text('Mint details')}</h2>
         <dl>
-          <div class="row">
-            <dt>{text('Currency')}</dt><dd>{values['currency_name_markup']}</dd>
-          </div>
-          <div class="row">
-            <dt>{text('Friendly name')}</dt>
-            <dd>{values['currency_display_name_markup']}</dd>
-          </div>
-          <div class="row">
-            <dt>{text('Unit label')}</dt><dd>{values['display_unit_markup']}</dd>
-          </div>
-          <div class="row">
-            <dt>{text('Protocol unit')}</dt>
-            <dd><code class="technical" dir="ltr">{values['protocol_unit']}</code></dd>
-          </div>
-          <div class="row">
-            <dt>{text('Keyset')}</dt>
-            <dd>
-              <code class="technical" dir="ltr">{values['keyset_id']}</code>
-            </dd>
-          </div>
           <div class="row">
             <dt>{text('Service identity')}</dt>
             <dd>{values['service_npub_markup']}</dd>
@@ -710,29 +685,15 @@ def render_homepage(
         </dl>
       </section>
 
-      <section class="panel">
-        <h2>{text('How this mint works')}</h2>
-        <ul class="features">
-          <li>{text('Treasurer-authorized issuance')}</li>
-          <li>{text('Private bearer transfers')}</li>
-          <li>{text('Mint-enforced double-spend protection')}</li>
-          <li>{text('Proof swapping and verification')}</li>
-          <li>{text('Explicit unit retirement')}</li>
-          <li>{values['authority_label']}</li>
-        </ul>
-      </section>
-
       <section class="panel keysets">
         <h2>{text('Mint Units In Circulation')}</h2>
         <table class="keyset-table">
           <thead>
             <tr>
               <th>{text('Name')}</th>
-              <th>{text('Authority')}</th>
-              <th>{text('Unit label')}</th>
-              <th>{text('Outstanding')}</th>
-              <th>{text('Protocol unit')}</th>
-              <th>{text('Keyset ID')}</th>
+              <th>{text('Unit Label')}</th>
+              <th>{text('Units Outstanding')}</th>
+              <th>{text('Protocol Unit')}</th>
             </tr>
           </thead>
           <tbody>
@@ -744,6 +705,14 @@ def render_homepage(
 
     <aside class="about">
       {text(HOMEPAGE_ABOUT)}
+      <ul class="features">
+        <li>{text('Treasurer-authorized issuance')}</li>
+        <li>{text('Private bearer transfers')}</li>
+        <li>{text('Mint-enforced double-spend protection')}</li>
+        <li>{text('Proof swapping and verification')}</li>
+        <li>{text('Explicit unit retirement')}</li>
+        <li>{values['authority_label']}</li>
+      </ul>
     </aside>
 
     <nav class="links" aria-label="{text('Mint resources')}">
