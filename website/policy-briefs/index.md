@@ -79,6 +79,16 @@ Notes circulate.
 
 [Read the policy brief](hidden-complexity-and-clear.md){ .md-button .md-button--primary }
 
+## Clearing Is More Than Minting
+
+The London Metal Exchange rulebook shows that market clearing encompasses
+contract acceptance, netting, margin, payment arrangements, delivery, and
+default management. This brief locates Clear within that wider scheme: a Clear
+mint can provide a private bearer settlement instrument without pretending to
+be the clearing house, depository, or market authority.
+
+[Read the policy brief](clearing-is-more-than-minting.md){ .md-button .md-button--primary }
+
 ## QxVault and Clear
 
 QxVault packages OpenBao-compatible secrets management with an integrated
