@@ -3,8 +3,15 @@
 **Clear means Credit-Liability Ecash: Authorized and Redeemable.** It is an
 experimental Cashu mint for organization-defined Mint Notes. Clear keeps
 Cashu's blinded issuance, transfer, swap, and double-spend protection while
-replacing Lightning settlement with explicit treasurer-authorized issuance,
-redemption, and retirement.
+decoupling those bearer-note mechanics from Bitcoin and Lightning settlement.
+It replaces payment-triggered issuance and melt-to-payment redemption with
+explicit treasurer-authorized issuance and policy-defined redemption and
+retirement.
+
+**Cashu is the protocol substrate; treasury policy is the institutional
+authority.** Bitcoin, Lightning, bank payments, and other rails may fund or
+settle a Clear program, but they do not have to define its unit or authorize
+each minting event.
 
 The name describes the complete relationship: a holder receives a credit, the
 issuer recognizes a corresponding liability, ecash makes that value privately
@@ -268,9 +275,14 @@ The working multi-community treasurer flow is recorded in
 ## Relationship to Cashu
 
 Clear follows the Cashu protocol's standard cryptographic and circulation
-model. Its `clear` issuance and retirement method is experimental and is not a
-published Cashu NUT. Standard wallets may require explicit support for
-keyset-bound CMU identifiers and this settlement method.
+model. It is best understood as a treasury-governed application of Cashu, not
+as a competing ecash protocol. Its `clear` issuance and retirement method is
+experimental and is not a published Cashu NUT. Standard wallets may require
+explicit support for keyset-bound CMU identifiers, multiple policy domains,
+and this authorization and settlement method.
+
+The architectural boundary is documented in
+[Cashu Decoupled: Clear's Treasury Mint Model](docs/CASHU-DECOUPLED-TREASURY-MINT-MODEL.md).
 
 - [Cashu protocol specifications](https://github.com/cashubtc/nuts)
 - [Nutshell reference implementation](https://github.com/cashubtc/nutshell)

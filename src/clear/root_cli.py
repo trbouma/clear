@@ -844,7 +844,8 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         "value",
         nargs="?",
         help=(
-            "CMU amount from the root wallet or a cashuA token. Reads a token "
+            "CMU amount from the root wallet or a cashuB or cashuA token. "
+            "Reads a token "
             "or proof JSON from stdin when omitted."
         ),
     )
@@ -863,7 +864,7 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     redeem_parser.add_argument(
         "value",
         nargs="?",
-        help="cashuA token string. Reads from stdin when omitted.",
+        help="cashuB or cashuA token string. Reads from stdin when omitted.",
     )
     redeem_parser.add_argument("--proofs-file", default=None, help=argparse.SUPPRESS)
     redeem_parser.add_argument("--memo", default=None, help="Optional retirement memo.")

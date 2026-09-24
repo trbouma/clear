@@ -13,7 +13,7 @@ from typing import Any
 from stroma import BasicKeySigner, Event, GiftWrap, Keys, RelayClient
 from stroma import KeyError as StromaKeyError
 
-from clear.tokens import decode_token_v3
+from clear.tokens import decode_token
 
 CLEAR_TRANSFER_KIND = 7379
 CLEAR_TRANSFER_GIFT_WRAP_KIND = 1059
@@ -361,7 +361,7 @@ def discover_clear_support(address: str, *, mint_url: str, unit: str) -> dict[st
 
 
 def _keyset_ids_from_token(token: str) -> list[str]:
-    decoded = decode_token_v3(token)
+    decoded = decode_token(token)
     keyset_ids: set[str] = set()
     for token_entry in decoded.get("token", []):
         if not isinstance(token_entry, dict):

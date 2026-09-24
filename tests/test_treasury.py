@@ -6,7 +6,7 @@ import pytest
 from stroma import Event, Keys
 
 from clear import treasury
-from clear.tokens import decode_token_v3, encode_token_v3
+from clear.tokens import decode_token, encode_token_v3
 from clear.treasury_auth import TREASURY_EVENT_KIND
 
 
@@ -35,7 +35,7 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
             return {
                 "keysets": [
                     {
-                        "id": "keyset-id",
+                        "id": "0011223344556677",
                         "keys": {"1": "pub1", "4": "pub4", "8": "pub8"},
                     }
                 ]
@@ -57,7 +57,11 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
     class FakeOutput:
         def __init__(self, amount):
             self.amount = amount
-            self.payload = {"amount": amount, "id": "keyset-id", "B_": f"B-{amount}"}
+            self.payload = {
+                "amount": amount,
+                "id": "0011223344556677",
+                "B_": f"B-{amount}",
+            }
 
     monkeypatch.setattr(treasury, "request_json", fake_request_json)
     monkeypatch.setattr(
@@ -72,7 +76,7 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
             "amount": output.amount,
             "id": output.payload["id"],
             "secret": f"secret-{output.amount}",
-            "C": promise["C_"],
+            "C": "02" + "11" * 32,
         },
     )
 
@@ -86,7 +90,7 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
     assert issued["mint"] == "https://clear.example"
     assert issued["unit"] == "cmu-0011223344556677"
     assert issued["amount"] == 13
-    assert issued["token"].startswith("cashuA")
+    assert issued["token"].startswith("cashuB")
     assert [proof["amount"] for proof in issued["proofs"]] == [8, 4, 1]
     assert calls[2] == (
         "POST",
@@ -102,6 +106,7 @@ def test_issue_units_authorizes_quote_and_unblinds_signatures(monkeypatch) -> No
     )
 
 
+
 def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> None:
     calls = []
     treasurer = Keys(priv_k="1".zfill(64))
@@ -115,17 +120,17 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
             assert event.pub_key == treasurer.public_key_hex()
             return {
                 "unit": "cmu-created",
-                "keyset_id": "keyset-created",
+                "keyset_id": "00aabbccddeeff00",
                 "friendly_name": "Treasurer Credits",
                 "status": "active",
             }
         if path == "/v1/info":
             return {"mint_url": "https://clear.example"}
-        if path == "/v1/keys/keyset-created":
+        if path == "/v1/keys/00aabbccddeeff00":
             return {
                 "keysets": [
                     {
-                        "id": "keyset-created",
+                        "id": "00aabbccddeeff00",
                         "keys": {"1": "pub1", "4": "pub4", "8": "pub8"},
                     }
                 ]
@@ -152,7 +157,7 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
             self.amount = amount
             self.payload = {
                 "amount": amount,
-                "id": "keyset-created",
+                "id": "00aabbccddeeff00",
                 "B_": f"B-{amount}",
             }
 
@@ -169,7 +174,7 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
             "amount": output.amount,
             "id": output.payload["id"],
             "secret": f"secret-{output.amount}",
-            "C": promise["C_"],
+            "C": "02" + "11" * 32,
         },
     )
 
@@ -177,13 +182,13 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
         "https://clear.example/",
         treasurer.private_key_bech32(),
         13,
-        keyset_id="keyset-created",
+        keyset_id="00aabbccddeeff00",
         memo="test issuance",
     )
 
     assert issued["mint"] == "https://clear.example"
     assert issued["unit"] == "cmu-created"
-    assert issued["keyset_id"] == "keyset-created"
+    assert issued["keyset_id"] == "00aabbccddeeff00"
     assert [proof["amount"] for proof in issued["proofs"]] == [8, 4, 1]
     assert calls[3] == (
         "POST",
@@ -195,7 +200,8 @@ def test_issue_treasury_units_uses_signed_quote_authorization(monkeypatch) -> No
     assert calls[4][3] is None
     info_event = Event.load(calls[0][2]["event"], validate=True)
     assert info_event is not None
-    assert json.loads(info_event.content)["keyset_id"] == "keyset-created"
+    assert json.loads(info_event.content)["keyset_id"] == "00aabbccddeeff00"
+
 
 
 def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> None:
@@ -205,12 +211,8 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
         calls.append((mint_url, method, path))
         if path == "/v1/info":
             return {"mint_url": "https://clear.example"}
-        if path == "/v1/keys/keyset-id":
-            return {
-                "keysets": [
-                    {"id": "keyset-id", "keys": {"1": "pub1"}}
-                ]
-            }
+        if path == "/v1/keys/0011223344556677":
+            return {"keysets": [{"id": "0011223344556677", "keys": {"1": "pub1"}}]}
         if path == "/v1/swap":
             return {"signatures": [{"C_": "send"}, {"C_": "change"}]}
         raise AssertionError(path)
@@ -218,7 +220,7 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
     class FakeOutput:
         def __init__(self, amount):
             self.amount = amount
-            self.payload = {"amount": amount, "id": "keyset-id", "B_": "B"}
+            self.payload = {"amount": amount, "id": "0011223344556677", "B_": "B"}
 
     monkeypatch.setattr(treasury, "request_json", fake_request_json)
     monkeypatch.setattr(
@@ -233,26 +235,27 @@ def test_swap_uses_internal_api_but_preserves_public_mint_url(monkeypatch) -> No
             "amount": output.amount,
             "id": output.payload["id"],
             "secret": promise["C_"],
-            "C": promise["C_"],
+            "C": "02" + "11" * 32,
         },
     )
 
     swapped = treasury.swap_token_for_amount(
         "http://127.0.0.1:3339",
-        [{"amount": 2, "id": "keyset-id"}],
+        [{"amount": 2, "id": "0011223344556677"}],
         1,
         unit="cmu-0011223344556677",
     )
 
     assert swapped["mint"] == "https://clear.example"
-    assert decode_token_v3(swapped["token"])["token"][0]["mint"] == (
+    assert decode_token(swapped["token"])["token"][0]["mint"] == (
         "https://clear.example"
     )
     assert calls == [
         ("http://127.0.0.1:3339", "GET", "/v1/info"),
-        ("http://127.0.0.1:3339", "GET", "/v1/keys/keyset-id"),
+        ("http://127.0.0.1:3339", "GET", "/v1/keys/0011223344556677"),
         ("http://127.0.0.1:3339", "POST", "/v1/swap"),
     ]
+
 
 
 def test_retire_token_decodes_proofs_and_retires(monkeypatch) -> None:

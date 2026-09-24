@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from clear.root_wallet import deposit_issue, export_token, load_wallet, wallet_summary
-from clear.tokens import decode_token_v3
+from clear.tokens import decode_token
 
 
 def issued(
     amounts: list[int],
     *,
     unit: str = "cmu-0011223344556677",
-    keyset_id: str = "keyset-id",
+    keyset_id: str = "0011223344556677",
 ) -> dict:
     return {
         "mint": "http://clear.example",
@@ -21,7 +21,7 @@ def issued(
                 "amount": amount,
                 "id": keyset_id,
                 "secret": f"{unit}-secret-{amount}",
-                "C": f"signature-{amount}",
+                "C": "02" + "11" * 32,
             }
             for amount in amounts
         ],
@@ -52,7 +52,7 @@ def test_export_token_from_root_wallet(tmp_path) -> None:
     deposit_issue(issued([8, 4, 1]), wallet_path)
 
     exported = export_token(13, wallet_path, memo="disburse")
-    decoded = decode_token_v3(exported["token"])
+    decoded = decode_token(exported["token"])
 
     assert exported["amount"] == 13
     assert decoded["unit"] == "cmu-0011223344556677"
@@ -66,7 +66,7 @@ def test_export_token_finds_exact_subset(tmp_path) -> None:
     deposit_issue(issued([16, 8, 4, 1]), wallet_path)
 
     exported = export_token(13, wallet_path, memo="subset")
-    decoded = decode_token_v3(exported["token"])
+    decoded = decode_token(exported["token"])
 
     assert [proof["amount"] for proof in decoded["token"][0]["proofs"]] == [8, 4, 1]
     assert wallet_summary(load_wallet(wallet_path), wallet_path)["balances"] == [
@@ -81,11 +81,11 @@ def test_export_token_finds_exact_subset(tmp_path) -> None:
 def test_export_token_can_target_unit_in_mixed_wallet(tmp_path) -> None:
     wallet_path = tmp_path / "data" / "clear-root-wallet.json"
     deposit_issue(
-        issued([8], unit="cmu-first", keyset_id="first-keyset"),
+        issued([8], unit="cmu-first", keyset_id="0011111111111111"),
         wallet_path,
     )
     deposit_issue(
-        issued([8], unit="cmu-second", keyset_id="second-keyset"),
+        issued([8], unit="cmu-second", keyset_id="0022222222222222"),
         wallet_path,
     )
 
@@ -95,11 +95,11 @@ def test_export_token_can_target_unit_in_mixed_wallet(tmp_path) -> None:
         unit="cmu-second",
         memo="target second",
     )
-    decoded = decode_token_v3(exported["token"])
+    decoded = decode_token(exported["token"])
 
     assert exported["unit"] == "cmu-second"
     assert decoded["unit"] == "cmu-second"
-    assert decoded["token"][0]["proofs"][0]["id"] == "second-keyset"
+    assert decoded["token"][0]["proofs"][0]["id"] == "0022222222222222"
     assert wallet_summary(load_wallet(wallet_path), wallet_path)["balances"] == [
         {
             "mint": "http://clear.example",

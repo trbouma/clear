@@ -506,8 +506,10 @@ def test_root_cli_withdraw_exports_from_local_wallet(
       "amount": 5,
       "memo": "float",
       "proofs": [
-        {"amount": 4, "id": "keyset-id", "secret": "a", "C": "b"},
-        {"amount": 1, "id": "keyset-id", "secret": "c", "C": "d"}
+        {"amount": 4, "id": "0011223344556677", "secret": "a",
+         "C": "021111111111111111111111111111111111111111111111111111111111111111"},
+        {"amount": 1, "id": "0011223344556677", "secret": "c",
+         "C": "021111111111111111111111111111111111111111111111111111111111111111"}
       ]
     }
   ]
@@ -531,9 +533,10 @@ def test_root_cli_withdraw_exports_from_local_wallet(
     assert root_cli.main() == 0
     output = capsys.readouterr().out
 
-    assert '"token": "cashuA' in output
+    assert '"token": "cashuB' in output
     assert '"amount": 5' in output
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
+
 
 
 def test_root_cli_send_delivers_then_removes_from_local_wallet(
@@ -555,8 +558,10 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
       "amount": 5,
       "memo": "float",
       "proofs": [
-        {"amount": 4, "id": "keyset-id", "secret": "a", "C": "b"},
-        {"amount": 1, "id": "keyset-id", "secret": "c", "C": "d"}
+        {"amount": 4, "id": "0011223344556677", "secret": "a",
+         "C": "021111111111111111111111111111111111111111111111111111111111111111"},
+        {"amount": 1, "id": "0011223344556677", "secret": "c",
+         "C": "021111111111111111111111111111111111111111111111111111111111111111"}
       ]
     }
   ]
@@ -623,6 +628,7 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
     assert '"status": "OK"' in output
     assert '"sender_ephemeral": true' in output
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
+
 
 
 def test_root_cli_send_rejects_internal_mint_before_discovery_or_export(
@@ -864,7 +870,8 @@ def test_root_cli_send_swaps_larger_proof_for_change(
       "amount": 32,
       "memo": "float",
       "proofs": [
-        {"amount": 32, "id": "keyset-id", "secret": "large", "C": "sig-large"}
+        {"amount": 32, "id": "0011223344556677", "secret": "large",
+         "C": "021111111111111111111111111111111111111111111111111111111111111111"}
       ]
     }
   ]
@@ -901,14 +908,44 @@ def test_root_cli_send_swaps_larger_proof_for_change(
             "change_amount": 7,
             "token": "cashuAswapped",
             "proofs": [
-                {"amount": 16, "id": "keyset-id", "secret": "s16", "C": "c16"},
-                {"amount": 8, "id": "keyset-id", "secret": "s8", "C": "c8"},
-                {"amount": 1, "id": "keyset-id", "secret": "s1", "C": "c1"},
+                {
+                    "amount": 16,
+                    "id": "0011223344556677",
+                    "secret": "s16",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 8,
+                    "id": "0011223344556677",
+                    "secret": "s8",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "0011223344556677",
+                    "secret": "s1",
+                    "C": "02" + "11" * 32,
+                },
             ],
             "change_proofs": [
-                {"amount": 4, "id": "keyset-id", "secret": "c4", "C": "cc4"},
-                {"amount": 2, "id": "keyset-id", "secret": "c2", "C": "cc2"},
-                {"amount": 1, "id": "keyset-id", "secret": "c1", "C": "cc1"},
+                {
+                    "amount": 4,
+                    "id": "0011223344556677",
+                    "secret": "c4",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 2,
+                    "id": "0011223344556677",
+                    "secret": "c2",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "0011223344556677",
+                    "secret": "c1",
+                    "C": "02" + "11" * 32,
+                },
             ],
         },
     )
@@ -922,7 +959,10 @@ def test_root_cli_send_swaps_larger_proof_for_change(
         sender_secret,
         memo=None,
         relays=None,
-        expiration=None: {"delivery": discovery, "publish": {"status": "OK"}},
+        expiration=None: {
+            "delivery": discovery,
+            "publish": {"status": "OK"},
+        },
     )
     monkeypatch.setattr(
         "sys.argv",
@@ -944,13 +984,12 @@ def test_root_cli_send_swaps_larger_proof_for_change(
     output = capsys.readouterr().out
     wallet = json.loads(wallet_path.read_text(encoding="utf-8"))
     remaining_amount = sum(
-        proof["amount"]
-        for entry in wallet["entries"]
-        for proof in entry["proofs"]
+        proof["amount"] for entry in wallet["entries"] for proof in entry["proofs"]
     )
 
     assert '"amount": 25' in output
     assert remaining_amount == 7
+
 
 
 def test_root_cli_retire_reads_token_from_stdin(monkeypatch, capsys) -> None:

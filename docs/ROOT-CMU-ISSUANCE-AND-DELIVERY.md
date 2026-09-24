@@ -322,7 +322,7 @@ The encrypted inner payload is a JSON object:
 {
   "type": "clear-token",
   "version": 1,
-  "token": "cashuA...",
+  "token": "cashuB...",
   "mint": "http://127.0.0.1:3339",
   "unit": "cmu-00ce29eeaf094301",
   "amount": 25,

@@ -81,9 +81,24 @@ poetry run clear-root withdraw 25 --memo "disbursement"
 poetry run clear-root issue 5 --memo "immediate token" --to-token
 poetry run clear-root address alice@example.com
 poetry run clear-root send 5 alice@example.com --memo "address delivery"
-poetry run clear-root redeem "cashuA..." --memo "returned from wallet"
+poetry run clear-root redeem "cashuB..." --memo "returned from wallet"
 poetry run clear-root summary
 ```
+
+Clear now emits `cashuB` (Cashu TokenV4) for issuance, withdrawals, and sends.
+Redemption accepts both `cashuB` and existing `cashuA` tokens, including the
+optional `cashu:` URI prefix. Existing wallet files need no migration.
+Receiving wallets must support TokenV4 and Clear's custom CMU units.
+
+TokenV4 preserves the CMU unit string and full proof keyset IDs independently;
+it does not change the issuance or redemption policy. Abbreviated modern
+keyset IDs in incoming tokens are resolved through the configured mint's
+keyset list before retirement. Unknown or ambiguous IDs are rejected.
+
+This upgrade adds token-format support, not an HTTP 402 acceptance endpoint
+or enforcement of optional spending conditions. Optional DLEQ and witness
+fields survive codec round trips; decoding alone does not verify them or
+establish that proofs are unspent.
 
 A Lightning-address or NIP-05 well-known response can advertise lab Clear
 delivery with a `clear` object. The current Safebox-compatible shape

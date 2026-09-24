@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from clear.tokens import encode_token_v3
+from clear.tokens import encode_token_v4
 
 DEFAULT_WALLET_PATH = Path("data/clear-root-wallet.json")
 
@@ -203,7 +203,7 @@ def export_token(
     selected = _best_selection(proofs, amount, exact=True)
     if selected is not None and selected_mint and selected_unit:
         selected_proofs = [proof for _, _, proof in selected]
-        token = encode_token_v3(
+        token = encode_token_v4(
             mint=selected_mint,
             proofs=selected_proofs,
             unit=selected_unit,

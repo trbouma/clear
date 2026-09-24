@@ -8,7 +8,7 @@ from stroma import Event, Keys
 
 from clear import treasury_cli
 from clear.root_wallet import deposit_issue, load_wallet
-from clear.tokens import decode_token_v3
+from clear.tokens import decode_token
 from clear.treasury_auth import TREASURY_EVENT_KIND
 
 
@@ -600,9 +600,24 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
             "amount": 13,
             "memo": None,
             "proofs": [
-                {"amount": 8, "id": "other-keyset", "secret": "o1", "C": "oc1"},
-                {"amount": 4, "id": "other-keyset", "secret": "o2", "C": "oc2"},
-                {"amount": 1, "id": "other-keyset", "secret": "o3", "C": "oc3"},
+                {
+                    "amount": 8,
+                    "id": "other-keyset",
+                    "secret": "o1",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 4,
+                    "id": "other-keyset",
+                    "secret": "o2",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "other-keyset",
+                    "secret": "o3",
+                    "C": "02" + "11" * 32,
+                },
             ],
         },
         wallet_path,
@@ -615,9 +630,24 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
             "amount": 13,
             "memo": None,
             "proofs": [
-                {"amount": 8, "id": "keyset-created", "secret": "s1", "C": "c1"},
-                {"amount": 4, "id": "keyset-created", "secret": "s2", "C": "c2"},
-                {"amount": 1, "id": "keyset-created", "secret": "s3", "C": "c3"},
+                {
+                    "amount": 8,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s1",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 4,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s2",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s3",
+                    "C": "02" + "11" * 32,
+                },
             ],
         },
         wallet_path,
@@ -628,7 +658,7 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
         "_cmu_info",
         lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
-            "keyset_id": "keyset-created",
+            "keyset_id": "00aabbccddeeff00",
         },
     )
     monkeypatch.setattr(
@@ -654,11 +684,11 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
         relays=None,
         expiration=None,
     ):
-        assert token.startswith("cashuA")
-        decoded = decode_token_v3(token)
+        assert token.startswith("cashuB")
+        decoded = decode_token(token)
         assert decoded["unit"] == "cmu-created"
         assert {proof["id"] for proof in decoded["token"][0]["proofs"]} == {
-            "keyset-created"
+            "00aabbccddeeff00"
         }
         assert amount == 13
         assert sender_secret is None
@@ -685,7 +715,7 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
             "13",
             "alice@example.com",
             "--keyset-id",
-            "keyset-created",
+            "00aabbccddeeff00",
             "--memo",
             "Gift",
             "--relay",
@@ -705,6 +735,7 @@ def test_treasury_cli_send_delivers_exact_token_from_wallet(
     assert treasury_cli.wallet_summary(load_wallet(wallet_path), wallet_path)[
         "balances"
     ] == [{"mint": "https://clear.example", "unit": "cmu-other", "amount": 13}]
+
 
 
 def test_treasury_cli_send_rejects_internal_mint_before_discovery(
@@ -794,7 +825,12 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
             "amount": 16,
             "memo": None,
             "proofs": [
-                {"amount": 16, "id": "other-keyset", "secret": "o16", "C": "oc16"},
+                {
+                    "amount": 16,
+                    "id": "other-keyset",
+                    "secret": "o16",
+                    "C": "02" + "11" * 32,
+                },
             ],
         },
         wallet_path,
@@ -807,7 +843,12 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
             "amount": 16,
             "memo": None,
             "proofs": [
-                {"amount": 16, "id": "keyset-created", "secret": "s16", "C": "c16"},
+                {
+                    "amount": 16,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s16",
+                    "C": "02" + "11" * 32,
+                },
             ],
         },
         wallet_path,
@@ -818,7 +859,7 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
         "_cmu_info",
         lambda mint, nsec, lifetime_seconds, *, keyset_id=None: {
             "unit": "cmu-created",
-            "keyset_id": "keyset-created",
+            "keyset_id": "00aabbccddeeff00",
         },
     )
     monkeypatch.setattr(
@@ -837,7 +878,12 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
     def fake_swap(mint_url, inputs, amount, *, unit, memo=None):
         assert mint_url == "https://clear.example"
         assert inputs == [
-            {"amount": 16, "id": "keyset-created", "secret": "s16", "C": "c16"}
+            {
+                "amount": 16,
+                "id": "00aabbccddeeff00",
+                "secret": "s16",
+                "C": "02" + "11" * 32,
+            }
         ]
         assert amount == 13
         assert unit == "cmu-created"
@@ -849,13 +895,38 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
             "change_amount": 3,
             "token": "cashuAsend",
             "proofs": [
-                {"amount": 8, "id": "keyset-created", "secret": "s8", "C": "c8"},
-                {"amount": 4, "id": "keyset-created", "secret": "s4", "C": "c4"},
-                {"amount": 1, "id": "keyset-created", "secret": "s1", "C": "c1"},
+                {
+                    "amount": 8,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s8",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 4,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s4",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s1",
+                    "C": "02" + "11" * 32,
+                },
             ],
             "change_proofs": [
-                {"amount": 2, "id": "keyset-created", "secret": "s2", "C": "c2"},
-                {"amount": 1, "id": "keyset-created", "secret": "s3", "C": "c3"},
+                {
+                    "amount": 2,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s2",
+                    "C": "02" + "11" * 32,
+                },
+                {
+                    "amount": 1,
+                    "id": "00aabbccddeeff00",
+                    "secret": "s3",
+                    "C": "02" + "11" * 32,
+                },
             ],
         }
 
@@ -882,7 +953,7 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
             "13",
             "alice@example.com",
             "--keyset-id",
-            "keyset-created",
+            "00aabbccddeeff00",
         ],
     )
 
@@ -892,6 +963,7 @@ def test_treasury_cli_send_swaps_when_exact_amount_is_unavailable(
         {"mint": "https://clear.example", "unit": "cmu-created", "amount": 3},
         {"mint": "https://clear.example", "unit": "cmu-other", "amount": 16},
     ]
+
 
 
 def test_treasury_cli_issue_requires_cmu_selector(monkeypatch, capsys) -> None:

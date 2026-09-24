@@ -21,6 +21,22 @@ Clear preserves the central Cashu model:
 - spent-secret tracking; and
 - proof-state checks.
 
+This retained protocol should be distinguished from Clear's changed
+institutional model. Most Cashu deployments couple issuance to receipt of
+bitcoin or a Lightning payment and couple redemption to an outgoing payment.
+Clear moves those decisions to a treasury-policy boundary:
+
+```text
+Cashu bearer protocol: unchanged where applicable
+Issuance authority: signed treasurer action under issuer policy
+Redemption meaning: defined by the CMU policy
+Bitcoin and Lightning: optional funding or settlement integrations
+```
+
+This is the defining Clear architecture. See
+[Cashu Decoupled](policy-briefs/cashu-decoupled.md) and the detailed
+[treasury mint model](https://github.com/trbouma/clear/blob/main/docs/CASHU-DECOUPLED-TREASURY-MINT-MODEL.md).
+
 In product and protocol language, the resulting bearer instruments are **Mint
 Notes** denominated in a **Clear Mint Unit (CMU)**. In implementation language, each
 spendable Mint Note is represented by a Cashu proof. The distinction keeps the

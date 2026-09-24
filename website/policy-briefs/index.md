@@ -59,6 +59,16 @@ units.
 
 [Read the policy brief](mintchip-and-clear.md){ .md-button .md-button--primary }
 
+## Cashu, Decoupled
+
+Clear preserves Cashu's blind signatures, bearer proofs, swaps, and
+double-spend protection while decoupling them from the usual Bitcoin and
+Lightning settlement loop. This brief explains the resulting model shift:
+issuer policy and delegated treasury authority define issuance and redemption,
+while payment rails become optional integrations.
+
+[Read the policy brief](cashu-decoupled.md){ .md-button .md-button--primary }
+
 ## Clear Is Not a Stablecoin
 
 Stablecoins usually move account balances through blockchain smart contracts.

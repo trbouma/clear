@@ -37,6 +37,29 @@ question is not merely how value moves. It is who is authorized to mint the
 unit, what the unit represents, where it is recognized, and how it is redeemed
 or retired.
 
+## Cashu, decoupled
+
+Clear is built on Cashu. It preserves Cashu's blind signatures, keysets,
+bearer proofs, swaps, and spent-proof protection. The fundamental change is at
+the institutional boundary: Clear decouples those mechanisms from the usual
+Bitcoin and Lightning settlement loop.
+
+In a conventional Cashu mint, receipt of payment normally authorizes issuance,
+and returning ecash normally causes a bitcoin or Lightning payout. In Clear, a
+treasurer acting under issuer policy authorizes issuance, and that policy
+defines what redemption accomplishes.
+
+```text
+Cashu: payment -> bearer ecash -> payment
+Clear: policy -> treasury authority -> bearer Mint Notes -> policy consequence
+```
+
+Bitcoin, Lightning, banks, and other rails can still fund or settle a Clear
+program. They become optional integrations rather than the authority that
+defines the unit.
+
+[Read Cashu, Decoupled](policy-briefs/cashu-decoupled.md){ .md-button }
+
 ## Clear works alongside cash
 
 Clear is not a replacement for Bitcoin, Lightning, or the Cashu mints that use

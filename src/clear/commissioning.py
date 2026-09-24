@@ -9,7 +9,7 @@ from clear.config import Settings
 from clear.crypto import Keyset, hash_to_curve
 from clear.models import BlindedMessage, Proof
 from clear.store import SCHEMA_VERSION, ClearError, Store
-from clear.tokens import decode_token_v3, encode_token_v3
+from clear.tokens import decode_token, encode_token_v4
 from clear.treasury import blind_output, unblind_signature
 
 VERIFICATION_AMOUNT = 3
@@ -112,13 +112,13 @@ def run_verification(store: Store, *, mint_url: str) -> dict:
             "issued proofs unblind and begin unspent",
         )
 
-        token = encode_token_v3(
+        token = encode_token_v4(
             mint=mint_url,
             proofs=proofs,
             unit=keyset.unit,
             memo="Clear root commissioning verification",
         )
-        decoded = decode_token_v3(token)
+        decoded = decode_token(token)
         _record(
             checks,
             "token-round-trip",

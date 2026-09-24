@@ -7,7 +7,7 @@ import pytest
 from stroma import Keys
 
 from clear import root_delivery
-from clear.tokens import encode_token_v3
+from clear.tokens import encode_token_v3, encode_token_v4
 
 RECIPIENT = Keys(priv_k="1".zfill(64))
 RECIPIENT_PUBKEY = RECIPIENT.public_key_hex()
@@ -115,18 +115,24 @@ def test_discover_clear_support_from_lightning_address_descriptor(
     assert discovery["relays"] == ["wss://relay.example"]
 
 
-def test_keyset_ids_from_token_are_sorted_unique() -> None:
-    token = encode_token_v3(
+@pytest.mark.parametrize("encoder", [encode_token_v3, encode_token_v4])
+def test_keyset_ids_from_token_are_sorted_unique(encoder) -> None:
+    token = encoder(
         mint="http://clear.example",
         unit="cmu-0011223344556677",
         proofs=[
-            {"amount": 4, "id": "keyset-b", "secret": "a", "C": "b"},
-            {"amount": 1, "id": "keyset-a", "secret": "c", "C": "d"},
-            {"amount": 1, "id": "keyset-b", "secret": "e", "C": "f"},
+            {"amount": 4, "id": "0022222222222222",
+             "secret": "a", "C": "02" + "11" * 32},
+            {"amount": 1, "id": "0011111111111111",
+             "secret": "c", "C": "02" + "11" * 32},
+            {"amount": 1, "id": "0022222222222222",
+             "secret": "e", "C": "02" + "11" * 32},
         ],
     )
 
-    assert root_delivery._keyset_ids_from_token(token) == ["keyset-a", "keyset-b"]
+    assert root_delivery._keyset_ids_from_token(token) == [
+        "0011111111111111", "0022222222222222",
+    ]
 
 
 def test_publish_verified_retries_until_relay_returns_event(monkeypatch) -> None:

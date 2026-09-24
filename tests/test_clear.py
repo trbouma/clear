@@ -2242,3 +2242,38 @@ def test_environment_values_override_dotenv_file(tmp_path, monkeypatch) -> None:
     assert settings.master_secret == "22" * 32
     assert settings.operator_token == "environment-token-is-long"
     assert settings.currency_name == "Environment Credits"
+
+
+@pytest.mark.parametrize("version", ["cashuA", "cashuB"])
+def test_serialized_token_swap_and_retirement(tmp_path, monkeypatch, version):
+    from clear import treasury
+    from clear.tokens import decode_token, encode_token_v3, encode_token_v4
+
+    app = create_app(settings(tmp_path))
+    keyset = app.state.keyset
+    with TestClient(app) as client:
+        proof = issue_proof(client, keyset)
+        encoder = encode_token_v3 if version == "cashuA" else encode_token_v4
+        token = encoder(
+            mint="https://clear.example", unit=keyset.unit, proofs=[proof],
+        )
+        mint, unit, proofs = treasury.proofs_from_token(token)
+        assert proofs == [proof]
+
+        def request(mint_url, method, path, payload=None, *, token=None):
+            assert mint_url == mint
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
+            response = client.request(method, path, json=payload, headers=headers)
+            if response.status_code != 200:
+                raise treasury.TreasuryError(response.json()["detail"])
+            return response.json()
+
+        monkeypatch.setattr(treasury, "request_json", request)
+        swapped = treasury.swap_token_for_amount(mint, proofs, 4, unit=unit)
+        assert swapped["token"].startswith("cashuB")
+        assert swapped["change_amount"] == 4
+        assert decode_token(swapped["token"])["unit"] == keyset.unit
+        retired = treasury.retire_token(mint, OPERATOR_TOKEN, swapped["token"])
+        assert retired["amount"] == 4
+        with pytest.raises(treasury.TreasuryError, match="spent"):
+            treasury.retire_token(mint, OPERATOR_TOKEN, swapped["token"])

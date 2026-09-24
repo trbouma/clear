@@ -13,7 +13,7 @@ from coincurve import PrivateKey, PublicKey
 
 from clear.crypto import CURVE_ORDER, hash_to_curve
 from clear.models import Proof
-from clear.tokens import decode_token_v3, encode_token_v3
+from clear.tokens import KeysetResolver, decode_token, encode_token_v4
 
 
 class TreasuryError(RuntimeError):
@@ -166,7 +166,7 @@ def issue_units(
         unblind_signature(output, promise, keys[str(output.amount)])
         for output, promise in zip(outputs, promises, strict=True)
     ]
-    token = encode_token_v3(
+    token = encode_token_v4(
         mint=token_mint_url,
         proofs=proofs,
         unit=unit,
@@ -283,7 +283,7 @@ def issue_treasury_units(
         unblind_signature(output, promise, keys[str(output.amount)])
         for output, promise in zip(outputs, promises, strict=True)
     ]
-    token = encode_token_v3(
+    token = encode_token_v4(
         mint=token_mint_url,
         proofs=proofs,
         unit=cmu["unit"],
@@ -373,7 +373,7 @@ def swap_token_for_amount(
         "amount": amount,
         "input_amount": input_total,
         "change_amount": change_amount,
-        "token": encode_token_v3(
+        "token": encode_token_v4(
             mint=token_mint_url,
             proofs=send_proofs,
             unit=unit,
@@ -384,8 +384,10 @@ def swap_token_for_amount(
     }
 
 
-def proofs_from_token(token: str) -> tuple[str, str | None, list[dict[str, Any]]]:
-    payload = decode_token_v3(token.strip())
+def proofs_from_token(
+    token: str, *, resolve_keyset: KeysetResolver | None = None,
+) -> tuple[str, str | None, list[dict[str, Any]]]:
+    payload = decode_token(token.strip(), resolve_keyset=resolve_keyset)
     token_entries = payload.get("token")
     if not isinstance(token_entries, list) or len(token_entries) != 1:
         raise TreasuryError("expected a token with exactly one mint entry")
@@ -487,9 +489,32 @@ def retire_token(
     *,
     memo: str | None = None,
 ) -> dict[str, Any]:
-    token_mint, token_unit, proofs = proofs_from_token(token)
     api_url = mint_url.rstrip("/")
-    info = request_json(api_url, "GET", "/v1/info")
+    info = None
+    keysets = None
+
+    def resolve_keyset(token_mint: str, short_id: str) -> str:
+        nonlocal info, keysets
+        if info is None:
+            info = request_json(api_url, "GET", "/v1/info")
+        if token_mint != advertised_mint_url(info, api_url):
+            raise TreasuryError("token is not from the configured mint")
+        if keysets is None:
+            keysets = request_json(api_url, "GET", "/v1/keysets")["keysets"]
+        matches = {
+            item["id"] for item in keysets
+            if isinstance(item.get("id"), str)
+            and len(item["id"]) == 66 and item["id"].startswith(short_id)
+        }
+        if len(matches) != 1:
+            raise TreasuryError("short keyset ID is unknown or ambiguous")
+        return matches.pop()
+
+    token_mint, token_unit, proofs = proofs_from_token(
+        token, resolve_keyset=resolve_keyset,
+    )
+    if info is None:
+        info = request_json(api_url, "GET", "/v1/info")
     configured_mint = advertised_mint_url(info, api_url)
     if token_mint != configured_mint:
         raise TreasuryError(
