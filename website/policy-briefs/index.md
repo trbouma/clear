@@ -89,6 +89,16 @@ be the clearing house, depository, or market authority.
 
 [Read the policy brief](clearing-is-more-than-minting.md){ .md-button .md-button--primary }
 
+## Clear Warehouse Units
+
+A Clear Warehouse Unit (CWU) could represent a policy-defined entitlement to
+standardized goods held in a recognized warehouse or custody system. This
+brief explains how separate Clear Mint Units can distinguish commodity,
+class, grade, crop year, location, and redemption terms while allowing private
+bearer circulation between controlled issuance and redemption boundaries.
+
+[Read the policy brief](clear-warehouse-units.md){ .md-button .md-button--primary }
+
 ## QxVault and Clear
 
 QxVault packages OpenBao-compatible secrets management with an integrated
