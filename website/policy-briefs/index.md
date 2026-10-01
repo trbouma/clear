@@ -89,6 +89,16 @@ Notes circulate.
 
 [Read the policy brief](hidden-complexity-and-clear.md){ .md-button .md-button--primary }
 
+## The Unit Before the Rail
+
+*The Great Rail Shift* anticipates convergence among stablecoins, tokenized
+deposits, banks, liquidity providers, and clearing mechanisms. This brief
+explains Clear's place in that hybrid future: payment rails can fund, exchange,
+or settle a Clear Mint Unit, but treasury authority and issuer policy define
+the unit itself.
+
+[Read the policy brief](the-unit-before-the-rail.md){ .md-button .md-button--primary }
+
 ## Clearing Is More Than Minting
 
 The London Metal Exchange rulebook shows that market clearing encompasses
