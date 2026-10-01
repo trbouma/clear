@@ -57,6 +57,33 @@ underlying keyset.
 | `spent_proofs` | Nullifier/spent-state records | Each spent proof records `keyset_id` |
 | `audit_log` | Supply and operator action history | Each audit row records `keyset_id` |
 
+## SQLite Operational Model
+
+Clear uses SQLite as the authoritative first-release store. Startup sets the
+database to WAL mode, then normal request connections use foreign-key
+enforcement, `synchronous=NORMAL`, and a 30-second busy timeout. Write
+operations that change issuance, spent-state, CMU, treasurer, grant, nonce, or
+readiness state use `BEGIN IMMEDIATE`, so accounting mutations are serialized
+by SQLite.
+
+Schema version 5 adds durable indexes for the highest-growth and most common
+CMU-scoped query paths:
+
+- supply summaries and audit totals by `audit_log.keyset_id` and `action`;
+- proof diagnostics by `signed_outputs.keyset_id` / `operation`;
+- spent-state diagnostics by `spent_proofs.keyset_id` / `reason`;
+- quote metrics by `mint_quotes.keyset_id`;
+- treasurer grant lookup by `npub`, `status`, creation time, and `keyset_id`;
+- CMU lookup by treasurer, status, and public listing state;
+- commissioning verification status checks; and
+- treasury nonce diagnostics by public key and action.
+
+The in-process keyset cache is still used for signing, but public keyset
+discovery, exact keyset lookup, quote creation, and quote issuance refresh the
+cache when they observe a keyset that was created by another running process.
+That keeps SQLite deployments usable with more than one process while retaining
+SQLite's single-writer accounting boundary.
+
 ## `mint_metadata`
 
 `mint_metadata` is a small key/value table:
@@ -518,14 +545,15 @@ On startup, Clear:
 4. records or verifies the configured mint-service `npub` sentinel;
 5. creates the service commissioning state as `bootstrapped` when absent;
 6. adds any missing display metadata columns;
-7. inserts the legacy CMU row if absent;
-8. populates legacy display metadata from configuration if unset;
-9. decrypts persisted random and commissioning keyset secrets;
-10. re-derives their public keys, fingerprints, units, and keyset IDs;
-11. creates the fail-closed treasury-state singleton when absent;
-12. invalidates enabled readiness when the critical configuration fingerprint
+7. creates required SQLite indexes;
+8. inserts the legacy CMU row if absent;
+9. populates legacy display metadata from configuration if unset;
+10. decrypts persisted random and commissioning keyset secrets;
+11. re-derives their public keys, fingerprints, units, and keyset IDs;
+12. creates the fail-closed treasury-state singleton when absent;
+13. invalidates enabled readiness when the critical configuration fingerprint
    changes; and
-13. refuses startup if persisted keyset identity does not match the decrypted
+14. refuses startup if persisted keyset identity does not match the decrypted
    secret.
 
 This prevents the mint from silently advertising or signing for a keyset whose

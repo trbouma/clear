@@ -22,7 +22,7 @@ class ClearError(ValueError):
     pass
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 COMMISSIONING_PROFILE_VERSION = 1
 
 
@@ -53,6 +53,7 @@ class Store:
     def initialize(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with self._connection() as connection:
+            self._configure_sqlite_database(connection)
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS mint_quotes (
@@ -183,6 +184,7 @@ class Store:
             self._bind_mint_identity(connection)
             self._bind_mint_service_identity(connection)
             self._ensure_cmu_columns(connection)
+            self._ensure_indexes(connection)
             self._ensure_legacy_cmu(connection)
             self._ensure_legacy_cmu_display_metadata(connection)
             self._load_persisted_keysets(connection)
@@ -460,6 +462,10 @@ class Store:
             self.keysets[keyset.id] = keyset
             self.keyset_order.append(keyset.id)
 
+    def _refresh_keysets(self) -> None:
+        with self._connection() as connection:
+            self._load_persisted_keysets(connection)
+
     def _encryption_key(self) -> bytes:
         if not self.key_encryption_key:
             raise RuntimeError("key encryption key is required for random keysets")
@@ -500,21 +506,39 @@ class Store:
         *,
         allow_commissioning: bool = False,
     ) -> Keyset:
+        keyset = self._find_keyset_for_unit(unit)
+        if keyset is None:
+            self._refresh_keysets()
+            keyset = self._find_keyset_for_unit(unit)
+        if keyset is None:
+            raise ClearError("quote unit is not issued by this Clear mint")
+        status = self._cmu_status(keyset.id)
+        if status != "active" and not (
+            allow_commissioning and status == "commissioning"
+        ):
+            raise ClearError("quote unit is not active")
+        return keyset
+
+    def _find_keyset_for_unit(self, unit: str) -> Keyset | None:
         for keyset in self.keysets.values():
             if keyset.unit == unit:
-                status = self._cmu_status(keyset.id)
-                if status != "active" and not (
-                    allow_commissioning and status == "commissioning"
-                ):
-                    raise ClearError("quote unit is not active")
                 return keyset
-        raise ClearError("quote unit is not issued by this Clear mint")
+        return None
 
-    def _keyset_response(self, keyset: Keyset, *, include_keys: bool) -> dict:
+    def _keyset_response(
+        self,
+        keyset: Keyset,
+        *,
+        include_keys: bool,
+        cmu_row=None,
+    ) -> dict:
+        status = (
+            cmu_row["status"] if cmu_row is not None else self._cmu_status(keyset.id)
+        )
         response = {
             "id": keyset.id,
             "unit": keyset.unit,
-            "active": self._cmu_status(keyset.id) == "active",
+            "active": status == "active",
             "input_fee_ppk": 0,
             "final_expiry": None,
         }
@@ -522,7 +546,11 @@ class Store:
             response["keys"] = {
                 str(amount): key for amount, key in keyset.public_keys.items()
             }
-        metadata = self._cmu_keyset_metadata(keyset.id)
+        metadata = (
+            self._cmu_keyset_metadata_from_row(cmu_row)
+            if cmu_row is not None
+            else self._cmu_keyset_metadata(keyset.id)
+        )
         response.update(metadata)
         return response
 
@@ -535,12 +563,43 @@ class Store:
         if "friendly_unit_alias" not in columns:
             connection.execute("ALTER TABLE cmus ADD COLUMN friendly_unit_alias TEXT")
         if "description" not in columns:
-            connection.execute("ALTER TABLE cmus ADD COLUMN description TEXT NOT NULL DEFAULT ''")
+            connection.execute(
+                "ALTER TABLE cmus ADD COLUMN description TEXT NOT NULL DEFAULT ''"
+            )
         if "public_listing" not in columns:
             connection.execute(
                 "ALTER TABLE cmus ADD COLUMN public_listing INTEGER "
                 "NOT NULL DEFAULT 1"
             )
+
+    @staticmethod
+    def _ensure_indexes(connection) -> None:
+        connection.executescript(
+            """
+            CREATE INDEX IF NOT EXISTS idx_audit_log_keyset_action
+                ON audit_log(keyset_id, action);
+            CREATE INDEX IF NOT EXISTS idx_signed_outputs_keyset_operation
+                ON signed_outputs(keyset_id, operation);
+            CREATE INDEX IF NOT EXISTS idx_spent_proofs_keyset_reason
+                ON spent_proofs(keyset_id, reason);
+            CREATE INDEX IF NOT EXISTS idx_mint_quotes_keyset
+                ON mint_quotes(keyset_id);
+            CREATE INDEX IF NOT EXISTS idx_treasurer_grants_npub_status
+                ON treasurer_grants(npub, status);
+            CREATE INDEX IF NOT EXISTS idx_treasurer_grants_status_created
+                ON treasurer_grants(status, created_at);
+            CREATE INDEX IF NOT EXISTS idx_treasurer_grants_npub_keyset
+                ON treasurer_grants(npub, keyset_id);
+            CREATE INDEX IF NOT EXISTS idx_cmus_treasurer_status
+                ON cmus(treasurer_npub, status);
+            CREATE INDEX IF NOT EXISTS idx_cmus_status_public_listing
+                ON cmus(status, public_listing);
+            CREATE INDEX IF NOT EXISTS idx_commissioning_verifications_status
+                ON commissioning_verifications(status);
+            CREATE INDEX IF NOT EXISTS idx_treasury_nonces_pubkey_action
+                ON treasury_nonces(pubkey, action);
+            """
+        )
 
     def _cmu_keyset_metadata(self, keyset_id: str) -> dict:
         with self._connection() as connection:
@@ -552,6 +611,10 @@ class Store:
                 """,
                 (keyset_id,),
             ).fetchone()
+        return self._cmu_keyset_metadata_from_row(row)
+
+    @staticmethod
+    def _cmu_keyset_metadata_from_row(row) -> dict:
         if row is None:
             return {
                 "friendly_name": None,
@@ -584,23 +647,60 @@ class Store:
         return row["status"] if row is not None else "active"
 
     def keyset_responses(self, *, include_keys: bool) -> list[dict]:
+        with self._connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT keyset_id, status, friendly_name, friendly_unit_alias,
+                    treasurer_npub, material_kind, public_listing
+                FROM cmus ORDER BY created_at, keyset_id
+                """
+            ).fetchall()
+            if any(row["keyset_id"] not in self.keysets for row in rows):
+                self._load_persisted_keysets(connection)
+        cmu_rows = {row["keyset_id"]: row for row in rows}
         return [
-            self._keyset_response(self.keysets[keyset_id], include_keys=include_keys)
+            self._keyset_response(
+                self.keysets[keyset_id],
+                include_keys=include_keys,
+                cmu_row=cmu_rows.get(keyset_id),
+            )
             for keyset_id in self.keyset_order
+            if keyset_id in self.keysets
         ]
 
     def keyset_response(self, keyset_id: str, *, include_keys: bool) -> dict:
-        keyset = self.keysets.get(keyset_id)
-        if keyset is None:
-            raise ClearError("keyset not found")
-        return self._keyset_response(keyset, include_keys=include_keys)
+        with self._connection() as connection:
+            keyset = self.keysets.get(keyset_id)
+            if keyset is None:
+                self._load_persisted_keysets(connection)
+                keyset = self.keysets.get(keyset_id)
+            if keyset is None:
+                raise ClearError("keyset not found")
+            cmu_row = connection.execute(
+                """
+                SELECT keyset_id, status, friendly_name, friendly_unit_alias,
+                    treasurer_npub, material_kind, public_listing
+                FROM cmus WHERE keyset_id = ?
+                """,
+                (keyset_id,),
+            ).fetchone()
+        return self._keyset_response(
+            keyset,
+            include_keys=include_keys,
+            cmu_row=cmu_row,
+        )
+
+    @staticmethod
+    def _configure_sqlite_database(connection) -> None:
+        connection.execute("PRAGMA journal_mode = WAL")
 
     @contextmanager
     def _connection(self):
         connection = sqlite3.connect(self.database_path, timeout=30)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA synchronous = NORMAL")
+        connection.execute("PRAGMA busy_timeout = 30000")
         try:
             yield connection
         except Exception:
@@ -707,6 +807,9 @@ class Store:
                 raise ClearError("quote not found")
             keyset = self.keysets.get(quote["keyset_id"])
             if keyset is None:
+                self._load_persisted_keysets(connection)
+                keyset = self.keysets.get(quote["keyset_id"])
+            if keyset is None:
                 raise ClearError("quote keyset is not available")
             self._validate_outputs(outputs, keyset)
             amount = sum(output.amount for output in outputs)
@@ -763,6 +866,8 @@ class Store:
         return {"amount": amount, "unit": keyset.unit}
 
     def states(self, ys: list[str]) -> list[dict]:
+        if not ys:
+            return []
         placeholders = ",".join("?" for _ in ys)
         with self._connection() as connection:
             spent = {
@@ -1434,7 +1539,8 @@ class Store:
             if grant["status"] != "pending":
                 raise ClearError("only pending treasurer grants can be revoked")
             connection.execute(
-                "UPDATE treasurer_grants SET status = 'revoked', updated_at = ? WHERE id = ?",
+                "UPDATE treasurer_grants SET status = 'revoked', updated_at = ? "
+                "WHERE id = ?",
                 (self._now(grant["updated_at"]), grant_id),
             )
             self._audit(connection, "treasurer:grant-revoke", 0, grant_id)
@@ -1646,13 +1752,26 @@ class Store:
                 "UPDATE cmus SET description = ? WHERE keyset_id = ?",
                 (description, cmu["keyset_id"]),
             )
-            self._audit(connection, "cmu:description", 0, unit_or_keyset_id, cmu["keyset_id"])
+            self._audit(
+                connection,
+                "cmu:description",
+                0,
+                unit_or_keyset_id,
+                cmu["keyset_id"],
+            )
         return self.get_cmu(unit_or_keyset_id)
 
-    def cmu_description_from_treasury_envelope(self, envelope: dict, *, mint_url: str) -> dict:
+    def cmu_description_from_treasury_envelope(
+        self,
+        envelope: dict,
+        *,
+        mint_url: str,
+    ) -> dict:
         try:
             payload, event = verify_envelope(
-                envelope, expected_action="cmu:description", expected_mint=mint_url,
+                envelope,
+                expected_action="cmu:description",
+                expected_mint=mint_url,
             )
         except TreasuryAuthError as exc:
             raise ClearError(str(exc)) from exc
@@ -1662,17 +1781,31 @@ class Store:
             raise ClearError("treasury request keyset_id is required")
         with self._transaction() as connection:
             self._record_treasury_nonce(
-                connection, nonce=payload["nonce"], pubkey=event["pubkey"],
-                action=payload["action"], now=self._now(),
+                connection,
+                nonce=payload["nonce"],
+                pubkey=event["pubkey"],
+                action=payload["action"],
+                now=self._now(),
             )
-            cmu = self._active_cmu_for_treasury_pubkey(connection, event["pubkey"], keyset_id)
+            cmu = self._active_cmu_for_treasury_pubkey(
+                connection,
+                event["pubkey"],
+                keyset_id,
+            )
             connection.execute(
                 "UPDATE cmus SET description = ? WHERE keyset_id = ?",
                 (description, cmu["keyset_id"]),
             )
-            self._audit(connection, "cmu:description:treasury", 0, payload["action"], keyset_id)
+            self._audit(
+                connection,
+                "cmu:description:treasury",
+                0,
+                payload["action"],
+                keyset_id,
+            )
             updated = connection.execute(
-                "SELECT * FROM cmus WHERE keyset_id = ?", (keyset_id,),
+                "SELECT * FROM cmus WHERE keyset_id = ?",
+                (keyset_id,),
             ).fetchone()
         return self._cmu_response(updated)
 

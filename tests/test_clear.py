@@ -1490,6 +1490,65 @@ def test_created_cmu_keyset_survives_restart(tmp_path) -> None:
     assert created in cmus
 
 
+def test_store_initializes_sqlite_indexes(tmp_path) -> None:
+    app = create_app(settings(tmp_path))
+    with TestClient(app):
+        with app.state.store._connection() as connection:
+            indexes = {
+                row["name"]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'index'"
+                ).fetchall()
+            }
+
+    assert {
+        "idx_audit_log_keyset_action",
+        "idx_signed_outputs_keyset_operation",
+        "idx_spent_proofs_keyset_reason",
+        "idx_mint_quotes_keyset",
+        "idx_treasurer_grants_npub_status",
+        "idx_cmus_treasurer_status",
+        "idx_treasury_nonces_pubkey_action",
+    }.issubset(indexes)
+
+
+def test_running_store_refreshes_externally_created_cmu(tmp_path) -> None:
+    configured = settings(tmp_path)
+    first_app = create_app(configured)
+    second_app = create_app(configured)
+    npub = "npub1treasurer0000000000000000000000000000000000000000"
+    headers = {"Authorization": f"Bearer {OPERATOR_TOKEN}"}
+
+    with TestClient(first_app) as first_client, TestClient(second_app) as second_client:
+        first_client.post(
+            "/v1/operator/treasurers",
+            json={"npub": npub},
+            headers=headers,
+        )
+        grant = first_client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": npub},
+            headers=headers,
+        ).json()
+        created = first_client.post(
+            "/v1/operator/cmus",
+            json={"grant_id": grant["id"], "name": "Live Refresh Credits"},
+            headers=headers,
+        ).json()
+
+        assert created["keyset_id"] not in second_app.state.store.keysets
+
+        quote = second_client.post(
+            "/v1/mint/quote/clear",
+            json={"amount": 1, "unit": created["unit"]},
+        )
+        keysets = second_client.get("/v1/keysets").json()["keysets"]
+
+    assert quote.status_code == 200, quote.json()
+    assert quote.json()["unit"] == created["unit"]
+    assert created["keyset_id"] in {keyset["id"] for keyset in keysets}
+
+
 def test_created_cmu_can_issue_and_retire_independently(tmp_path) -> None:
     configured = settings(tmp_path)
     app = create_app(configured)
