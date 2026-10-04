@@ -79,6 +79,15 @@ stablecoin payment rails and token contracts.
 
 [Read the policy brief](chaumian-mint-vs-stablecoins.md){ .md-button .md-button--primary }
 
+## Where Is the Holding?
+
+Bitcoin outputs, Ethereum token contracts, and Cashu bearer proofs place
+holding evidence and spending authority in different places. This brief
+compares their implications for privacy, control, resilience, recovery,
+auditability, and redemption, and explains the resulting priorities for Clear.
+
+[Read the policy brief](where-is-the-holding.md){ .md-button .md-button--primary }
+
 ## Hidden Complexity and Clear
 
 Research from the Bank for International Settlements (BIS) shows that public
