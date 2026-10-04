@@ -11,7 +11,7 @@ description: "Digital minting infrastructure for issuer-defined treasury units: 
 
 <p class="clear-tagline">Digital minting infrastructure for issuer-defined treasury units.</p>
 
-<p class="clear-intro">Clear is not primarily a payment rail. It is electronic coinage machinery: an issuer defines a treasury unit, an authorized treasurer issues private bearer Mint Notes, holders circulate them, and recognized parties redeem or retire them under policy. The name also describes the relationship: Credit-Liability Ecash, Authorized and Redeemable.</p>
+<p class="clear-intro">Clear gives communities and institutions the tools to issue their own circulating digital units. An issuer defines what a unit represents, a treasurer authorizes issuance, and the mint creates private bearer Mint Notes that holders can exchange and redeem under the issuer's policy. Built on Cashu, Clear brings treasury authority and holder-held digital value into one minting model.</p>
 
 [Why Clear?](why-clear.md){ .md-button .md-button--primary }
 [Organization-issued value](organization-issued-value.md){ .md-button .md-button--primary }
@@ -20,14 +20,24 @@ description: "Digital minting infrastructure for issuer-defined treasury units: 
 
 </section>
 
-## Digital coinage, not a payment rail
+## Treasury-defined value, held by the holder
 
-Blockchains, stablecoins, card networks, and Lightning invoices are mostly
-payment rails: they move value that already has an external unit and settlement
-meaning. Clear starts one layer earlier. It gives an institution a way to mint
-its own distinct bearer units, define the policy that gives them meaning, and
-let holders circulate them without turning every transfer into an account entry
-inside one application.
+Clear combines an old institutional function with modern cryptography: an
+organization defines a unit and its obligations, delegates authority to issue
+it, and recognizes it when it returns for redemption. Holders carry the evidence
+of their holdings as Mint Notes rather than relying on a balance account at the
+issuer for every transfer. The name describes the relationship:
+**Credit-Liability Ecash, Authorized and Redeemable.**
+
+The core mechanism is **mint-enforced unspent bearer proofs**. Wallets hold the
+proofs; the mint maintains the authoritative pending and spent state. A recipient
+normally swaps received notes for fresh ones to prevent the sender from reusing
+them. Privacy comes from Cashu's blind signatures, while spendability and
+redemption still depend on the mint and the responsible institutions.
+
+Payment rails can fund or settle a program. Clear supplies the minting layer:
+who may issue a unit, what holders possess, and how that unit circulates under
+its own policy.
 
 That makes Clear useful for communities and corporations that need credits,
 vouchers, benefits, allowances, or service units. The same model can also serve
@@ -36,6 +46,8 @@ compute-credit systems for software agents. In each case, the important
 question is not merely how value moves. It is who is authorized to mint the
 unit, what the unit represents, where it is recognized, and how it is redeemed
 or retired.
+
+[Compare Bitcoin, Ethereum tokens, and Cashu](policy-briefs/where-is-the-holding.md){ .md-button }
 
 ## Cashu, decoupled
 
@@ -113,8 +125,9 @@ does not infer authority from a payment invoice.
 
 ### Circulate
 
-Wallets hold Mint Notes and transfer them directly. The mint supports swaps and
-prevents the underlying Cashu proofs from being spent twice.
+Wallets hold Mint Notes and transfer them directly. Recipients swap received
+notes for fresh proofs at the mint, which enforces pending and spent state to
+prevent reuse.
 
 </article>
 
