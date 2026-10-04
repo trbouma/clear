@@ -2,6 +2,16 @@
 
 Status: Analysis note
 
+## The core distinctions
+
+- **Bitcoin: ledger-enforced unspent outputs.**
+- **Ethereum tokens: ledger-enforced contract balances.**
+- **Cashu: mint-enforced unspent bearer proofs.**
+
+This is the framework for the analysis. Bitcoin tracks individual transaction outputs, not whole unspent transactions. Ethereum maintains native ETH in account balances; ERC-20 tokens maintain balances in contract state. Cashu proofs live with the holder, but their spendability depends on the mint's authoritative pending and spent state.
+
+Here, "ledger-enforced" means enforcement through network validation and consensus under the applicable rules. These distinctions describe holding and double-spend mechanisms, not guarantees of economic value, backing, or redemption.
+
 ## Purpose and scope
 
 **Where is the evidence of a holding maintained, and who determines whether it can be spent?**
@@ -47,6 +57,12 @@ The crucial policy distinction is between **execution assurance** and **substant
 Assessment must therefore examine the deployed contract, proxy and upgrade arrangements, role assignments, and external dependencies. Administrative powers are neither universal to ERC-20 nor ruled out by it. An immutable contract and an upgradeable issuer-controlled token can expose the same standard interface while offering different protections.
 
 Allowances introduce a further authorization boundary: another contract may be permitted to spend tokens. Wallet compromise is not the only route to loss; an unsafe approval can expose value while the account's private key remains secret.
+
+### Where stablecoins fit
+
+Mainstream blockchain stablecoins generally follow the balance-recording model illustrated by Ethereum tokens: holdings are recorded in blockchain state and transfers update those records, rather than passing holder-held mint-signed proofs. On Ethereum and compatible networks, ERC-20 is a common implementation. This does not mean stablecoins run only on Ethereum or universally use ERC-20. Other networks use different token programs or native token facilities. For example, Circle documents USDC as a smart contract on Ethereum-compatible chains and as using built-in token primitives on non-compatible chains. [Circle: Multichain USDC](https://www.circle.com/multi-chain-usdc).
+
+The useful generalization is therefore **ledger-maintained token holdings**, not universal Ethereum implementation. A stablecoin's price target, reserve arrangements, and redemption obligations are a separate layer from that recording mechanism. Stable value is an economic objective, not a requirement to use any particular accounting architecture. Clear's contrast with mainstream stablecoins concerns how holdings and transfers are represented; it does not establish that every stablecoin has identical governance or that bearer units cannot target a stable value.
 
 ## 4. Cashu: holder-held evidence, mint-maintained exclusion
 

@@ -5,6 +5,18 @@ description: Bitcoin outputs, Ethereum token contracts, and Cashu proofs distrib
 
 # Where Is the Holding?
 
+The core distinctions are:
+
+- **Bitcoin: ledger-enforced unspent outputs.**
+- **Ethereum tokens: ledger-enforced contract balances.**
+- **Cashu: mint-enforced unspent bearer proofs.**
+
+Bitcoin tracks outputs, not whole unspent transactions. Native ETH uses account
+balances; Ethereum tokens use contract balances. Cashu proofs live with the
+holder, but their spendability depends on the mint's pending and spent state.
+Ledger enforcement rests on network validation and consensus. None of these
+mechanisms alone guarantees economic value or redemption.
+
 Digital value is often discussed as though every system merely moves a balance
 between wallets. A more revealing question is: **Where is the evidence of a
 holding maintained, and who determines whether it can be spent?**
@@ -35,6 +47,18 @@ ERC-20 standardizes an interface, not a complete monetary constitution.
 Issuance, freezes, upgrades, and administrative powers vary by contract.
 Faithful execution does not guarantee fair rules, freedom from defects, or
 redeemable backing. [ERC-20 specification](https://eips.ethereum.org/EIPS/eip-20).
+
+**Mainstream blockchain stablecoins generally use the balance-recording model
+illustrated by Ethereum tokens**, rather than holder-held bearer proofs. This
+does not mean they all run on Ethereum: ERC-20 is common on Ethereum-compatible
+networks, while other blockchains use different token mechanisms. USDC, for
+example, uses smart contracts on Ethereum-compatible chains and built-in token
+primitives on other networks. The shared feature is ledger-maintained holdings,
+not a single blockchain or token standard.
+[Circle: Multichain USDC](https://www.circle.com/multi-chain-usdc).
+
+A stablecoin's price target and backing are separate from this mechanism;
+neither stable value nor redemption assurance follows from its accounting model.
 
 Cashu places proof secrets and mint signatures with the holder. Blind signatures
 support unlinkability between issuance and later spending; a named balance
