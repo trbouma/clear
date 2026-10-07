@@ -88,6 +88,15 @@ auditability, and redemption, and explains the resulting priorities for Clear.
 
 [Read the policy brief](where-is-the-holding.md){ .md-button .md-button--primary }
 
+## Inference Credits and User Agency
+
+Organizations could turn purchased or self-hosted inference capacity into
+private, transferable service credits. This brief explores where Clear offers
+users more discretion than account-bound allocations, along with the privacy,
+metering, redemption, and governance conditions needed to make that useful.
+
+[Read the policy brief](inference-credits-and-user-agency.md){ .md-button .md-button--primary }
+
 ## Hidden Complexity and Clear
 
 Research from the Bank for International Settlements (BIS) shows that public
