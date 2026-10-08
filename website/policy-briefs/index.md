@@ -33,6 +33,9 @@ keyset-bound Clear Mint Units (CMUs), and explicit issuer policy.
 
 ## Credit, Coinage and Clear
 
+Includes distinct Haudenosaunee longhouse and Northwest Coast potlatch
+examples, with Indigenous-authored sources and limits on the analogy to Clear.
+
 Drawing on David Graeber's account of the long oscillation between credit
 systems and coinage systems, this brief starts from the oscillation itself and
 then explains why Clear sits in the middle: credit-like in meaning, coin-like

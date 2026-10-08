@@ -19,8 +19,8 @@ and forth between those models, and often combines them.
 
 Clear sits inside that oscillation rather than outside it. It is neither
 ordinary credit nor ordinary coin. It is a private bearer instrument issued
-against an explicit treasury promise. It carries some of the portability and
-finality people associate with coinage, while preserving the issuer-specific
+against an explicit treasury promise. It carries some of the portability
+people associate with coinage, while preserving the issuer-specific
 obligation and recognition that make credit systems work.
 
 That middle position is exactly the opportunity.
@@ -57,6 +57,67 @@ generalized violence  -> bullion, coinage, portable bearer value
 ```
 
 Clear should be understood against that background.
+
+## Indigenous institutions beyond the binary
+
+Graeber's Indigenous examples also reveal the limits of treating all economic
+life as either credit or coinage. Shared provisioning, gifts, and obligations
+can organize resources without being commercial debts or transferable claims.
+His Eurasian oscillation is not a universal sequence through which every
+society passes.
+
+### Haudenosaunee longhouses: provisioning through collective authority
+
+In chapter 2, Graeber draws on historical accounts of the Haudenosaunee,
+described in his source as the Six Nations of the Iroquois. He discusses goods
+stored in longhouses and allocated by women's councils, then uses a Seneca
+longhouse example to challenge the imagined necessity of barter between
+neighbors. The point is organized provisioning, not an early version of a
+token market. See *Debt*, printed pages 29 and 34.
+
+This is a northeastern North American example, distinct from the Northwest
+Coast examples below. The Onondaga Nation's own account describes longhouses
+as homes for extended clan families, while its account of Clan Mothers
+explains their continuing political and social responsibilities.
+[Onondaga Nation: Homes](https://www.onondaganation.org/culture/homes/);
+[Clan Mothers](https://www.onondaganation.org/government/clan-mothers/).
+
+For Clear, the limited lesson is that resource allocation begins with
+recognized responsibilities and institutions, not with a market or a mint.
+A community might choose digital instruments for some allocations, but a
+bearer entitlement is not equivalent to collective provisioning. Some
+relationships and obligations should remain outside a transferable-unit model.
+
+### Northwest Coast potlatches: giving, witnessing, and recognition
+
+In chapter 5, Graeber discusses competitive generosity among Northwest Coast
+peoples, naming Haida, Tlingit, and people he calls "Kwakiutl" in the terminology
+of the older literature. His discussion emphasizes prestige, rivalry, and
+the possibility that exchange becomes hierarchy. It should not be read as a
+complete account of these distinct peoples or their institutions. See *Debt*,
+printed page 117.
+
+For a community-grounded account of Kwakwaka'wakw potlatch practice, U'mista
+Cultural Centre explains the importance of giving, guests witnessing events,
+and recognition of names, rights, and privileges. Potlatching continues today;
+it is not a vanished stage on the way to modern banking.
+[U'mista: The Potlatch](https://umistapotlatch.ca/potlatch-eng.php).
+U'mista also documents colonial suppression and the confiscation and return
+of ceremonial belongings, essential context for discussing these institutions.
+[History of the Potlatch Collection](https://www.umista.ca/pages/collection-history).
+
+The connection to Clear is a question of institutional recognition: who can
+make an obligation meaningful, who witnesses authority, and how resources
+circulate within relationships. It is not a claim that potlatch gifts were
+coins, that ceremonial belongings were redeemable tokens, or that a digital
+signature can replace witnesses, law, kinship, or ceremony.
+
+Together, these examples broaden the framework: **credit and coinage are
+instruments within social orders, not an exhaustive description of those
+orders**. A contemporary Indigenous government or community could choose Clear
+for a specific service or benefit program under its own authority. That would
+be a new, community-directed application, not a technological reconstruction
+of a longhouse or potlatch and not an endorsement implied by these sources.
 
 ## Coinage created markets
 
@@ -246,6 +307,13 @@ That is Clear's opening.
 
 ## Sources
 
-- David Graeber, *Debt: The First 5,000 Years*, Melville House, 2011.
+- David Graeber, *Debt: The First 5,000 Years*, Melville House, 2011; chapter 2,
+  printed pp. 29 and 34 (Haudenosaunee longhouses), and chapter 5, printed p. 117
+  (Northwest Coast competitive giving). These are separate examples, not one
+  pan-Indigenous economic model.
+- Onondaga Nation, [Homes](https://www.onondaganation.org/culture/homes/) and
+  [Clan Mothers](https://www.onondaganation.org/government/clan-mothers/).
+- U'mista Cultural Centre, [The Potlatch](https://umistapotlatch.ca/potlatch-eng.php)
+  and [History of the Potlatch Collection](https://www.umista.ca/pages/collection-history).
 - G. F. Knapp, *The State Theory of Money*, 1905.
 - A. Mitchell-Innes, "What is Money?", *The Banking Law Journal*, 1913.

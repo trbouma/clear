@@ -141,6 +141,20 @@ food banks, mutual-aid groups, service clubs, community foundations, co-working
 facilities, resorts, and Indigenous community programs all need ways to
 coordinate limited resources under a shared mandate.
 
+For example, an Indigenous government or community organization could choose
+to issue a bounded allocation for transport, meals, or access to a
+community-operated facility. This is a hypothetical contemporary use, not a
+claim of adoption. The community would determine the relevant authority,
+eligibility, transfer rules, accepting providers, and control of program data.
+A transferable note may suit some benefits; others may depend on personal or
+collective responsibilities that should not be made transferable. Clear's
+treasurer role must follow the chosen governance arrangements, not prescribe
+them or presume that all Indigenous nations share one governance model.
+
+[Credit, Coinage and Clear](credit-coinage-and-clear.md#indigenous-institutions-beyond-the-binary)
+discusses distinct Haudenosaunee and Northwest Coast examples, including why
+their historical institutions should not be equated with digital minting.
+
 A Clear currency could operate as a community voucher system. Consider a group
 of participating food banks and local service providers:
 
