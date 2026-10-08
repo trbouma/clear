@@ -167,6 +167,10 @@ organizational choice, not merely a different interface for account credits.
 
 ## Related briefs
 
+[Howey, Treasury Responsibility, and Bearer Loyalty Units](https://github.com/trbouma/clear/blob/main/docs/HOWEY-TREASURY-AND-BEARER-LOYALTY-ANALYSIS.md)
+examines investment-contract considerations for issuers and treasurers,
+including purchase-earned rewards redeemable by subsequent holders.
+
 [Where Is the Holding?](where-is-the-holding.md) explains holder-held proofs and
 mint-enforced spending. [Cashu, Decoupled](cashu-decoupled.md) explains the
 treasury-authorized issuance model underlying this proposal.
