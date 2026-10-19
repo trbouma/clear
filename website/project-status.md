@@ -26,7 +26,7 @@ protocol experiment, not a production mint.
 - privileged `clear-root` bootstrap, issuance, treasury wallet, exact export,
   send, and retirement workflows;
 - issued, retired, circulating, and local-wallet balance inspection;
-- NIP-05 Clear capability discovery;
+- safebox.json Clear capability discovery;
 - NIP-59 kind `1059` delivery with inner kind `7379`;
 - tested pending transfer interoperability with Acorn and Safebox Web;
 - recipient acceptance into separate kind `7380` spendable proof state and
@@ -40,7 +40,7 @@ documented in the
 ## August 2026 transferable CMU milestone
 
 Clear now demonstrates organization-issued CMUs moving from a mint-operated
-treasury to a recipient wallet through a public mint, NIP-05 discovery, Nostr
+treasury to a recipient wallet through a public mint, safebox.json discovery, Nostr
 relay delivery, Acorn receipt storage, and Safebox Web display.
 
 This is the first end-to-end product-family proof that an organization-defined

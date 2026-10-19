@@ -24,95 +24,13 @@ def test_mint_public_route_requires_well_formed_https() -> None:
     assert root_delivery.mint_has_public_route("https://clear.example?q=1") is False
 
 
-def test_discover_clear_support_from_lightning_address(monkeypatch) -> None:
-    def fake_get_json(url):
-        assert url == "https://example.com/.well-known/nostr.json?name=alice"
-        return {
-            "names": {"alice": RECIPIENT_PUBKEY},
-            "relays": {RECIPIENT_PUBKEY: ["wss://relay.example"]},
-            "clear": {
-                "mints": ["http://clear.example"],
-                "units": ["cmu-0011223344556677"],
-                "protocols": ["clear-token-transfer"],
-                "transports": ["nip59"],
-                "kinds": [7379],
-                "label": "Alice Clear Wallet",
-            },
-        }
-
-    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
-
-    discovery = root_delivery.discover_clear_support(
-        "alice@example.com",
-        mint_url="http://clear.example",
-        unit="cmu-0011223344556677",
-    )
-
-    assert discovery["supported"] is True
-    assert discovery["source"] == "nip05"
-    assert discovery["recipient_pubkey"] == RECIPIENT_PUBKEY
-    assert discovery["relays"] == ["wss://relay.example"]
-
-
-def test_discover_clear_support_returns_unsupported_when_unit_differs(
-    monkeypatch,
-) -> None:
-    def fake_get_json(url):
-        return {
-            "names": {"alice": RECIPIENT_PUBKEY},
-            "relays": {RECIPIENT_PUBKEY: ["wss://relay.example"]},
-            "clear": {
-                "mints": ["http://clear.example"],
-                "units": ["cmu-other"],
-                "protocols": ["clear-token-transfer"],
-                "transports": ["nip59"],
-                "kinds": [7379],
-            }
-        }
-
-    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
-
-    discovery = root_delivery.discover_clear_support(
-        "alice@example.com",
-        mint_url="http://clear.example",
-        unit="cmu-0011223344556677",
-    )
-
-    assert discovery["supported"] is False
-
-
-def test_discover_clear_support_from_lightning_address_descriptor(
-    monkeypatch,
-) -> None:
-    def fake_get_json(url):
-        if url == "https://example.com/.well-known/nostr.json?name=alice":
-            raise root_delivery.DeliveryError("no nostr.json")
-        assert url == "https://example.com/.well-known/lnurlp/alice"
-        return {
-            "callback": "https://example.com/lnurl",
-            "clear": {
-                "pubkey": SECOND_RECIPIENT_PUBKEY,
-                "relays": ["wss://relay.example"],
-                "mints": ["http://clear.example"],
-                "units": ["cmu-0011223344556677"],
-                "protocols": ["clear-token-transfer"],
-                "transports": ["nip59"],
-                "kinds": [7379],
-            },
-        }
-
-    monkeypatch.setattr(root_delivery, "_get_json", fake_get_json)
-
-    discovery = root_delivery.discover_clear_support(
-        "alice@example.com",
-        mint_url="http://clear.example",
-        unit="cmu-0011223344556677",
-    )
-
-    assert discovery["supported"] is True
-    assert discovery["source"] == "lightning-address"
-    assert discovery["recipient_pubkey"] == SECOND_RECIPIENT_PUBKEY
-    assert discovery["relays"] == ["wss://relay.example"]
+def test_explicit_wallet_keys_still_work():
+    for key in (RECIPIENT_NPUB, RECIPIENT_PUBKEY):
+        result = root_delivery.discover_clear_support(
+            key, mint_url="https://mint.example", unit="credits")
+        assert result["recipient_pubkey"] == RECIPIENT_PUBKEY
+        assert result["source"] == "pubkey" and result["supported"]
+        assert result["relays"] == []
 
 
 @pytest.mark.parametrize("encoder", [encode_token_v3, encode_token_v4])

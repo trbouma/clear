@@ -304,7 +304,7 @@ clear-treasury --mint https://clear.safebox.dev \
 ```
 
 The treasurer can send an exact amount from the local wallet to a compatible
-NIP-05 address or `npub`:
+Safebox wallet address or explicit wallet `npub` / hex public key:
 
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
@@ -387,3 +387,20 @@ the container. Both update paths are audited. Existing CMUs start with an empty
 description after the automatic database migration. Description changes do not
 alter identity, supply, or listing visibility. An unlisted CMU's description is
 still visible on its direct page; do not put secrets in it.
+
+### Wallet address discovery
+
+`clear-treasury send` resolves `name@domain` only through
+`https://domain/.well-known/safebox.json?name=name`. The version-1 document must
+match the requested address, provide its Acorn wallet key and public WSS relays,
+and advertise `clear-token-transfer` with `nip59`, kind `7379`, and the selected
+unit (or omit units to support any Clear unit).
+
+There is no NIP-05 or LNURL fallback, even on 404 or network errors. A separate
+social npub cannot become the wallet destination. Older receivers must publish
+the wallet directory, or the treasurer can supply a verified wallet public key
+and explicit `--relay`. Do not substitute the recipient's social npub.
+
+Mint acceptance, treasury accounting, internal-mint guards and Stroma delivery
+are unchanged. Discovery does not add a mint allowlist. Delivery errors retain
+the existing uncertain-outcome semantics; do not blindly repeat a send.

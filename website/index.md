@@ -104,7 +104,7 @@ redemption and retirement according to the organization's published policy.
 
 The working lab milestone now carries that model across product boundaries:
 Clear issues CMUs into a treasury wallet, sends an encrypted transfer to a
-NIP-05 address, Acorn stores the incoming kind `7379` transfer separately from
+Safebox wallet address, Acorn stores the incoming kind `7379` transfer separately from
 cash, and Safebox Web lets the recipient accept it into the corresponding
 spendable Clear Balance.
 

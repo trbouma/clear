@@ -286,9 +286,9 @@ Circulating means issued minus retired in the Clear mint accounting store.
 `outstanding` is retained as a compatibility alias for the same amount. Neither
 field means every Mint Note is currently held by a reachable wallet.
 
-## NIP-05 delivery
+## Safebox wallet delivery
 
-`clear-root send` delivers Clear tokens to a NIP-05 or Lightning-style address
+`clear-root send` delivers Clear tokens to a Safebox wallet address
 that advertises Clear support:
 
 ```sh
@@ -337,14 +337,16 @@ ephemeral sender key for the transfer.
 
 ## Receiver advertisement
 
-A compatible NIP-05 provider advertises Clear receive support in the
-well-known response:
+A compatible Safebox publishes `/.well-known/safebox.json?name=alice`:
 
 ```json
 {
-  "clear": {
-    "alice": {
-      "protocols": ["clear-token-transfer"],
+  "version": 1,
+  "address": "alice@example.com",
+  "pubkey": "<Acorn wallet public key as 64 lowercase hex characters>",
+  "relays": ["wss://relay.example.com"],
+  "capabilities": {
+    "clear-token-transfer": {
       "transports": ["nip59"],
       "kinds": [7379]
     }
@@ -352,10 +354,10 @@ well-known response:
 }
 ```
 
-Optional `mints` and `units` arrays restrict what the receiver claims to
-accept. When those arrays are omitted or empty, the receiver advertises general
-Clear support and validates the mint, CMU, and keyset from the encrypted
-payload after receipt.
+An optional nonempty `units` array limits supported units. Omitting it advertises
+general Clear support. No mint allowlist is inferred from discovery; the receiver
+validates the mint, CMU and keyset after receipt. NIP-05 and LNURL are never wallet
+fallbacks. Explicit wallet public keys require an explicit relay route.
 
 ## Relationship to Acorn
 
@@ -366,7 +368,7 @@ and are not counted in the sats balance.
 Acorn's private `home_relay` and its public receive route are deliberately
 separate. The home relay is the wallet's current state context and may be
 reachable only inside a Mainstay, local network, or private deployment. Remote
-Clear senders should use the recipient's public NIP-05 relay hints, signed
+Clear senders should use the recipient's public safebox.json relay hints, signed
 inbox relays, or explicit public relay override.
 
 Operators troubleshooting a missing Acorn receipt should first inspect the
@@ -393,7 +395,7 @@ poetry run acorn receive-clear --event-id <event-id> --json
 poetry run acorn clear accept <event-id> --json
 ```
 
-A Safebox Web NIP-05 endpoint that advertises Clear receive support must list
+A Safebox Web safebox.json endpoint that advertises Clear receive support must list
 externally reachable WebSocket relays. Context-local relays, Docker service
 names, loopback addresses, and VPN-only routes are not suitable public receive
 routes for remote treasury delivery.

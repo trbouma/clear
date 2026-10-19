@@ -96,7 +96,7 @@ tokens, database identity, and tests. See
 - privileged `clear-root` bootstrap, treasury issuance, exact export, send,
   and retirement
 - canonical keyset-bound CMUs with wallet-facing aliases
-- NIP-05 discovery and private NIP-59 kind `7379` delivery
+- Safebox v1 `safebox.json` wallet discovery and private NIP-59 kind `7379` delivery
 - signed service commissioning requests, operator attestations, and descriptors
 - pending Clear transfer interoperability with Acorn and Safebox Web
 - FastAPI service, Poetry entry point, tests, and MkDocs documentation

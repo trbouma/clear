@@ -100,27 +100,27 @@ or enforcement of optional spending conditions. Optional DLEQ and witness
 fields survive codec round trips; decoding alone does not verify them or
 establish that proofs are unspent.
 
-A Lightning-address or NIP-05 well-known response can advertise lab Clear
-delivery with a `clear` object. The current Safebox-compatible shape
-advertises NIP-59 delivery with inner kind `7379`:
+A compatible Safebox publishes `/.well-known/safebox.json?name=alice`:
 
 ```json
 {
-  "clear": {
-    "alice": {
-      "protocols": ["clear-token-transfer"],
+  "version": 1,
+  "address": "alice@example.com",
+  "pubkey": "<Acorn wallet public key as 64 lowercase hex characters>",
+  "relays": ["wss://relay.example.com"],
+  "capabilities": {
+    "clear-token-transfer": {
       "transports": ["nip59"],
-      "kinds": [7379],
-      "mints": ["http://127.0.0.1:3339"],
-      "units": ["cmu-0011223344556677"]
+      "kinds": [7379]
     }
   }
 }
 ```
 
-The `mints` and `units` arrays are optional restrictions. When omitted, the
-receiver advertises general Clear support and validates the mint, CMU, and
-keyset ids after decrypting the transfer.
+An optional nonempty `units` array limits supported units. Omitting it advertises
+general Clear support. No mint allowlist is inferred from discovery; the receiver
+validates the mint, CMU and keyset after receipt. NIP-05 and LNURL are never wallet
+fallbacks. Explicit wallet public keys require an explicit relay route.
 
 ## Run checks
 

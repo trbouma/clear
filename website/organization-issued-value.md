@@ -117,7 +117,7 @@ The current lab system can:
 - issue CMUs into a local treasury wallet;
 - report issued, retired, and circulating supply;
 - select an exact transfer amount and retain change;
-- discover Clear support through a recipient's NIP-05 address;
+- discover Clear support through a recipient's Safebox wallet address;
 - deliver an encrypted kind `7379` transfer through NIP-59;
 - let Acorn store the transfer separately from cash;
 - accept the transfer into spendable kind `7380` Clear proof state;

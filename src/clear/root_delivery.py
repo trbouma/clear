@@ -121,20 +121,6 @@ async def _publish_verified(
     return verified_relays
 
 
-def _get_json(url: str) -> dict[str, Any]:
-    request = urllib.request.Request(url, headers={"Accept": "application/json"})
-    try:
-        with urllib.request.urlopen(request, timeout=10) as response:
-            payload = json.loads(response.read())
-    except urllib.error.HTTPError as exc:
-        raise DeliveryError(f"GET {url} failed with {exc.code}") from exc
-    except urllib.error.URLError as exc:
-        raise DeliveryError(f"GET {url} failed: {exc.reason}") from exc
-    if not isinstance(payload, dict):
-        raise DeliveryError(f"GET {url} did not return a JSON object")
-    return payload
-
-
 def _post_json(url: str, payload: dict[str, Any]) -> dict[str, Any]:
     request = urllib.request.Request(
         url,
@@ -151,13 +137,6 @@ def _post_json(url: str, payload: dict[str, Any]) -> dict[str, Any]:
     except urllib.error.URLError as exc:
         raise DeliveryError(f"POST {url} failed: {exc.reason}") from exc
     return json.loads(body) if body else {"status": "OK"}
-
-
-def _address_parts(address: str) -> tuple[str, str]:
-    local, sep, domain = address.strip().lower().partition("@")
-    if not sep or not local or not domain:
-        raise DeliveryError("address must be a lightning address or NIP-05 name")
-    return local, domain
 
 
 def _as_list(value: Any) -> list[str]:
@@ -186,124 +165,6 @@ def _pubkey_to_npub(pubkey: str) -> str:
         raise DeliveryError("recipient public key is invalid") from exc
 
 
-def _descriptor_from_payload(
-    payload: dict[str, Any],
-    local: str,
-) -> dict[str, Any] | None:
-    candidate = (
-        payload.get("clear")
-        or payload.get("clear_mint")
-        or payload.get("clearMint")
-    )
-    if (
-        isinstance(candidate, dict)
-        and local in candidate
-        and isinstance(candidate[local], dict)
-    ):
-        return candidate[local]
-    if isinstance(candidate, dict):
-        return candidate
-    return None
-
-
-def _match_descriptor(
-    descriptor: dict[str, Any],
-    *,
-    mint_url: str,
-    unit: str,
-) -> dict[str, Any] | None:
-    mints = _as_list(descriptor.get("mints") or descriptor.get("mint"))
-    units = _as_list(descriptor.get("units") or descriptor.get("unit"))
-    normalized_mint = mint_url.rstrip("/")
-    if mints and normalized_mint not in mints:
-        return None
-    if units and unit not in units:
-        return None
-    protocols = _as_list(descriptor.get("protocols") or descriptor.get("protocol"))
-    transports = _as_list(descriptor.get("transports") or descriptor.get("transport"))
-    try:
-        kinds = [int(each) for each in descriptor.get("kinds", []) or []]
-    except (TypeError, ValueError):
-        return None
-    if protocols and CLEAR_TRANSFER_PROTOCOL not in protocols:
-        return None
-    if transports and "nip59" not in transports and "gift-wrap" not in transports:
-        return None
-    if kinds and CLEAR_TRANSFER_KIND not in kinds:
-        return None
-    recipient_pubkey = descriptor.get("pubkey") or descriptor.get("npub")
-    if isinstance(recipient_pubkey, str):
-        try:
-            recipient_pubkey = _npub_to_hex(recipient_pubkey)
-        except DeliveryError:
-            return None
-    else:
-        recipient_pubkey = None
-    return {
-        "mints": mints,
-        "units": units,
-        "protocols": protocols,
-        "transports": transports,
-        "kinds": kinds,
-        "label": descriptor.get("label"),
-        **(
-            {
-                "recipient_pubkey": recipient_pubkey,
-                "recipient_npub": _pubkey_to_npub(recipient_pubkey),
-            }
-            if recipient_pubkey
-            else {}
-        ),
-        **(
-            {"relays": _as_list(descriptor.get("relays"))}
-            if descriptor.get("relays")
-            else {}
-        ),
-    }
-
-
-def _nip05_discovery(
-    address: str,
-    *,
-    mint_url: str,
-    unit: str,
-) -> dict[str, Any]:
-    local, domain = _address_parts(address)
-    url = f"https://{domain}/.well-known/nostr.json?name={urllib.parse.quote(local)}"
-    payload = _get_json(url)
-    names = payload.get("names")
-    relays = payload.get("relays") or {}
-    if not isinstance(names, dict):
-        raise DeliveryError("NIP-05 response is missing names")
-    pubkey = names.get(local) or names.get(local.lower())
-    if not isinstance(pubkey, str):
-        raise DeliveryError("NIP-05 response does not name this address")
-    pubkey = _npub_to_hex(pubkey)
-    recipient_relays = _as_list(
-        relays.get(pubkey) or relays.get(pubkey.lower())
-        if isinstance(relays, dict)
-        else None
-    )
-    descriptor = _descriptor_from_payload(payload, local)
-    match = (
-        _match_descriptor(descriptor, mint_url=mint_url, unit=unit)
-        if descriptor is not None
-        else None
-    )
-    return {
-        "address": address,
-        "supported": match is not None,
-        "source": "nip05",
-        "lookup_url": url,
-        "mint": mint_url.rstrip("/"),
-        "unit": unit,
-        "recipient_pubkey": pubkey,
-        "recipient_npub": _pubkey_to_npub(pubkey),
-        "relays": recipient_relays,
-        **(match or {}),
-    }
-
-
 def discover_clear_support(address: str, *, mint_url: str, unit: str) -> dict[str, Any]:
     if "@" not in address:
         pubkey = _npub_to_hex(address.strip())
@@ -317,46 +178,20 @@ def discover_clear_support(address: str, *, mint_url: str, unit: str) -> dict[st
             "recipient_npub": _pubkey_to_npub(pubkey),
             "relays": [],
         }
+    from clear.wallet_discovery import discover_wallet
 
-    errors: list[str] = []
     try:
-        return _nip05_discovery(address, mint_url=mint_url, unit=unit)
-    except DeliveryError as exc:
-        errors.append(str(exc))
-
-    local, domain = _address_parts(address)
-    checks = [
-        (
-            "lightning-address",
-            f"https://{domain}/.well-known/lnurlp/{urllib.parse.quote(local)}",
-        ),
-    ]
-    for kind, url in checks:
-        try:
-            payload = _get_json(url)
-        except DeliveryError as exc:
-            errors.append(str(exc))
-            continue
-        descriptor = _descriptor_from_payload(payload, local)
-        if descriptor is None:
-            continue
-        match = _match_descriptor(descriptor, mint_url=mint_url, unit=unit)
-        if match is not None:
-            return {
-                "address": address,
-                "supported": True,
-                "source": kind,
-                "lookup_url": url,
-                "mint": mint_url.rstrip("/"),
-                "unit": unit,
-                **match,
-            }
+        destination = discover_wallet(address, unit)
+    except (ValueError, OSError) as exc:
+        raise DeliveryError(
+            "Safebox wallet discovery failed. No Clear token was sent."
+        ) from exc
     return {
-        "address": address,
-        "supported": False,
+        **destination,
+        "source": "safebox-v1",
         "mint": mint_url.rstrip("/"),
         "unit": unit,
-        "errors": errors,
+        "recipient_npub": _pubkey_to_npub(destination["recipient_pubkey"]),
     }
 
 

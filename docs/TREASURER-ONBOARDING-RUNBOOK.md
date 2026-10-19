@@ -364,7 +364,7 @@ clear-treasury --mint https://clear.safebox.dev \
 ```
 
 The treasurer can send an exact amount from the local treasury wallet to a
-compatible NIP-05 address or `npub`:
+compatible Safebox wallet address or explicit wallet `npub`:
 
 ```bash
 clear-treasury --mint https://clear.safebox.dev \
@@ -405,7 +405,7 @@ Use this distinction when debugging delivery:
   Clear treasurer.
 - signed inbox relays and `public_relays` are externally reachable receive
   hints. These are the routes remote senders can use for NIP-59 gift wraps.
-- a NIP-05 provider, such as Safebox Web, advertises the public receive
+- a safebox.json provider, such as Safebox Web, advertises the public receive
   context. Its relay list must name relays that outside senders can actually
   reach.
 
