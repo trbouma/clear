@@ -502,6 +502,10 @@ def test_treasury_cli_rejects_unknown_cmu_id(monkeypatch, capsys) -> None:
 def test_treasury_cli_wallet_balance_uses_scoped_default_wallet(
     monkeypatch, capsys, tmp_path
 ) -> None:
+    monkeypatch.setattr("clear.wallet_labels.fetch_keysets", lambda mint: [{
+        "unit": "cmu-created", "friendly_alias": "Satellite Shares",
+        "friendly_unit_alias": "shares", "active": True,
+    }])
     treasurer = Keys(priv_k="1".zfill(64))
     monkeypatch.setattr(treasury_cli, "DEFAULT_TREASURY_WALLET_BASE", tmp_path)
     wallet_path = treasury_cli._wallet_path(
@@ -557,7 +561,8 @@ def test_treasury_cli_wallet_balance_uses_scoped_default_wallet(
     assert output["treasurer_npub"] == treasurer.public_key_bech32()
     assert output["wallet"] == str(wallet_path)
     assert output["balances"] == [
-        {"mint": "https://clear.example", "unit": "cmu-created", "amount": 8}
+        {"mint": "https://clear.example", "unit": "cmu-created", "amount": 8,
+         "friendly_alias": "Satellite Shares", "friendly_unit_alias": "shares"}
     ]
 
 
@@ -990,6 +995,9 @@ def test_treasury_cli_issue_requires_cmu_selector(monkeypatch, capsys) -> None:
 
 
 def test_treasury_cli_requires_nsec(monkeypatch, capsys) -> None:
+    def no_terminal(*args, **kwargs):
+        raise OSError("no terminal")
+    monkeypatch.setattr(treasury_cli, "open", no_terminal, raising=False)
     monkeypatch.delenv("CLEAR_TREASURER_NSEC", raising=False)
     monkeypatch.setattr(
         "sys.argv",
@@ -1004,4 +1012,4 @@ def test_treasury_cli_requires_nsec(monkeypatch, capsys) -> None:
     )
 
     assert treasury_cli.main() == 1
-    assert "treasurer nsec must be supplied" in capsys.readouterr().err
+    assert "Hidden key input requires a terminal" in capsys.readouterr().err

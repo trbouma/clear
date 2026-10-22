@@ -404,3 +404,18 @@ and explicit `--relay`. Do not substitute the recipient's social npub.
 Mint acceptance, treasury accounting, internal-mint guards and Stroma delivery
 are unchanged. Discovery does not add a mint allowlist. Delivery errors retain
 the existing uncertain-outcome semantics; do not blindly repeat a send.
+
+### Hidden key prompt
+
+For treasury commands such as `issue` and `send`, omit `--nsec` (or pass
+`--nsec ""`) to use hidden terminal input when `CLEAR_TREASURER_NSEC` is unset.
+An explicit nonempty key takes precedence over that environment variable.
+The prompted key is kept only for the current invocation. Commands without a
+terminal must supply a key explicitly or through the environment; they never
+fall back to visible secret input.
+
+`clear-treasury wallet balance` includes `friendly_alias` and
+`friendly_unit_alias` from each mint's public keyset metadata, while retaining
+`mint`, `unit`, and `amount`. If the mint is unavailable or has no label,
+the CMU unit identifier is shown instead. This lookup does not change local
+proofs or validate whether they remain unspent.

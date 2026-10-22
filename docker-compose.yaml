@@ -42,7 +42,11 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     volumes:
-      - clear-data:/app/data
+      - type: bind
+        source: "${CLEAR_DATA_DIR:?Set CLEAR_DATA_DIR in .env to the existing mint data directory}"
+        target: /app/data
+        bind:
+          create_host_path: false
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
@@ -102,10 +106,11 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     volumes:
-      - clear-data:/app/data
+      - type: bind
+        source: "${CLEAR_DATA_DIR:?Set CLEAR_DATA_DIR in .env to the existing mint data directory}"
+        target: /app/data
+        bind:
+          create_host_path: false
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
-
-volumes:
-  clear-data:

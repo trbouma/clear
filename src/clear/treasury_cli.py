@@ -21,6 +21,7 @@ from clear.root_delivery import (
     discover_clear_support,
     mint_has_public_route,
 )
+from clear.wallet_labels import with_friendly_labels
 from clear.root_wallet import (
     deposit_issue,
     export_token,
@@ -53,9 +54,22 @@ def _print_json(payload: dict) -> None:
 
 
 def _treasurer_nsec(args) -> str:
-    nsec = args.nsec or os.getenv("CLEAR_TREASURER_NSEC")
+    nsec = (args.nsec or "").strip() or os.getenv("CLEAR_TREASURER_NSEC", "").strip()
     if not nsec:
-        raise TreasuryError("treasurer nsec must be supplied with --nsec")
+        try:
+            with open("/dev/tty", "w", encoding="utf-8") as terminal:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", getpass.GetPassWarning)
+                    nsec = getpass.getpass("Treasurer nsec (hidden): ", stream=terminal).strip()
+        except (OSError, getpass.GetPassWarning) as exc:
+            raise TreasuryError(
+                "Hidden key input requires a terminal; supply --nsec or "
+                "CLEAR_TREASURER_NSEC for scripts."
+            ) from exc
+        if not nsec:
+            raise TreasuryError("Treasurer nsec cannot be empty")
+    # Reuse only in this command invocation; never write the key to disk.
+    args.nsec = nsec
     return nsec
 
 
@@ -362,7 +376,7 @@ def wallet_balance(args) -> int:
     _print_json(
         {
             "treasurer_npub": npub_from_nsec(nsec),
-            **wallet_summary(load_wallet(path), path),
+            **with_friendly_labels(wallet_summary(load_wallet(path), path)),
         }
     )
     return 0
@@ -471,7 +485,7 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     result.add_argument(
         "--nsec",
         default=None,
-        help="Treasurer nsec. Defaults to CLEAR_TREASURER_NSEC.",
+        help="Treasurer nsec. Uses CLEAR_TREASURER_NSEC, otherwise prompts with hidden input.",
     )
     result.add_argument(
         "--wallet",

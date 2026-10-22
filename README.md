@@ -157,6 +157,7 @@ leaking an internal address into a circulating token.
 ```bash
 cp .env.example .env
 # Set all three secrets in .env using independent `openssl rand -hex 32` values.
+# Set CLEAR_DATA_DIR to your existing mint data directory (see below).
 docker compose up --build --detach
 docker compose ps
 curl http://127.0.0.1:3339/health
@@ -175,8 +176,29 @@ Mainstay must instead be updated from its Mainstay deployment directory. See
 the [standalone deployment guide](https://trbouma.github.io/clear/deployment/)
 for the complete operating lifecycle.
 
-The mint database and privileged root wallet are stored in the named
-`clear-data` volume. The same image includes `clear-root`, which can be run in
+The mint database and privileged root wallet are stored in the host directory
+selected by `CLEAR_DATA_DIR` in the ignored `.env` file. Both services bind that
+same directory to `/app/data`. The setting is required, and Compose will not
+create a missing directory. There is no fallback to an old Docker volume.
+
+For the migrated Beelink deployment, set:
+
+```dotenv
+CLEAR_DATA_DIR=/mnt/lexar/clear
+```
+
+Verify `/mnt/lexar` is mounted before starting. Do not create an empty replacement
+directory for an existing mint. Keep the original master secret and instance
+settings. If upgrading from a named volume, stop both services and take a
+consistent backup first; select or migrate the current data deliberately. Merely
+changing this setting does not copy any data. Keep old copies until recovery is
+verified; never overwrite a newer database with an older one.
+
+For a brand-new mint only, create the chosen directory with ownership matching
+the image's UID/GID 10001 before starting. Keep host-specific paths in `.env`,
+not edits to Compose, so refreshes do not require stashing storage changes.
+
+ The same image includes `clear-root`, which can be run in
 the internal operator container with its injected operator environment:
 
 ```bash
@@ -240,7 +262,7 @@ docker compose exec clear-operator clear-root treasury disable \
   --reason "operator maintenance"
 ```
 
-`docker compose down` stops the deployment without removing the named volume.
+`docker compose down` stops the deployment without deleting the host data directory.
 
 The proposed multi-currency and signed-treasurer architecture is described in
 [Multi-Currency Treasurer Authorization](docs/MULTI-CURRENCY-TREASURER-AUTHORIZATION-DESIGN.md).
