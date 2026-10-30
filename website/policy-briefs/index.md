@@ -13,6 +13,15 @@ They are written for leaders, operators, policy makers, and partners who need
 to understand what Clear is trying to make possible before going deep into
 deployment details or protocol mechanics.
 
+## Community First, Circulating Credits
+
+Communities can choose portable service entitlements without automatically
+adding speculation, currency pegs, or exchange infrastructure. This brief
+explores holder privacy and agency, accountable acceptance networks, and the
+case for safeguards proportionate to the program's actual activities.
+
+[Read the policy brief](community-first-circulating-credits.md){ .md-button .md-button--primary }
+
 ## Old Function, New Tools
 
 Clear applies modern cryptography to an organizational treasury function that
