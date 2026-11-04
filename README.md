@@ -329,3 +329,18 @@ startup default to 300 seconds. OakGate's `./refresh-app.sh --timeout 120`
 remains app-only and leaves Keycloak and Redis running. Application checks
 (login, public HTTPS, record retrieval and a small payment) remain separate
 from container readiness. Never run two refresh operations concurrently.
+
+## Cryptographic dependency boundary
+
+Clear uses Stroma's `CurvePoint` and `CURVE_ORDER` API for secp256k1 point
+operations. Stroma owns the coincurve dependency, which uses libsecp256k1;
+Clear has no direct coincurve dependency. Cashu hash-to-curve, denomination
+key derivation, blinding/unblinding, and proof verification remain in Clear.
+
+The Stroma dependency tracks `main` in `pyproject.toml`; `poetry.lock` records
+the exact resolved commit for reproducible installs. Use
+`poetry update stroma-nostr` to advance to the latest branch revision. Ordinary
+`poetry install` uses the locked commit, and changes in a sibling Stroma checkout
+do not update Clear automatically. Run both libraries' tests when updating this
+boundary. Existing CMU identities and signature
+outputs are covered by a fixed pre-migration regression vector.

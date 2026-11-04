@@ -5,9 +5,8 @@ import time
 from dataclasses import replace
 
 import pytest
-from coincurve import PrivateKey, PublicKey
 from fastapi.testclient import TestClient
-from stroma import Keys
+from stroma import CurvePoint, Keys
 
 from clear.config import Settings
 from clear.crypto import CURVE_ORDER, Keyset, hash_to_curve
@@ -71,8 +70,8 @@ def blinded_output(
     keyset: Keyset, amount: int, secret: str, r: int
 ) -> tuple[dict, int]:
     y = hash_to_curve(secret)
-    r_key = PrivateKey(r.to_bytes(32, "big")).public_key
-    blinded = PublicKey.combine_keys([y, r_key]).format(compressed=True).hex()
+    r_key = CurvePoint.from_scalar(r.to_bytes(32, "big"))
+    blinded = CurvePoint.combine([y, r_key]).format(compressed=True).hex()
     return {"amount": amount, "id": keyset.id, "B_": blinded}, r
 
 
@@ -83,10 +82,10 @@ def unblind(
     r: int,
     promise: dict,
 ) -> dict:
-    promise_point = PublicKey(bytes.fromhex(promise["C_"]))
-    mint_key = PublicKey(bytes.fromhex(keyset.public_keys[amount]))
+    promise_point = CurvePoint(bytes.fromhex(promise["C_"]))
+    mint_key = CurvePoint(bytes.fromhex(keyset.public_keys[amount]))
     negative_r = (CURVE_ORDER - r).to_bytes(32, "big")
-    signature = PublicKey.combine_keys(
+    signature = CurvePoint.combine(
         [promise_point, mint_key.multiply(negative_r)]
     ).format(compressed=True)
     return {

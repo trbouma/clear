@@ -6,9 +6,8 @@ import hashlib
 import hmac
 import secrets
 
-from coincurve import PrivateKey, PublicKey
+from stroma import CURVE_ORDER, CurvePoint
 
-CURVE_ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 DOMAIN_SEPARATOR = b"Secp256k1_HashToCurve_Cashu_"
 
 
@@ -38,14 +37,14 @@ def derive_private_key(
     return _scalar(digest)
 
 
-def hash_to_curve(message: str) -> PublicKey:
+def hash_to_curve(message: str) -> CurvePoint:
     message_hash = hashlib.sha256(DOMAIN_SEPARATOR + message.encode()).digest()
     for counter in range(2**32):
         candidate = hashlib.sha256(
             message_hash + counter.to_bytes(4, "little")
         ).digest()
         try:
-            return PublicKey(b"\x02" + candidate)
+            return CurvePoint(b"\x02" + candidate)
         except ValueError:
             continue
     raise RuntimeError("could not map secret to secp256k1")
@@ -68,7 +67,7 @@ class Keyset:
             for order in range(max_order + 1)
         }
         self.public_keys = {
-            amount: PrivateKey(private).public_key.format(compressed=True).hex()
+            amount: CurvePoint.from_scalar(private).format(compressed=True).hex()
             for amount, private in self.private_keys.items()
         }
         public_key_bytes = b"".join(
@@ -94,7 +93,7 @@ class Keyset:
         if private is None:
             raise ValueError(f"unsupported denomination: {amount}")
         try:
-            point = PublicKey(bytes.fromhex(blinded_secret))
+            point = CurvePoint(bytes.fromhex(blinded_secret))
         except (ValueError, TypeError) as exc:
             raise ValueError("B_ must be a compressed secp256k1 public key") from exc
         return point.multiply(private).format(compressed=True).hex()
@@ -106,7 +105,7 @@ class Keyset:
         y = hash_to_curve(secret)
         expected = y.multiply(private).format(compressed=True)
         try:
-            supplied = PublicKey(bytes.fromhex(signature)).format(compressed=True)
+            supplied = CurvePoint(bytes.fromhex(signature)).format(compressed=True)
         except (ValueError, TypeError) as exc:
             raise ValueError("C must be a compressed secp256k1 public key") from exc
         if not hmac.compare_digest(expected, supplied):

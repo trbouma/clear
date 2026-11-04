@@ -9,7 +9,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from coincurve import PrivateKey, PublicKey
+from stroma import CurvePoint
 
 from clear.crypto import CURVE_ORDER, hash_to_curve
 from clear.models import Proof
@@ -84,8 +84,8 @@ def blind_output(amount: int, keyset_id: str) -> BlindedOutput:
     secret = secrets.token_hex(32)
     r = secrets.randbelow(CURVE_ORDER - 1) + 1
     y = hash_to_curve(secret)
-    r_key = PrivateKey(r.to_bytes(32, "big")).public_key
-    blinded = PublicKey.combine_keys([y, r_key]).format(compressed=True).hex()
+    r_key = CurvePoint.from_scalar(r.to_bytes(32, "big"))
+    blinded = CurvePoint.combine([y, r_key]).format(compressed=True).hex()
     return BlindedOutput(
         amount=amount,
         secret=secret,
@@ -99,10 +99,10 @@ def unblind_signature(
     promise: dict[str, Any],
     mint_public_key: str,
 ) -> dict[str, Any]:
-    promise_point = PublicKey(bytes.fromhex(promise["C_"]))
-    mint_key = PublicKey(bytes.fromhex(mint_public_key))
+    promise_point = CurvePoint(bytes.fromhex(promise["C_"]))
+    mint_key = CurvePoint(bytes.fromhex(mint_public_key))
     negative_r = (CURVE_ORDER - output.r).to_bytes(32, "big")
-    signature = PublicKey.combine_keys(
+    signature = CurvePoint.combine(
         [promise_point, mint_key.multiply(negative_r)]
     ).format(compressed=True)
     return {
