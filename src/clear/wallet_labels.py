@@ -1,4 +1,5 @@
 """Optional public labels for local treasury balances; never alter wallet proofs."""
+
 import json
 import urllib.request
 from urllib.parse import urlsplit
@@ -6,12 +7,18 @@ from urllib.parse import urlsplit
 
 def fetch_keysets(mint):
     parsed = urlsplit(mint)
-    if (parsed.scheme not in {"http", "https"} or not parsed.hostname
-            or parsed.username is not None or parsed.password is not None
-            or parsed.query or parsed.fragment):
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
         raise ValueError("Invalid mint URL")
-    request = urllib.request.Request(mint.rstrip("/") + "/v1/keysets",
-                                     headers={"Accept": "application/json"})
+    request = urllib.request.Request(
+        mint.rstrip("/") + "/v1/keysets", headers={"Accept": "application/json"}
+    )
     with urllib.request.urlopen(request, timeout=3) as response:
         body = response.read(262145)
     if len(body) > 262144:
@@ -33,11 +40,21 @@ def with_friendly_labels(summary):
             except (ValueError, OSError):
                 cache[mint] = []
         candidates = [row for row in cache[mint] if row.get("unit") == unit]
-        selected = next((row for row in candidates if row.get("active") is True),
-                        candidates[0] if candidates else {})
+        selected = next(
+            (row for row in candidates if row.get("active") is True),
+            candidates[0] if candidates else {},
+        )
         for field, value, limit in (
-            ("friendly_alias", selected.get("friendly_alias") or selected.get("friendly_name"), 120),
+            (
+                "friendly_alias",
+                selected.get("friendly_alias") or selected.get("friendly_name"),
+                120,
+            ),
             ("friendly_unit_alias", selected.get("friendly_unit_alias"), 40),
         ):
-            balance[field] = value.strip() if isinstance(value, str) and 0 < len(value.strip()) <= limit else unit
+            balance[field] = (
+                value.strip()
+                if isinstance(value, str) and 0 < len(value.strip()) <= limit
+                else unit
+            )
     return summary

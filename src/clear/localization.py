@@ -26,12 +26,12 @@ SUPPORTED_LANGUAGES = {
 
 RIGHT_TO_LEFT_LANGUAGES = {"ar"}
 
-_LANGUAGE_TAG_PATTERN = re.compile(
-    r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
-)
+_LANGUAGE_TAG_PATTERN = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
 
 _FRENCH = {
-    "Private bearer notes for community-issued value.": "Des titres au porteur privés pour une valeur émise par la communauté.",
+    "Private bearer notes for community-issued value.": (
+        "Des titres au porteur privés pour une valeur émise par la communauté."
+    ),
     "Clear Mint": "Service Clear",
     "Online": "En ligne",
     HOMEPAGE_TAGLINE: (
@@ -99,7 +99,9 @@ _FRENCH = {
 }
 
 _SPANISH = {
-    "Private bearer notes for community-issued value.": "Notas privadas al portador para valor emitido por la comunidad.",
+    "Private bearer notes for community-issued value.": (
+        "Notas privadas al portador para valor emitido por la comunidad."
+    ),
     "Clear Mint": "Servicio Clear",
     "Online": "En línea",
     HOMEPAGE_TAGLINE: "Dinero electrónico de crédito y pasivo: autorizado y canjeable",
@@ -165,7 +167,9 @@ _SPANISH = {
 }
 
 _PORTUGUESE = {
-    "Private bearer notes for community-issued value.": "Notas privadas ao portador para valor emitido pela comunidade.",
+    "Private bearer notes for community-issued value.": (
+        "Notas privadas ao portador para valor emitido pela comunidade."
+    ),
     "Clear Mint": "Serviço Clear",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
@@ -233,12 +237,13 @@ _PORTUGUESE = {
 }
 
 _GERMAN = {
-    "Private bearer notes for community-issued value.": "Private Inhabernoten für gemeinschaftlich ausgegebenen Wert.",
+    "Private bearer notes for community-issued value.": (
+        "Private Inhabernoten für gemeinschaftlich ausgegebenen Wert."
+    ),
     "Clear Mint": "Clear-Dienst",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
-        "Elektronisches Kredit- und Verbindlichkeitsgeld: autorisiert und "
-        "einlösbar"
+        "Elektronisches Kredit- und Verbindlichkeitsgeld: autorisiert und einlösbar"
     ),
     HOMEPAGE_LEDE: "Privat ausgegebener Gemeinschaftswert.",
     "Copy mint URL": "Dienst-URL kopieren",
@@ -302,7 +307,9 @@ _GERMAN = {
 }
 
 _ITALIAN = {
-    "Private bearer notes for community-issued value.": "Note private al portatore per valore emesso dalla comunità.",
+    "Private bearer notes for community-issued value.": (
+        "Note private al portatore per valore emesso dalla comunità."
+    ),
     "Clear Mint": "Servizio Clear",
     "Online": "Online",
     HOMEPAGE_TAGLINE: (
@@ -370,7 +377,9 @@ _ITALIAN = {
 }
 
 _SIMPLIFIED_CHINESE = {
-    "Private bearer notes for community-issued value.": "承载社区发行价值的隐私型不记名票据。",
+    "Private bearer notes for community-issued value.": (
+        "承载社区发行价值的隐私型不记名票据。"
+    ),
     "Clear Mint": "Clear 服务",
     "Online": "在线",
     HOMEPAGE_TAGLINE: "信用与负债电子现金：经授权且可兑付",
@@ -432,7 +441,9 @@ _SIMPLIFIED_CHINESE = {
 }
 
 _ARABIC = {
-    "Private bearer notes for community-issued value.": "أوراق خاصة لحاملها تمثل قيمة يصدرها المجتمع.",
+    "Private bearer notes for community-issued value.": (
+        "أوراق خاصة لحاملها تمثل قيمة يصدرها المجتمع."
+    ),
     "Clear Mint": "خدمة Clear",
     "Online": "متصل",
     HOMEPAGE_TAGLINE: (
@@ -469,9 +480,7 @@ _ARABIC = {
     "How this mint works": "كيفية عمل هذه الخدمة",
     "Treasurer-authorized issuance": "إصدار معتمد من أمين الخزانة",
     "Private bearer transfers": "تحويلات خاصة لحاملها",
-    "Mint-enforced double-spend protection": (
-        "حماية من الإنفاق المزدوج تفرضها الخدمة"
-    ),
+    "Mint-enforced double-spend protection": ("حماية من الإنفاق المزدوج تفرضها الخدمة"),
     "Proof swapping and verification": "تبادل الإثباتات والتحقق منها",
     "Explicit unit retirement": "سحب الوحدات بصورة صريحة",
     "Root authority configured": "سلطة الجذر مهيأة",
@@ -537,9 +546,7 @@ def supported_language(value: str | None) -> str:
         return DEFAULT_LANGUAGE
     if normalized in SUPPORTED_LANGUAGES:
         return normalized
-    if normalized in {"zh", "zh-CN", "zh-SG"} or normalized.startswith(
-        "zh-Hans-"
-    ):
+    if normalized in {"zh", "zh-CN", "zh-SG"} or normalized.startswith("zh-Hans-"):
         return "zh-Hans"
     base_language = normalized.split("-", 1)[0]
     return base_language if base_language in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE

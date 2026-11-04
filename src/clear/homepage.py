@@ -52,7 +52,7 @@ def render_homepage(
     def identity_value(value: str | None, fallback: str) -> str:
         if value:
             return f'<code class="technical" dir="ltr">{escape(value)}</code>'
-        return f'<span>{text(fallback)}</span>'
+        return f"<span>{text(fallback)}</span>"
 
     def authority_label(item: dict) -> str:
         if item.get("authority") == "authorized-treasury" and item.get(
@@ -72,8 +72,7 @@ def render_homepage(
     def cmu_link(item: dict, label: str) -> str:
         href = f"cmus/{quote(str(item['id']), safe='')}"
         return (
-            f'<a class="cmu-link" href="{escape(href)}">'
-            f"{configured_value(label)}</a>"
+            f'<a class="cmu-link" href="{escape(href)}">{configured_value(label)}</a>'
         )
 
     display_name = mint_title or "Clear Mint"
@@ -88,7 +87,7 @@ def render_homepage(
     language_options = "".join(
         (
             f'<option value="{escape(tag)}"'
-            f'{" selected" if tag == language else ""}>'
+            f"{' selected' if tag == language else ''}>"
             f"{escape(label)}</option>"
         )
         for tag, label in SUPPORTED_LANGUAGES.items()
@@ -108,7 +107,7 @@ def render_homepage(
             f'<td class="unit-label">{configured_value(str(unit_label))}</td>'
             f"<td>{cmu_link(item, str(outstanding))}</td>"
             "<td>"
-            f"<code class=\"technical\" dir=\"ltr\">{escape(str(item['unit']))}</code>"
+            f'<code class="technical" dir="ltr">{escape(str(item["unit"]))}</code>'
             "</td>"
             "</tr>"
         )
@@ -165,13 +164,13 @@ def render_homepage(
     }
 
     return f"""<!doctype html>
-<html lang="{values['language']}" dir="{values['direction']}">
+<html lang="{values["language"]}" dir="{values["direction"]}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="{values['display_name']} {text('Clear Mint')}">
+  <meta name="description" content="{values["display_name"]} {text("Clear Mint")}">
   <meta name="color-scheme" content="light dark">
-  <title>{values['display_name']} | {text('Clear Mint')}</title>
+  <title>{values["display_name"]} | {text("Clear Mint")}</title>
   <style>
     :root {{
       color-scheme: light;
@@ -620,35 +619,35 @@ def render_homepage(
             d="M256 48a208 208 0 0 0 0 416v-86a122 122 0 1 1 0-244z"/>
           <path fill="#e16f51" d="M222 224h168v64H222z"/>
         </svg>
-        <span>{text('Clear Mint')}</span>
+        <span>{text("Clear Mint")}</span>
       </div>
       <div class="topbar-actions">
         <form class="language-form" method="get">
-          <label for="language">{text('Language')}</label>
+          <label for="language">{text("Language")}</label>
           <select id="language" name="lang" onchange="this.form.submit()">
-            {values['language_options']}
+            {values["language_options"]}
           </select>
         </form>
-        <div class="online">{text('Online')}</div>
+        <div class="online">{text("Online")}</div>
       </div>
     </header>
 
     <section class="hero">
       <div>
         <p class="eyebrow">{text(HOMEPAGE_TAGLINE)}</p>
-        <h1>{values['display_name_markup']}</h1>
+        <h1>{values["display_name_markup"]}</h1>
         <p class="lede">
-          {values['display_tag_line']}
+          {values["display_tag_line"]}
         </p>
         <div class="mint-address">
-          <code class="technical" id="mint-url" dir="ltr">{values['mint_url']}</code>
-          <button id="copy-mint" type="button" aria-label="{text('Copy mint URL')}">
-            {text('Copy mint URL')}
+          <code class="technical" id="mint-url" dir="ltr">{values["mint_url"]}</code>
+          <button id="copy-mint" type="button" aria-label="{text("Copy mint URL")}">
+            {text("Copy mint URL")}
           </button>
         </div>
       </div>
       <div class="token">
-        <svg viewBox="0 0 512 512" role="img" aria-label="{text('Clear token')}">
+        <svg viewBox="0 0 512 512" role="img" aria-label="{text("Clear token")}">
           <circle cx="256" cy="256" r="208" fill="#247c93"/>
           <circle cx="256" cy="256" r="122" fill="#f4fbfc"/>
           <path fill="#143d52"
@@ -656,48 +655,48 @@ def render_homepage(
           <path fill="#e16f51" d="M222 224h168v64H222z"/>
         </svg>
         <div>
-          <strong>{text('Private bearer notes for community-issued value.')}</strong>
+          <strong>{text("Private bearer notes for community-issued value.")}</strong>
         </div>
       </div>
     </section>
 
     <div class="grid">
       <section class="panel">
-        <h2>{text('Mint details')}</h2>
+        <h2>{text("Mint details")}</h2>
         <dl>
           <div class="row">
-            <dt>{text('Service identity')}</dt>
-            <dd>{values['service_npub_markup']}</dd>
+            <dt>{text("Service identity")}</dt>
+            <dd>{values["service_npub_markup"]}</dd>
           </div>
           <div class="row">
-            <dt>{text('FIPS IPv6 address')}</dt>
-            <dd>{values['service_fips_ipv6_address_markup']}</dd>
+            <dt>{text("FIPS IPv6 address")}</dt>
+            <dd>{values["service_fips_ipv6_address_markup"]}</dd>
           </div>
           <div class="row">
-            <dt>{text('Management')}</dt><dd>{values['service_management']}</dd>
+            <dt>{text("Management")}</dt><dd>{values["service_management"]}</dd>
           </div>
           <div class="row">
-            <dt>{text('Identity state')}</dt><dd>{values['service_state']}</dd>
+            <dt>{text("Identity state")}</dt><dd>{values["service_state"]}</dd>
           </div>
           <div class="row">
-            <dt>{text('Operator')}</dt><dd>{values['operator_npub_markup']}</dd>
+            <dt>{text("Operator")}</dt><dd>{values["operator_npub_markup"]}</dd>
           </div>
         </dl>
       </section>
 
       <section class="panel keysets">
-        <h2>{text('Mint Units In Circulation')}</h2>
+        <h2>{text("Mint Units In Circulation")}</h2>
         <table class="keyset-table">
           <thead>
             <tr>
-              <th>{text('Name')}</th>
-              <th>{text('Unit Label')}</th>
-              <th>{text('Units Outstanding')}</th>
-              <th>{text('Protocol Unit')}</th>
+              <th>{text("Name")}</th>
+              <th>{text("Unit Label")}</th>
+              <th>{text("Units Outstanding")}</th>
+              <th>{text("Protocol Unit")}</th>
             </tr>
           </thead>
           <tbody>
-            {values['active_keyset_rows']}
+            {values["active_keyset_rows"]}
           </tbody>
         </table>
       </section>
@@ -706,22 +705,22 @@ def render_homepage(
     <aside class="about">
       {text(HOMEPAGE_ABOUT)}
       <ul class="features">
-        <li>{text('Treasurer-authorized issuance')}</li>
-        <li>{text('Private bearer transfers')}</li>
-        <li>{text('Mint-enforced double-spend protection')}</li>
-        <li>{text('Proof swapping and verification')}</li>
-        <li>{text('Explicit unit retirement')}</li>
-        <li>{values['authority_label']}</li>
+        <li>{text("Treasurer-authorized issuance")}</li>
+        <li>{text("Private bearer transfers")}</li>
+        <li>{text("Mint-enforced double-spend protection")}</li>
+        <li>{text("Proof swapping and verification")}</li>
+        <li>{text("Explicit unit retirement")}</li>
+        <li>{values["authority_label"]}</li>
       </ul>
     </aside>
 
-    <nav class="links" aria-label="{text('Mint resources')}">
-      <a href="v1/info">{text('Mint information')}</a>
-      <a href="v1/keys">{text('Public keys')}</a>
-      <a href="https://trbouma.github.io/clear/">{text('Docs')}</a>
+    <nav class="links" aria-label="{text("Mint resources")}">
+      <a href="v1/info">{text("Mint information")}</a>
+      <a href="v1/keys">{text("Public keys")}</a>
+      <a href="https://trbouma.github.io/clear/">{text("Docs")}</a>
       <span class="version">
-        Clear <bdi dir="ltr">{values['version']}</bdi>
-        &middot; {text('Developer-stage software')}
+        Clear <bdi dir="ltr">{values["version"]}</bdi>
+        &middot; {text("Developer-stage software")}
       </span>
     </nav>
   </main>
@@ -732,12 +731,12 @@ def render_homepage(
       try {{
         const mintUrl = document.getElementById("mint-url").textContent;
         await navigator.clipboard.writeText(mintUrl);
-        button.textContent = {json.dumps(copy_labels['copied'], ensure_ascii=False)};
+        button.textContent = {json.dumps(copy_labels["copied"], ensure_ascii=False)};
       }} catch (_error) {{
-        button.textContent = {json.dumps(copy_labels['failed'], ensure_ascii=False)};
+        button.textContent = {json.dumps(copy_labels["failed"], ensure_ascii=False)};
       }}
       window.setTimeout(() => {{
-        button.textContent = {json.dumps(copy_labels['ready'], ensure_ascii=False)};
+        button.textContent = {json.dumps(copy_labels["ready"], ensure_ascii=False)};
       }}, 1800);
     }});
 
@@ -874,12 +873,7 @@ def render_cmu_metrics_page(
         )
 
     def definition_row(label: str, content: str) -> str:
-        return (
-            '<div class="row">'
-            f"<dt>{escape(label)}</dt>"
-            f"<dd>{content}</dd>"
-            "</div>"
-        )
+        return f'<div class="row"><dt>{escape(label)}</dt><dd>{content}</dd></div>'
 
     display_name = cmu.get("friendly_name") or cmu["unit"]
     supply = cmu["supply"]
@@ -891,12 +885,14 @@ def render_cmu_metrics_page(
     description_markup = (
         '<p class="lede" id="cmu-description" dir="auto" '
         'style="white-space: pre-wrap; overflow-wrap: anywhere">'
-        f'{escape(description)}</p>'
-        if description else ""
+        f"{escape(description)}</p>"
+        if description
+        else ""
     )
     treasurer_profile_url = (
         f"../v1/nostr/profiles/{quote(treasurer_npub, safe='')}"
-        if treasurer_npub else ""
+        if treasurer_npub
+        else ""
     )
     return f"""<!doctype html>
 <html lang="{escape(language)}" dir="{direction}">
@@ -1104,12 +1100,20 @@ def render_cmu_metrics_page(
       <section class="panel">
         <h2>Supply</h2>
         <div class="metric-grid">
-          <div class="metric"><span>Issued</span><strong>{value(supply["issued"])}</strong></div>
-          <div class="metric"><span>Retired</span><strong>{value(supply["retired"])}</strong></div>
-          <div class="metric"><span>Outstanding</span><strong>{value(supply["outstanding"])}</strong></div>
+          <div class="metric"><span>Issued</span><strong>{
+            value(supply["issued"])
+          }</strong></div>
+          <div class="metric"><span>Retired</span><strong>{
+            value(supply["retired"])
+          }</strong></div>
+          <div class="metric"><span>Outstanding</span><strong>{
+            value(supply["outstanding"])
+          }</strong></div>
         </div>
         <h3>Treasurer</h3>
-        <div id="treasurer-profile" data-profile-url="{escape(treasurer_profile_url)}" aria-live="polite" style="overflow-wrap: anywhere">
+        <div id="treasurer-profile"
+             data-profile-url="{escape(treasurer_profile_url)}"
+             aria-live="polite" style="overflow-wrap: anywhere">
           <p class="note">No Social Profile</p>
         </div>
       </section>
@@ -1122,8 +1126,15 @@ def render_cmu_metrics_page(
           {definition_row("Keyset ID", code(cmu["keyset_id"]))}
           {definition_row("Fingerprint", code(cmu["keyset_fingerprint"]))}
           {definition_row("Status", value(cmu["status"]))}
-          {definition_row("Home page listing", value("Listed" if cmu.get("public_listing", True) else "Unlisted"))}
-          {definition_row("Treasurer", code(cmu["treasurer_npub"]) if cmu.get("treasurer_npub") else value("Operator keyset"))}
+          {definition_row(
+              "Home page listing",
+              value("Listed" if cmu.get("public_listing", True) else "Unlisted")
+          )}
+          {definition_row(
+              "Treasurer",
+              code(cmu["treasurer_npub"])
+              if cmu.get("treasurer_npub") else value("Operator keyset")
+          )}
           {definition_row("Material", value(cmu["material_kind"]))}
         </dl>
       </section>
@@ -1135,17 +1146,30 @@ def render_cmu_metrics_page(
           {definition_row("Authorized", value(quotes["authorized"]))}
           {definition_row("Issued", value(quotes["issued"]))}
           {definition_row("Authorized, unissued", value(quotes["authorized_unissued"]))}
-          {definition_row("Requested, unauthorized", value(quotes["requested_unauthorized"]))}
+          {definition_row(
+              "Requested, unauthorized", value(quotes["requested_unauthorized"])
+          )}
         </dl>
       </section>
       <section class="panel">
         <h2>Proof-state diagnostics</h2>
         <dl>
-          {definition_row("Signed output amount", value(proof_state["signed_outputs_amount"]))}
-          {definition_row("Signed output count", value(proof_state["signed_outputs_count"]))}
-          {definition_row("Spent proof amount", value(proof_state["spent_proofs_amount"]))}
-          {definition_row("Spent proof count", value(proof_state["spent_proofs_count"]))}
-          {definition_row("Unspent signed-output estimate", value(proof_state["unspent_signed_outputs_estimate"]))}
+          {definition_row(
+              "Signed output amount", value(proof_state["signed_outputs_amount"])
+          )}
+          {definition_row(
+              "Signed output count", value(proof_state["signed_outputs_count"])
+          )}
+          {definition_row(
+              "Spent proof amount", value(proof_state["spent_proofs_amount"])
+          )}
+          {definition_row(
+              "Spent proof count", value(proof_state["spent_proofs_count"])
+          )}
+          {definition_row(
+              "Unspent signed-output estimate",
+              value(proof_state["unspent_signed_outputs_estimate"])
+          )}
         </dl>
       </section>
       <section class="panel wide">
@@ -1202,7 +1226,8 @@ def render_cmu_metrics_page(
           treasurerProfile.replaceChildren();
           const picture = profile && (profile.picture || profile.image);
           if (typeof picture === "string" &&
-              ["https://", "http://"].some(prefix => picture.toLowerCase().startsWith(prefix))) {{
+              ["https://", "http://"].some(prefix =>
+                picture.toLowerCase().startsWith(prefix))) {{
             const image = document.createElement("img");
             image.src = picture;
             image.alt = "Treasurer profile picture";
@@ -1212,7 +1237,9 @@ def render_cmu_metrics_page(
             image.style.objectFit = "cover";
             image.addEventListener("error", () => {{
               image.remove();
-              if (!fields || !fields.length) treasurerProfile.textContent = "No Social Profile";
+              if (!fields || !fields.length) {{
+                treasurerProfile.textContent = "No Social Profile";
+              }}
             }});
             treasurerProfile.append(image);
           }}

@@ -25,7 +25,16 @@ def test_root_cli_revoke_grant(monkeypatch, capsys) -> None:
     monkeypatch.setattr(root_cli, "request_json", request)
     args = root_cli.parser().parse_args(["treasurer", "revoke-grant", "grant-id"])
     assert args.handler(args) == 0
-    assert calls == [(("http://localhost:3339", "POST", "/v1/operator/treasurer-grants/grant-id/revoke"), {"token": "test-token"})]
+    assert calls == [
+        (
+            (
+                "http://localhost:3339",
+                "POST",
+                "/v1/operator/treasurer-grants/grant-id/revoke",
+            ),
+            {"token": "test-token"},
+        )
+    ]
     assert json.loads(capsys.readouterr().out)["status"] == "revoked"
 
 
@@ -538,7 +547,6 @@ def test_root_cli_withdraw_exports_from_local_wallet(
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
 
 
-
 def test_root_cli_send_delivers_then_removes_from_local_wallet(
     tmp_path,
     monkeypatch,
@@ -590,14 +598,8 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
     monkeypatch.setattr(
         root_cli,
         "deliver_clear_token",
-        lambda discovery,
-        *,
-        token,
-        amount,
-        sender_secret,
-        memo=None,
-        relays=None,
-        expiration=None: {
+        lambda discovery, *, token, amount, sender_secret,
+        memo=None, relays=None, expiration=None: {
             "delivery": discovery,
             "publish": {
                 "status": "OK",
@@ -628,7 +630,6 @@ def test_root_cli_send_delivers_then_removes_from_local_wallet(
     assert '"status": "OK"' in output
     assert '"sender_ephemeral": true' in output
     assert '"entries": []' in wallet_path.read_text(encoding="utf-8")
-
 
 
 def test_root_cli_send_rejects_internal_mint_before_discovery_or_export(
@@ -667,9 +668,7 @@ def test_root_cli_send_rejects_internal_mint_before_discovery_or_export(
 
     assert root_cli.main() == 1
     assert "internal-only mint" in capsys.readouterr().err
-    assert wallet_path.read_text(encoding="utf-8") == (
-        '{"version":1,"entries":[]}\n'
-    )
+    assert wallet_path.read_text(encoding="utf-8") == ('{"version":1,"entries":[]}\n')
 
 
 def test_root_cli_internal_mint_override_requires_explicit_relay(
@@ -733,9 +732,7 @@ def test_root_cli_internal_mint_override_uses_explicit_relay(
     monkeypatch.setattr(
         root_cli,
         "_export_or_swap",
-        lambda amount, wallet_path, *, api_url, memo=None: {
-            "token": "cashuApending"
-        },
+        lambda amount, wallet_path, *, api_url, memo=None: {"token": "cashuApending"},
     )
 
     def fake_delivery(discovery, **kwargs):
@@ -952,14 +949,8 @@ def test_root_cli_send_swaps_larger_proof_for_change(
     monkeypatch.setattr(
         root_cli,
         "deliver_clear_token",
-        lambda discovery,
-        *,
-        token,
-        amount,
-        sender_secret,
-        memo=None,
-        relays=None,
-        expiration=None: {
+        lambda discovery, *, token, amount, sender_secret,
+        memo=None, relays=None, expiration=None: {
             "delivery": discovery,
             "publish": {"status": "OK"},
         },
@@ -989,7 +980,6 @@ def test_root_cli_send_swaps_larger_proof_for_change(
 
     assert '"amount": 25' in output
     assert remaining_amount == 7
-
 
 
 def test_root_cli_retire_reads_token_from_stdin(monkeypatch, capsys) -> None:

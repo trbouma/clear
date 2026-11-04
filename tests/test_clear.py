@@ -41,8 +41,7 @@ def settings(
     currency_unit_alias: str | None = None,
     root_api_loopback_only: bool = False,
     root_api_allowed_networks: str = (
-        "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,"
-        "192.168.0.0/16,fc00::/7"
+        "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
     ),
     mint_service_nsec: str | None = MINT_SERVICE_NSEC,
     mint_service_management: str = "independent",
@@ -161,9 +160,7 @@ def test_information_health_and_unique_currency(tmp_path) -> None:
         "keyset_id": currency["keyset_id"],
         "friendly_alias": f"Example Credits ({currency['protocol_unit']})",
         "friendly_unit_alias": None,
-        "friendly_alias_key": (
-            f"example-credits:{currency['keyset_fingerprint']}"
-        ),
+        "friendly_alias_key": (f"example-credits:{currency['keyset_fingerprint']}"),
         "identity_note": (
             "Suggested wallet label only; balances must bind to mint URL, "
             "unit, and keyset id."
@@ -237,9 +234,7 @@ def test_root_verification_uses_isolated_keyset_and_records_evidence(tmp_path) -
         keysets = client.get("/v1/keysets").json()["keysets"]
         verification = verified.json()["verification"]
         commissioning = next(
-            keyset
-            for keyset in keysets
-            if keyset["id"] == verification["keyset_id"]
+            keyset for keyset in keysets if keyset["id"] == verification["keyset_id"]
         )
         rejected_quote = client.post(
             "/v1/mint/quote/clear",
@@ -254,9 +249,7 @@ def test_root_verification_uses_isolated_keyset_and_records_evidence(tmp_path) -
     assert verification["issued"] == 3
     assert verification["retired"] == 3
     assert verification["evidence"]["digest"]
-    assert all(
-        check["passed"] for check in verification["evidence"]["checks"]
-    )
+    assert all(check["passed"] for check in verification["evidence"]["checks"])
     assert root_summary.json()["keyset_id"] == root_keyset_id
     assert root_summary.json()["issued"] == 0
     assert root_summary.json()["outstanding"] == 0
@@ -453,9 +446,7 @@ def test_failed_verification_is_durable_and_keeps_gate_closed(
     assert "simulated swap failure" in response.json()["detail"]
     assert status.json()["lifecycle"] == "verification-failed"
     assert status.json()["treasury_enabled"] is False
-    assert status.json()["verification"]["failure_reason"] == (
-        "simulated swap failure"
-    )
+    assert status.json()["verification"]["failure_reason"] == ("simulated swap failure")
 
 
 def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
@@ -471,11 +462,13 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert homepage.status_code == 200
     assert homepage.headers["content-type"].startswith("text/html")
     assert homepage.headers["content-language"] == "en"
-    assert homepage.headers["vary"] == "Accept-Language"
+    assert "accept-language" in {
+        field.strip().lower() for field in homepage.headers["vary"].split(",")
+    }
     assert '<html lang="en" dir="ltr">' in homepage.text
     assert '<select id="language" name="lang"' in homepage.text
     assert '<option value="en" selected>English</option>' in homepage.text
-    assert "<h1><bdi dir=\"auto\">Clear Mint</bdi></h1>" in homepage.text
+    assert '<h1><bdi dir="auto">Clear Mint</bdi></h1>' in homepage.text
     assert "Privately issued community value." in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "smiles" in homepage.text
@@ -499,9 +492,7 @@ def test_browser_homepage_is_friendly_and_keeps_json_api(tmp_path) -> None:
     assert 'href="docs"' not in homepage.text
     assert "API documentation" not in homepage.text
     assert "About Clear" not in homepage.text
-    assert information.json()["currency"]["friendly_alias"] == (
-        "Harbour Lab Credits"
-    )
+    assert information.json()["currency"]["friendly_alias"] == ("Harbour Lab Credits")
 
 
 def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
@@ -552,11 +543,11 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert "Authorized treasury keyset" not in homepage.text
     assert npub in metrics_page.text
     assert f'data-profile-url="v1/nostr/profiles/{npub}"' not in homepage.text
-    table = homepage.text.split('<table class="keyset-table">')[1].split('</table>')[0]
-    assert table.count('<th>') == 4
-    assert '<th>Units Outstanding</th>' in table
-    assert '<th>Authority</th>' not in table
-    assert '<th>Keyset ID</th>' not in table
+    table = homepage.text.split('<table class="keyset-table">')[1].split("</table>")[0]
+    assert table.count("<th>") == 4
+    assert "<th>Units Outstanding</th>" in table
+    assert "<th>Authority</th>" not in table
+    assert "<th>Keyset ID</th>" not in table
     assert 'id="profile-card"' in homepage.text
     assert "Harbour Lab Credits" in homepage.text
     assert "Gym Guest Passes" in homepage.text
@@ -571,11 +562,11 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
     assert "Gym Guest Passes" in metrics_page.text
     assert "Policy-aware supply metrics" not in metrics_page.text
     assert (
-        "<span>Issued</span><strong><bdi dir=\"auto\">8</bdi></strong>"
+        '<span>Issued</span><strong><bdi dir="auto">8</bdi></strong>'
         in metrics_page.text
     )
     assert (
-        "<span>Outstanding</span><strong><bdi dir=\"auto\">8</bdi></strong>"
+        '<span>Outstanding</span><strong><bdi dir="auto">8</bdi></strong>'
         in metrics_page.text
     )
     assert "Quote pipeline" in metrics_page.text
@@ -587,12 +578,18 @@ def test_browser_homepage_lists_active_keysets(tmp_path) -> None:
         "authorized-treasury",
     }
     assert all(item["public_listing"] is True for item in keysets)
-    assert next(
-        item for item in keysets if item["authority"] == "authorized-treasury"
-    )["treasurer_npub"] == npub
-    assert next(item for item in keysets if item["authority"] == "operator")[
-        "treasurer_npub"
-    ] is None
+    assert (
+        next(item for item in keysets if item["authority"] == "authorized-treasury")[
+            "treasurer_npub"
+        ]
+        == npub
+    )
+    assert (
+        next(item for item in keysets if item["authority"] == "operator")[
+            "treasurer_npub"
+        ]
+        is None
+    )
 
 
 def test_public_nostr_profile_endpoint_returns_kind_0_profile(
@@ -737,7 +734,7 @@ def test_browser_homepage_uses_configured_mint_title(tmp_path) -> None:
         homepage = client.get("/", headers={"Accept": "text/html"})
 
     assert homepage.status_code == 200
-    assert "<h1><bdi dir=\"auto\">Harbour Credit Service</bdi></h1>" in homepage.text
+    assert '<h1><bdi dir="auto">Harbour Credit Service</bdi></h1>' in homepage.text
     assert "Community credits for neighbourly exchange." in homepage.text
     assert "Harbour Lab Credits" in homepage.text
 
@@ -815,8 +812,7 @@ def test_browser_homepage_renders_arabic_with_isolated_technical_values(
     assert "كيفية عمل هذه الخدمة" not in homepage.text
     assert '<bdi dir="auto">Harbour Lab Credits</bdi>' in homepage.text
     assert (
-        '<code class="technical" id="mint-url" dir="ltr">'
-        "https://clear.example</code>"
+        '<code class="technical" id="mint-url" dir="ltr">https://clear.example</code>'
     ) in homepage.text
     assert MINT_SERVICE_NPUB in homepage.text
     assert information.json()["description"] == (
@@ -1271,7 +1267,7 @@ def test_operator_revokes_pending_grant_and_can_replace_it(tmp_path) -> None:
         store = app.state.store
         store.add_treasurer(npub)
         grant = store.grant_treasurer(npub)
-        route = f'/v1/operator/treasurer-grants/{grant["id"]}/revoke'
+        route = f"/v1/operator/treasurer-grants/{grant['id']}/revoke"
         assert client.post(route).status_code != 200
         assert store.get_treasurer_grant(grant["id"])["status"] == "pending"
         revoked = client.post(route, headers=headers)
@@ -1283,27 +1279,54 @@ def test_operator_revokes_pending_grant_and_can_replace_it(tmp_path) -> None:
         assert revoked.json()["keyset_id"] is None
         assert revoked.json()["consumed_at"] is None
         assert client.post(route, headers=headers).status_code == 400
-        assert client.post('/v1/operator/treasurer-grants/missing/revoke', headers=headers).status_code == 400
-        operator_create = client.post('/v1/operator/cmus', json={"grant_id": grant["id"]}, headers=headers)
+        assert (
+            client.post(
+                "/v1/operator/treasurer-grants/missing/revoke", headers=headers
+            ).status_code
+            == 400
+        )
+        operator_create = client.post(
+            "/v1/operator/cmus", json={"grant_id": grant["id"]}, headers=headers
+        )
         assert operator_create.status_code == 400
-        treasury_create = client.post('/v1/treasury/cmus', json=build_cmu_create_envelope(
-            mint=configured.mint_url, grant_id=grant["id"],
-            nsec=treasurer.private_key_bech32(), name="Revoked",
-        ))
+        treasury_create = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint=configured.mint_url,
+                grant_id=grant["id"],
+                nsec=treasurer.private_key_bech32(),
+                name="Revoked",
+            ),
+        )
         assert treasury_create.status_code == 400
-        replacement = client.post('/v1/operator/treasurer-grants', json={"npub": npub}, headers=headers).json()
+        replacement = client.post(
+            "/v1/operator/treasurer-grants", json={"npub": npub}, headers=headers
+        ).json()
         assert replacement["id"] != grant["id"]
         assert replacement["status"] == "pending"
-        created = client.post('/v1/operator/cmus', json={"grant_id": replacement["id"]}, headers=headers)
+        created = client.post(
+            "/v1/operator/cmus", json={"grant_id": replacement["id"]}, headers=headers
+        )
         assert created.status_code == 200
-        assert client.post(f'/v1/operator/treasurer-grants/{replacement["id"]}/revoke', headers=headers).status_code == 400
+        assert (
+            client.post(
+                f"/v1/operator/treasurer-grants/{replacement['id']}/revoke",
+                headers=headers,
+            ).status_code
+            == 400
+        )
         assert store.get_cmu(created.json()["unit"])["status"] == "active"
     with TestClient(create_app(configured)) as client:
-        grants = client.get('/v1/operator/treasurer-grants', headers=headers).json()["grants"]
+        grants = client.get("/v1/operator/treasurer-grants", headers=headers).json()[
+            "grants"
+        ]
         assert next(g for g in grants if g["id"] == grant["id"])["status"] == "revoked"
     with sqlite3.connect(configured.database_path) as connection:
         count = connection.execute(
-            "SELECT COUNT(*) FROM audit_log WHERE action = 'treasurer:grant-revoke' AND reference = ?",
+            (
+                "SELECT COUNT(*) FROM audit_log WHERE action = "
+                "'treasurer:grant-revoke' AND reference = ?"
+            ),
             (grant["id"],),
         ).fetchone()[0]
     assert count == 1
@@ -1904,22 +1927,40 @@ def test_cmu_description_authority_rendering_and_persistence(tmp_path) -> None:
     description = "Meal credits for our community.\n\n<script>alert('x')</script>"
     with TestClient(create_app(configured)) as client:
         commission_and_enable(client)
-        client.post("/v1/operator/treasurers", json={"npub": treasurer.public_key_bech32()}, headers=headers)
-        grant = client.post("/v1/operator/treasurer-grants", json={"npub": treasurer.public_key_bech32()}, headers=headers).json()
-        cmu = client.post("/v1/treasury/cmus", json=build_cmu_create_envelope(
-            mint="https://clear.example", grant_id=grant["id"],
-            name="Meals", nsec=treasurer.private_key_bech32(),
-        )).json()
+        client.post(
+            "/v1/operator/treasurers",
+            json={"npub": treasurer.public_key_bech32()},
+            headers=headers,
+        )
+        grant = client.post(
+            "/v1/operator/treasurer-grants",
+            json={"npub": treasurer.public_key_bech32()},
+            headers=headers,
+        ).json()
+        cmu = client.post(
+            "/v1/treasury/cmus",
+            json=build_cmu_create_envelope(
+                mint="https://clear.example",
+                grant_id=grant["id"],
+                name="Meals",
+                nsec=treasurer.private_key_bech32(),
+            ),
+        ).json()
         assert cmu["description"] == ""
         route = "/v1/treasury/cmus/description"
 
         def envelope(text, signer=treasurer):
             return build_cmu_description_envelope(
-                mint="https://clear.example", nsec=signer.private_key_bech32(),
-                keyset_id=cmu["keyset_id"], description=text,
+                mint="https://clear.example",
+                nsec=signer.private_key_bech32(),
+                keyset_id=cmu["keyset_id"],
+                description=text,
             )
 
-        assert client.post(route, json=envelope("unauthorized", outsider)).status_code == 400
+        assert (
+            client.post(route, json=envelope("unauthorized", outsider)).status_code
+            == 400
+        )
         assert client.post(route, json=envelope("x" * 10001)).status_code == 400
         tampered = envelope("original")
         tampered["payload"]["description"] = "changed"
@@ -1930,25 +1971,42 @@ def test_cmu_description_authority_rendering_and_persistence(tmp_path) -> None:
         assert result.json()["description"] == description
         assert result.json()["unit"] == cmu["unit"]
         assert client.post(route, json=signed).status_code == 400
-        page = client.get(f'/cmus/{cmu["keyset_id"]}').text
+        page = client.get(f"/cmus/{cmu['keyset_id']}").text
         assert 'id="cmu-description"' in page
-        assert page.index('id="cmu-description"') < page.index('<h2>Supply</h2>')
+        assert page.index('id="cmu-description"') < page.index("<h2>Supply</h2>")
         assert page.count("Meal credits for our community.") == 1
         assert "Policy-aware supply metrics" not in page
         assert "&lt;script&gt;" in page
         assert "<script>alert('x')</script>" not in page
-        operator_route = f'/v1/operator/cmus/{cmu["unit"]}/description'
-        assert client.post(operator_route, json={"description": "override"}).status_code != 200
-        assert client.post(operator_route, json={"description": "x" * 10001}, headers=headers).status_code == 422
-        assert client.post(operator_route, json={"description": "Operator description"}, headers=headers).status_code == 200
+        operator_route = f"/v1/operator/cmus/{cmu['unit']}/description"
+        assert (
+            client.post(operator_route, json={"description": "override"}).status_code
+            != 200
+        )
+        assert (
+            client.post(
+                operator_route, json={"description": "x" * 10001}, headers=headers
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                operator_route,
+                json={"description": "Operator description"},
+                headers=headers,
+            ).status_code
+            == 200
+        )
 
     with TestClient(create_app(configured)) as client:
-        page = client.get(f'/cmus/{cmu["keyset_id"]}').text
+        page = client.get(f"/cmus/{cmu['keyset_id']}").text
         assert "Operator description" in page
         result = client.post(route, json=envelope(""))
         assert result.status_code == 200
         assert result.json()["description"] == ""
-        assert 'id="cmu-description"' not in client.get(f'/cmus/{cmu["keyset_id"]}').text
+        assert (
+            'id="cmu-description"' not in client.get(f"/cmus/{cmu['keyset_id']}").text
+        )
 
 
 def test_treasury_cmu_visibility_rejects_unbound_treasurer(tmp_path) -> None:
@@ -1984,7 +2042,7 @@ def test_treasury_cmu_visibility_rejects_unbound_treasurer(tmp_path) -> None:
                 keyset_id=cmu["keyset_id"],
                 public_listing=False,
             ),
-    )
+        )
 
     assert response.status_code == 400
     assert "treasurer does not control requested CMU" in response.json()["detail"]
@@ -2146,9 +2204,7 @@ def test_proofs_from_different_clear_currency_are_rejected(tmp_path) -> None:
 
 def test_friendly_name_does_not_change_currency_identity(tmp_path) -> None:
     first = create_app(settings(tmp_path / "first", currency_name="Harbour Credits"))
-    second = create_app(
-        settings(tmp_path / "second", currency_name="Friendly Credits")
-    )
+    second = create_app(settings(tmp_path / "second", currency_name="Friendly Credits"))
 
     assert first.state.keyset.unit == second.state.keyset.unit
     assert first.state.keyset.id == second.state.keyset.id
@@ -2204,9 +2260,7 @@ def test_existing_pre_identity_database_can_adopt_its_first_service_key(
 
 
 def test_unconfigured_standalone_mint_reports_no_service_identity(tmp_path) -> None:
-    with TestClient(
-        create_app(settings(tmp_path, mint_service_nsec=None))
-    ) as client:
+    with TestClient(create_app(settings(tmp_path, mint_service_nsec=None))) as client:
         info = client.get("/v1/info").json()
 
     assert info["service_identity"] == {
@@ -2313,7 +2367,9 @@ def test_serialized_token_swap_and_retirement(tmp_path, monkeypatch, version):
         proof = issue_proof(client, keyset)
         encoder = encode_token_v3 if version == "cashuA" else encode_token_v4
         token = encoder(
-            mint="https://clear.example", unit=keyset.unit, proofs=[proof],
+            mint="https://clear.example",
+            unit=keyset.unit,
+            proofs=[proof],
         )
         mint, unit, proofs = treasury.proofs_from_token(token)
         assert proofs == [proof]

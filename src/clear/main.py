@@ -22,8 +22,8 @@ from clear.localization import resolve_language
 from clear.models import (
     CheckStateRequest,
     CMUCreateRequest,
-    CMULabelRequest,
     CMUDescriptionRequest,
+    CMULabelRequest,
     CMUVisibilityRequest,
     MintQuoteRequest,
     MintRequest,

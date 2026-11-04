@@ -67,9 +67,9 @@ def _is_loopback_url(url: str) -> bool:
 
 
 def _api_url(args) -> str:
-    url = (
-        args.api_url or os.getenv("CLEAR_ROOT_API_URL") or DEFAULT_MINT_URL
-    ).rstrip("/")
+    url = (args.api_url or os.getenv("CLEAR_ROOT_API_URL") or DEFAULT_MINT_URL).rstrip(
+        "/"
+    )
     if not _is_loopback_url(url):
         raise TreasuryError(
             "clear-root requires a loopback API URL; run it inside the mint "
@@ -229,9 +229,7 @@ def retire(args) -> int:
     else:
         raw = args.value or sys.stdin.read().strip()
     if not raw:
-        raise TreasuryError(
-            "CMU amount, Cashu token, or proof JSON must be supplied"
-        )
+        raise TreasuryError("CMU amount, Cashu token, or proof JSON must be supplied")
 
     if raw.startswith("cashu"):
         retired = retire_token(
@@ -310,9 +308,7 @@ def service_request(args) -> int:
 def service_commission(args) -> int:
     if args.attestation_file:
         try:
-            event = json.loads(
-                Path(args.attestation_file).read_text(encoding="utf-8")
-            )
+            event = json.loads(Path(args.attestation_file).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise TreasuryError(f"unable to read operator attestation: {exc}") from exc
     else:
@@ -595,8 +591,11 @@ def cmu_label(args) -> int:
 
 def cmu_description(args) -> int:
     result = request_json(
-        _api_url(args), "POST", f"/v1/operator/cmus/{args.cmu}/description",
-        {"description": read_description(args)}, token=_operator_token(),
+        _api_url(args),
+        "POST",
+        f"/v1/operator/cmus/{args.cmu}/description",
+        {"description": read_description(args)},
+        token=_operator_token(),
     )
     _print_json(result)
     return 0
@@ -1037,7 +1036,8 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     treasurer_grant_parser.add_argument("npub")
     treasurer_grant_parser.set_defaults(handler=treasurer_grant)
     treasurer_revoke_parser = treasurer_subcommands.add_parser(
-        "revoke-grant", help="Revoke a pending CMU creation grant without deleting its history.",
+        "revoke-grant",
+        help="Revoke a pending CMU creation grant without deleting its history.",
     )
     treasurer_revoke_parser.add_argument("grant_id")
     treasurer_revoke_parser.set_defaults(handler=treasurer_revoke_grant)
@@ -1096,7 +1096,9 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
         "list",
         help="List CMU records, or list a specified CMU on the mint home page.",
     )
-    cmu_list_parser.add_argument("cmu", nargs="?", help="CMU unit or keyset ID to list on the home page.")
+    cmu_list_parser.add_argument(
+        "cmu", nargs="?", help="CMU unit or keyset ID to list on the home page."
+    )
     cmu_list_parser.set_defaults(handler=cmu_list, public_listing=True)
     cmu_label_parser = cmu_subcommands.add_parser(
         "label",
@@ -1111,13 +1113,15 @@ def parser(*, prog: str = "clear-root") -> argparse.ArgumentParser:
     )
     cmu_label_parser.set_defaults(handler=cmu_label)
     cmu_description_parser = cmu_subcommands.add_parser(
-        "describe", help="Set or clear a CMU's public description.",
+        "describe",
+        help="Set or clear a CMU's public description.",
     )
     cmu_description_parser.add_argument("cmu", help="CMU unit or keyset ID.")
     add_description_arguments(cmu_description_parser)
     cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
-        "unlist", aliases=["private"],
+        "unlist",
+        aliases=["private"],
         help="Unlist a CMU from the home page while keeping it accessible by ID.",
     )
     cmu_private_parser.add_argument("cmu", help="CMU unit or keyset ID.")

@@ -21,7 +21,6 @@ from clear.root_delivery import (
     discover_clear_support,
     mint_has_public_route,
 )
-from clear.wallet_labels import with_friendly_labels
 from clear.root_wallet import (
     deposit_issue,
     export_token,
@@ -39,12 +38,13 @@ from clear.treasury import (
 from clear.treasury_auth import (
     TreasuryAuthError,
     build_cmu_create_envelope,
+    build_cmu_description_envelope,
     build_cmu_info_envelope,
     build_cmu_summary_envelope,
     build_cmu_visibility_envelope,
-    build_cmu_description_envelope,
     npub_from_nsec,
 )
+from clear.wallet_labels import with_friendly_labels
 
 DEFAULT_TREASURY_WALLET_BASE = Path("~/.clear/treasury-wallets").expanduser()
 
@@ -60,7 +60,9 @@ def _treasurer_nsec(args) -> str:
             with open("/dev/tty", "w", encoding="utf-8") as terminal:
                 with warnings.catch_warnings():
                     warnings.simplefilter("error", getpass.GetPassWarning)
-                    nsec = getpass.getpass("Treasurer nsec (hidden): ", stream=terminal).strip()
+                    nsec = getpass.getpass(
+                        "Treasurer nsec (hidden): ", stream=terminal
+                    ).strip()
         except (OSError, getpass.GetPassWarning) as exc:
             raise TreasuryError(
                 "Hidden key input requires a terminal; supply --nsec or "
@@ -96,9 +98,7 @@ def _resolve_keyset_id(mint: str, args) -> str:
         raise TreasuryError("treasurer CMU selection requires --keyset-id or --cmu-id")
     response = request_json(mint, "GET", "/v1/keysets")
     matches = [
-        item
-        for item in response.get("keysets") or []
-        if item.get("unit") == cmu_id
+        item for item in response.get("keysets") or [] if item.get("unit") == cmu_id
     ]
     if not matches:
         raise TreasuryError(f"CMU was not found: {cmu_id}")
@@ -134,7 +134,9 @@ def _prompt_grant_details(args) -> None:
         else:
             grant = json.load(sys.stdin)
     except (ValueError, OSError) as exc:
-        raise TreasuryError(f"could not read a single grant JSON object from {source}") from exc
+        raise TreasuryError(
+            f"could not read a single grant JSON object from {source}"
+        ) from exc
     if not isinstance(grant, dict):
         raise TreasuryError(f"{source} must contain a single grant JSON object")
     for field in ("id", "mint_url", "npub"):
@@ -144,8 +146,18 @@ def _prompt_grant_details(args) -> None:
         raise TreasuryError("grant must be pending with scope keyset:create")
     mint = grant["mint_url"].rstrip("/")
     parsed = urlparse(mint)
-    if parsed.scheme not in ("https", "http") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
-        raise TreasuryError("grant mint_url must be an HTTP(S) mint URL without credentials, query, or fragment")
+    if (
+        parsed.scheme not in ("https", "http")
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise TreasuryError(
+            "grant mint_url must be an HTTP(S) mint URL "
+            "without credentials, query, or fragment"
+        )
     if args.mint and args.mint.rstrip("/") != mint:
         raise TreasuryError("--mint does not match the grant mint_url")
     args.mint = mint
@@ -153,10 +165,12 @@ def _prompt_grant_details(args) -> None:
     # stdin contains the grant; use the controlling terminal for all prompts.
     try:
         with (
-            open("/dev/tty", "r", encoding="utf-8") as terminal_input,
+            open("/dev/tty", encoding="utf-8") as terminal_input,
             open("/dev/tty", "w", encoding="utf-8") as terminal,
         ):
-            terminal.write(f"Mint: {mint}\nGrant: {args.grant_id}\nTreasurer: {grant['npub']}\n")
+            terminal.write(
+                f"Mint: {mint}\nGrant: {args.grant_id}\nTreasurer: {grant['npub']}\n"
+            )
             terminal.flush()
             nsec = args.nsec or os.getenv("CLEAR_TREASURER_NSEC")
             if not nsec:
@@ -166,7 +180,10 @@ def _prompt_grant_details(args) -> None:
             if npub_from_nsec(nsec) != grant["npub"]:
                 raise TreasuryError("treasurer key does not match the grant npub")
             args.nsec = nsec
-            for field, label, limit in (("name", "CMU name", 120), ("unit_alias", "Unit label (e.g. credits)", 40)):
+            for field, label, limit in (
+                ("name", "CMU name", 120),
+                ("unit_alias", "Unit label (e.g. credits)", 40),
+            ):
                 if getattr(args, field) is not None:
                     continue
                 while True:
@@ -174,14 +191,20 @@ def _prompt_grant_details(args) -> None:
                     terminal.flush()
                     line = terminal_input.readline()
                     if not line:
-                        raise TreasuryError("CMU creation cancelled: terminal input ended")
+                        raise TreasuryError(
+                            "CMU creation cancelled: terminal input ended"
+                        )
                     value = line.strip()
                     if value and len(value) <= limit:
                         setattr(args, field, value)
                         break
                     terminal.write(f"Enter between 1 and {limit} characters.\n")
     except (OSError, getpass.GetPassWarning) as exc:
-        raise TreasuryError("interactive grant creation requires a terminal with hidden secret input; use the explicit cmu create command for scripts") from exc
+        raise TreasuryError(
+            "interactive grant creation requires a terminal "
+            "with hidden secret input; use the explicit cmu "
+            "create command for scripts"
+        ) from exc
 
 
 def cmu_create(args) -> int:
@@ -427,8 +450,11 @@ def cmu_description(args) -> int:
     mint = args.mint.rstrip("/")
     keyset_id = _resolve_keyset_id(mint, args)
     envelope = build_cmu_description_envelope(
-        mint=mint, nsec=nsec, keyset_id=keyset_id,
-        description=read_description(args), lifetime_seconds=args.lifetime,
+        mint=mint,
+        nsec=nsec,
+        keyset_id=keyset_id,
+        description=read_description(args),
+        lifetime_seconds=args.lifetime,
     )
     _print_json(request_json(mint, "POST", "/v1/treasury/cmus/description", envelope))
     return 0
@@ -458,14 +484,18 @@ def cmu_visibility(args) -> int:
 class TreasuryArgumentParser(argparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         parsed = super().parse_args(args, namespace)
-        grant_json = getattr(parsed, "grant_stdin", False) or getattr(parsed, "grant_file", None)
+        grant_json = getattr(parsed, "grant_stdin", False) or getattr(
+            parsed, "grant_file", None
+        )
         if not parsed.mint and not grant_json:
             self.error("--mint is required unless using --grant-stdin or --grant-file")
         if getattr(parsed, "cmu_command", None) == "create":
             if grant_json and parsed.grant_id:
                 self.error("use either a grant ID or grant JSON, not both")
             if not grant_json and not parsed.grant_id:
-                self.error("cmu create requires a grant ID, --grant-stdin, or --grant-file")
+                self.error(
+                    "cmu create requires a grant ID, --grant-stdin, or --grant-file"
+                )
         return parsed
 
 
@@ -485,7 +515,10 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     result.add_argument(
         "--nsec",
         default=None,
-        help="Treasurer nsec. Uses CLEAR_TREASURER_NSEC, otherwise prompts with hidden input.",
+        help=(
+            "Treasurer nsec. Uses CLEAR_TREASURER_NSEC, "
+            "otherwise prompts with hidden input."
+        ),
     )
     result.add_argument(
         "--wallet",
@@ -573,11 +606,16 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     cmu_create_parser.add_argument("grant_id", nargs="?")
     grant_source = cmu_create_parser.add_mutually_exclusive_group()
     grant_source.add_argument(
-        "--grant-stdin", action="store_true",
-        help="Read grant JSON from stdin and prompt in the terminal for missing key and CMU details.",
+        "--grant-stdin",
+        action="store_true",
+        help=(
+            "Read grant JSON from stdin and prompt in the "
+            "terminal for missing key and CMU details."
+        ),
     )
     grant_source.add_argument(
-        "--grant-file", type=Path,
+        "--grant-file",
+        type=Path,
         help="Read a grant JSON file and prompt for missing key and CMU details.",
     )
     cmu_create_parser.add_argument("--name", default=None, help="Friendly CMU name.")
@@ -618,14 +656,16 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
     )
     cmu_summary_parser.set_defaults(handler=cmu_summary)
     cmu_description_parser = cmu_subcommands.add_parser(
-        "describe", help="Set or clear a description for your CMU.",
+        "describe",
+        help="Set or clear a description for your CMU.",
     )
     _add_cmu_selector(cmu_description_parser, action="describe")
     add_description_arguments(cmu_description_parser)
     cmu_description_parser.add_argument("--lifetime", type=int, default=300)
     cmu_description_parser.set_defaults(handler=cmu_description)
     cmu_private_parser = cmu_subcommands.add_parser(
-        "unlist", aliases=["private"],
+        "unlist",
+        aliases=["private"],
         help="Unlist a treasurer-controlled CMU from the mint home page.",
     )
     _add_cmu_selector(cmu_private_parser, action="hide")
@@ -640,7 +680,8 @@ def parser(*, prog: str = "clear-treasury") -> argparse.ArgumentParser:
         public_listing=False,
     )
     cmu_publish_parser = cmu_subcommands.add_parser(
-        "list", aliases=["publish"],
+        "list",
+        aliases=["publish"],
         help="List a treasurer-controlled CMU on the mint home page.",
     )
     _add_cmu_selector(cmu_publish_parser, action="list")
